@@ -1,0 +1,73 @@
+{
+  "jobs": [
+    {
+      "absolute_url": "https://boards.greenhouse.io/acmerobotics/jobs/4001",
+      "data_compliance": [
+        {
+          "type": "gdpr",
+          "requires_consent": false,
+          "requires_processing_consent": false,
+          "requires_retention_consent": false,
+          "retention_period": null
+        }
+      ],
+      "internal_job_id": 904001,
+      "location": {
+        "name": "Remote - US"
+      },
+      "metadata": [],
+      "id": 4001,
+      "updated_at": "2026-09-12T10:15:00-04:00",
+      "first_published": "2026-09-01T09:00:00-04:00",
+      "requisition_id": "REQ-2026-014",
+      "title": "Senior Backend Engineer",
+      "company_name": "Acme Robotics",
+      "departments": [
+        {
+          "id": 1000,
+          "name": "Engineering",
+          "child_ids": [],
+          "parent_id": null
+        }
+      ],
+      "offices": [],
+      "content": "&lt;p&gt;Acme Robotics builds warehouse automation for regional grocers. The backend team owns the fleet-coordination services that keep two thousand robots moving without collisions.&lt;/p&gt;&lt;h3&gt;What you'll do&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;Own the scheduling service end to end&lt;/li&gt;&lt;li&gt;Design APIs used by the fleet controllers&lt;/li&gt;&lt;/ul&gt;&lt;h3&gt;Requirements&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;5+ years building backend services in Go or Python&lt;/li&gt;&lt;li&gt;Experience operating PostgreSQL at scale&lt;/li&gt;&lt;li&gt;Comfortable with on-call rotations&lt;/li&gt;&lt;/ul&gt;&lt;h3&gt;Nice to have&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;Robotics or logistics domain experience&lt;/li&gt;&lt;li&gt;Familiarity with gRPC&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;This role is only open to candidates located in the United States.&lt;/p&gt;&lt;p&gt;The salary range for this position is USD 140,000 - 170,000 per year, plus equity.&lt;/p&gt;"
+    },
+    {
+      "absolute_url": "https://boards.greenhouse.io/acmerobotics/jobs/4003",
+      "data_compliance": [
+        {
+          "type": "gdpr",
+          "requires_consent": false,
+          "requires_processing_consent": false,
+          "requires_retention_consent": false,
+          "retention_period": null
+        }
+      ],
+      "internal_job_id": 904003,
+      "location": {
+        "name": "Remote"
+      },
+      "metadata": [],
+      "id": 4003,
+      "updated_at": "2026-09-11T09:20:00-04:00",
+      "first_published": "2026-09-05T12:00:00-04:00",
+      "requisition_id": "REQ-2026-027",
+      "title": "Product Designer",
+      "company_name": "Acme Robotics",
+      "departments": [
+        {
+          "id": 1000,
+          "name": "Design",
+          "child_ids": [],
+          "parent_id": null
+        }
+      ],
+      "offices": [],
+      "content": "&lt;p&gt;Join Acme Robotics as a Product Designer for the operator console used on warehouse floors around the world.&lt;/p&gt;&lt;h3&gt;Requirements&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;Portfolio of shipped B2B interfaces&lt;/li&gt;&lt;li&gt;Experience running usability studies&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Compensation: $90,000 - $110,000 per year depending on experience.&lt;/p&gt;"
+    }
+  ],
+  "meta": {
+    "total": 2
+  }
+}

@@ -1,0 +1,8 @@
+# Synthetic robots.txt for the arbitrary-URL fetcher tests.
+User-agent: *
+Disallow: /private/
+Allow: /
+
+User-agent: JobGetter
+Disallow: /careers/internal/
+Crawl-delay: 2

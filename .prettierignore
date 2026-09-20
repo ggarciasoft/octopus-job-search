@@ -21,6 +21,8 @@ docs/spec/
 fixtures/MANIFEST.sha256
 fixtures/cvs/
 fixtures/model-responses/
+fixtures/jobs/
+fixtures/ats-pages/
 apps/api/dist/
 apps/web/dist/
 

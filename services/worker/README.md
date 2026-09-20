@@ -8,9 +8,11 @@ and never writes to the database. Node owns persistence and workflow
 (`docs/spec/00_AI_IMPLEMENTATION_INSTRUCTIONS.md` invariant 1, ADR03). If you
 find yourself wanting a `POST` route here, the feature belongs in `apps/api`.
 
-Implemented milestones: **M0** (task protocol and the `noop_echo` probe) and
-**M1** (profile parsing and the model-provider abstraction). Nothing beyond
-that exists yet, and nothing here pretends otherwise.
+Implemented milestones: **M0** (task protocol and the `noop_echo` probe),
+**M1** (profile parsing and the model-provider abstraction) and the worker side
+of **M2** (job discovery: the arbitrary-URL fetcher, the Greenhouse and Lever
+connectors, normalisation, `fetch_board` and `fetch_job`). Nothing beyond that
+exists yet, and nothing here pretends otherwise.
 
 ---
 
@@ -43,9 +45,12 @@ a locator the worker cannot reproduce is not provenance.
 | `cancellation.py`      | The cooperative cancellation token                                 |
 | `api.py`               | Client for `/internal/v1/tasks`                                    |
 | `worker.py`            | Claim → lease → heartbeat → complete/fail loop                     |
-| `handlers/`            | Task registry; `noop_echo` (M0), `parse_profile` (M1)              |
+| `handlers/`            | Task registry; `noop_echo` (M0), `parse_profile` (M1), `fetch_board` and `fetch_job` (M2) |
 | `extraction/`          | PDF, DOCX and text extraction with bounds and locators             |
 | `profile/`             | Injection sanitising, grounding, the fact allowlist                |
+| `net/`                 | The only outbound HTTP to job sources: destination policy, pinned fetcher, robots, politeness |
+| `connectors/`          | Discovery connector contract; Greenhouse and Lever                 |
+| `discovery/`           | HTML-to-text, JSON-LD `JobPosting`, the country table, normalisation and `content_hash` |
 | `prompts/`             | Versioned prompt constants                                         |
 | `providers/`           | `ModelProvider` and the fake / Ollama / OpenAI-compatible adapters |
 | `cli.py`               | `job-getter-worker` - the container worker                         |
@@ -191,6 +196,131 @@ accepts counts and codes and _refuses_ anything that looks like content, so the
 easy way to describe work done ("extracted 4821 chars, proposed 23 facts")
 carries nothing sensitive. A test feeds a real CV through a parse and asserts
 none of its text reaches captured log output.
+
+---
+
+## Job discovery (M2)
+
+### The fetcher is the network
+
+`net/` is the only code that opens a connection to a job source, and it
+applies `docs/spec/05_DISCOVERY_CONNECTORS.md` -> "For arbitrary URLs" before
+anything else can happen (AT20):
+
+1. **HTTPS only**, default port only, no credentials in the URL, no local
+   names.
+2. **`robots.txt`** is fetched once per host per process and honoured for the
+   path under the `JobGetter` product token, including `Crawl-delay`. A
+   disallow is `ROBOTS_DISALLOWED`; a 5xx or unreachable robots file counts
+   as disallow (RFC 9309). There is no bypass.
+3. **Every address a name resolves to must be public.** Private, loopback,
+   link-local, multicast, unspecified, reserved, shared (100.64/10) and the
+   cloud-metadata endpoints are refused for IPv4 and IPv6, including
+   IPv4-mapped, 6to4, Teredo and NAT64 forms. One private record rejects the
+   whole name (mixed records are the rebinding setup). This runs before the
+   first connection **and again after every redirect**.
+4. **The connection is pinned.** The request goes to the validated address;
+   the `Host` header and the TLS server name (httpcore's `sni_hostname`
+   extension, which Python's `ssl` verifies the certificate against) carry
+   the real hostname. A DNS answer that changes between check and connect
+   changes nothing.
+5. **Bounds**: 20 s overall, at most 3 redirects, an accepted media type
+   only, a body cap enforced _while streaming_. These are read off the
+   generated `FetchJobInputPolicy` constraints, so a task policy can only
+   tighten them.
+6. **Nothing identifying**: no cookies (the jar is emptied after every
+   response and the header stripped before every send), no `Authorization`,
+   no proxy or `.netrc` from the environment, a fixed User-Agent naming the
+   project.
+7. **Politeness**: one in-flight request per host, at least one second
+   between requests to the same host.
+
+Connectors go through the same fetcher and may only contact their declared
+`allowed_hosts`; a redirect anywhere else is `BLOCKED_DESTINATION`.
+
+### Connectors
+
+`connectors/base.py` is the spec contract (`id`, `version`, `allowed_hosts`,
+`capabilities`, `config_schema`, `rate_policy`, `policy_review_url/date`;
+`discover`, `get_job`, `healthcheck`). Greenhouse reads
+`boards-api.greenhouse.io/v1/boards/{token}/jobs?content=true`; Lever reads
+`api.lever.co/v0/postings/{site}?mode=json`, or `api.eu.lever.co` when
+`base_url` names it - any other `base_url` is `INPUT_INVALID` before a request
+is made. Both send `If-None-Match` / `If-Modified-Since` from the input and
+return `ETag` / `Last-Modified`; both stop on 403 (`ACCESS_DENIED`) and 429
+(`RATE_LIMITED`, with `Retry-After` in seconds from either header form)
+without retrying. The response schemas they rely on are pinned by
+`fixtures/jobs/*.json`; a required field that is missing or of the wrong type
+is `SCHEMA_DRIFT` for the whole page, never a guess.
+
+`source_key` for a board job is exactly `<connector>:<board_key>:<external_id>`
+(`connectors.base.source_key_for`). A snapshot listing one identity twice is
+collapsed to the first occurrence; the API collapses across scans.
+
+### `complete_snapshot`
+
+Only a scan in which every page was fetched within limits and no request
+failed reports `complete_snapshot=True`. A cap, a denial, a rate limit, a
+drift, a failed later page and a 304 all report `False` (AT06). A 304 in
+particular returns `jobs: []`, a `NOT_MODIFIED` warning, `observed_health`
+`ok`/304 and the echoed `etag`/`last_modified`: zero jobs with
+`complete_snapshot=True` would close every job on the board. A transport
+failure or timeout on the _first_ page fails the task (`FETCH_BLOCKED` /
+`TIMEOUT`) so the API can decide about a retry; on a later page the jobs
+already seen are returned as a partial result with `observed_health`
+`degraded`.
+
+### Normalisation: nothing is invented
+
+`discovery/normalize.py` distinguishes structured values from inferences:
+
+- **Structured** (an API field, a JSON-LD property) is used after validation.
+  Mapping `"United States"` to `"US"` through the versioned table in
+  `discovery/countries.py` is normalisation, not inference; the table holds
+  unambiguous names only, so `"CA"` in free text stays `None`.
+- **Inferred** (from the description by a heuristic) is used only with its
+  excerpt in `inferred[]` and a `FIELD_INFERRED` warning that names the field
+  without quoting the text. This covers `remote_type` from a location name or
+  an explicit sentence, `eligible_countries` from an explicit statement
+  ("must be located in", "only open to candidates located in", "authorized
+  to work in", "US-only"), `salary` from text that has a currency marker
+  **and** a period (a bare `$` keeps `currency=None`; no period, no salary;
+  nothing is converted), `requirements` split out of
+  Requirements/Qualifications/Nice-to-have sections, and `language` from
+  stopword counts.
+- **Unstated is null/unknown.** `published_at` comes only from a stated date;
+  `eligible_countries` is `None` unless stated (never `[]`, never "anywhere"
+  because a job is remote); `remote_type` is `unknown` unless the source says.
+
+Text addressed to an AI system (the `profile/sanitize.py` patterns) is
+excluded from every heuristic but kept in `description_text` as data (AT09):
+the description is what the page said, and no field is derived from it.
+
+**`content_hash`** is SHA-256 of the canonical JSON
+`{"v":1,"title","company","description_text","locations","salary","apply_url"}`
+(`sort_keys=True`, `separators=(",",":")`, UTF-8), where the three strings have
+whitespace runs collapsed and are stripped, `locations` is the sorted list of
+`[country, region, city]` (`""` for null), `salary` is
+`[min, max, currency, period]` or `null`. Time fields, provenance excerpts,
+requirements, inferred fields and the canonical URL are excluded on purpose
+(`discovery.normalize.compute_content_hash`).
+
+### `fetch_job`
+
+A URL is fetched under the task's policy and read structured-data first: one
+JSON-LD `JobPosting` is the `job`; several are `candidates` with
+`MULTIPLE_POSTINGS`; none falls back to sanitised page text with
+`NO_STRUCTURED_DATA` (title from `<title>`, company from the hint or a visible
+placeholder). A blocked, disallowed, denied or rate-limited fetch is a
+_result_ carrying the warning and `job: null`, so the UI can offer paste mode.
+Pasted text is normalised with `extraction: pasted_text`, `fetch.performed:
+false`, the user's `company_hint`/`title_hint` recorded verbatim, and identity
+`manual:<content_hash>` for `external_id`, `source_key` and `canonical_url`
+(no invented URL).
+
+Every URL identity is `url:<normalised URL>` (lower-cased scheme and host, no
+fragment, tracking parameters dropped, sorted query) with `external_id` its
+SHA-256.
 
 ---
 

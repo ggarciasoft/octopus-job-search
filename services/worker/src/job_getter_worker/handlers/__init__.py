@@ -98,13 +98,17 @@ class HandlerRegistry:
 
 
 def build_default_registry() -> HandlerRegistry:
-    """The handlers implemented as of M1."""
+    """The handlers implemented as of M2."""
+    from .fetch_board import handle_fetch_board
+    from .fetch_job import handle_fetch_job
     from .noop_echo import handle_noop_echo
     from .parse_profile import handle_parse_profile
 
     registry = HandlerRegistry()
     registry.register(TaskType.NOOP_ECHO, handle_noop_echo)
     registry.register(TaskType.PARSE_PROFILE, handle_parse_profile)
+    registry.register(TaskType.FETCH_BOARD, handle_fetch_board)
+    registry.register(TaskType.FETCH_JOB, handle_fetch_job)
     return registry
 
 

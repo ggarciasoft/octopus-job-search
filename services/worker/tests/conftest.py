@@ -7,14 +7,22 @@ property-verified by its own tooling.
 
 from __future__ import annotations
 
+import asyncio
+import json
 from collections.abc import Callable
 from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
+import httpx
 import pytest
 
+from job_getter_worker.api import TaskApiClient
+from job_getter_worker.cancellation import CancellationToken
 from job_getter_worker.clock import to_timestamp_string, utc_now
+from job_getter_worker.contracts.generated import TaskType
+from job_getter_worker.handlers import TaskContext
+from job_getter_worker.net import Fetcher
 from job_getter_worker.settings import WorkerSettings, load_settings
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -147,3 +155,164 @@ def input_file_entry(
 
 def read_cv(name: str) -> bytes:
     return (CV_FIXTURES / name).read_bytes()
+
+
+# ---------------------------------------------------------------------------
+# M2 discovery helpers: a stub resolver, a recording transport, task contexts.
+# ---------------------------------------------------------------------------
+
+JOB_FIXTURES = REPO_ROOT / "fixtures" / "jobs"
+ATS_PAGES = REPO_ROOT / "fixtures" / "ats-pages"
+
+#: Genuinely global addresses (documentation ranges count as private on
+#: Python 3.12, so they cannot stand in for "public" here).
+PUBLIC_V4 = "93.184.216.34"
+PUBLIC_V6 = "2001:4860:4860::8888"
+GREENHOUSE_IP = "8.8.8.8"
+LEVER_IP = "1.1.1.1"
+LEVER_EU_IP = "9.9.9.9"
+
+#: The only DNS the discovery tests know. Anything else fails to resolve.
+STUB_DNS: dict[str, list[str]] = {
+    "jobs.example.test": [PUBLIC_V4],
+    "v6.example.test": [PUBLIC_V6],
+    "private.example.test": ["10.0.0.1"],
+    "mixed.example.test": [PUBLIC_V4, "10.0.0.1"],
+    "evil.example.test": ["127.0.0.1"],
+    "metadata.example.test": ["169.254.169.254"],
+    "boards-api.greenhouse.io": [GREENHOUSE_IP],
+    "api.lever.co": [LEVER_IP],
+    "api.eu.lever.co": [LEVER_EU_IP],
+}
+
+
+async def stub_resolver(host: str) -> list[str]:
+    try:
+        return list(STUB_DNS[host])
+    except KeyError as error:
+        raise OSError(f"no stub DNS record for {host!r}") from error
+
+
+RouteHandler = Callable[[httpx.Request], httpx.Response]
+
+
+class FakeSite:
+    """Routes keyed by (Host header, path) for ``httpx.MockTransport``.
+
+    The fetcher pins connections to the resolved address, so the request URL
+    host is an IP; the *name* travels in the ``Host`` header. Routing on the
+    header is therefore also an assertion that pinning happened.
+    """
+
+    def __init__(self) -> None:
+        self.routes: dict[tuple[str, str], RouteHandler] = {}
+        self.requests: list[httpx.Request] = []
+
+    def add(self, host: str, path: str, response: httpx.Response | RouteHandler) -> None:
+        if isinstance(response, httpx.Response):
+            fixed = response
+            self.routes[(host, path)] = lambda _request: fixed
+        else:
+            self.routes[(host, path)] = response
+
+    def handler(self, request: httpx.Request) -> httpx.Response:
+        self.requests.append(request)
+        route = self.routes.get((request.headers.get("host", ""), request.url.path))
+        if route is None:
+            return httpx.Response(404, content=b"not found", headers={"content-type": "text/plain"})
+        return route(request)
+
+    def hosts_contacted(self) -> list[str]:
+        return [request.headers.get("host", "") for request in self.requests]
+
+    def paths_for(self, host: str) -> list[str]:
+        return [
+            request.url.path for request in self.requests if request.headers.get("host", "") == host
+        ]
+
+
+class RecordingFetcher(Fetcher):
+    """A fetcher whose politeness waits are recorded instead of slept."""
+
+    recorded_sleeps: list[float]
+
+
+def make_fetcher(site: FakeSite | None = None) -> RecordingFetcher:
+    """A :class:`Fetcher` wired to the stub resolver and an instant clock.
+
+    With ``site`` the transport is a ``MockTransport`` over the site's routes;
+    without it the default transport is used, which is what ``respx`` patches.
+    """
+    state = {"now": 1000.0}
+    sleeps: list[float] = []
+
+    def monotonic() -> float:
+        state["now"] += 0.001
+        return state["now"]
+
+    async def sleeper(seconds: float) -> None:
+        sleeps.append(seconds)
+        state["now"] += seconds
+        await asyncio.sleep(0)
+
+    fetcher = RecordingFetcher(
+        resolver=stub_resolver,
+        transport=httpx.MockTransport(site.handler) if site is not None else None,
+        sleeper=sleeper,
+        monotonic=monotonic,
+    )
+    fetcher.recorded_sleeps = sleeps
+    return fetcher
+
+
+def html_response(
+    body: str, status: int = 200, headers: dict[str, str] | None = None
+) -> httpx.Response:
+    return httpx.Response(
+        status,
+        content=body.encode("utf-8"),
+        headers={"content-type": "text/html; charset=utf-8", **(headers or {})},
+    )
+
+
+def make_task_context(
+    settings: WorkerSettings,
+    task_input: Any,
+    *,
+    task_type: str = "fetch_job",
+) -> tuple[TaskContext, list[tuple[str, int]]]:
+    """A ``TaskContext`` for handler tests plus the progress it reports.
+
+    The API client is never used by the discovery handlers, so it points at a
+    transport that refuses."""
+
+    def refuse(_request: httpx.Request) -> httpx.Response:
+        raise AssertionError("discovery handlers must not call the task API")
+
+    progress: list[tuple[str, int]] = []
+    context = TaskContext(
+        task_id="11111111-2222-4333-8444-555555555555",
+        task_type=TaskType(task_type),
+        attempt=1,
+        input=task_input,
+        files=(),
+        settings=settings,
+        api=TaskApiClient(
+            "http://api.internal.test",
+            "worker-credential-for-tests",
+            max_download_bytes=1024,
+            transport=httpx.MockTransport(refuse),
+        ),
+        cancel=CancellationToken(),
+        report_progress=lambda stage, percent: progress.append((stage, percent)),
+        lease_token=LEASE_TOKEN,
+    )
+    return context, progress
+
+
+def read_page(name: str) -> str:
+    return (ATS_PAGES / name).read_text(encoding="utf-8")
+
+
+def read_job_fixture(name: str) -> Any:
+    return json.loads((JOB_FIXTURES / name).read_text(encoding="utf-8"))
