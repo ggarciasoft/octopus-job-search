@@ -1,0 +1,123 @@
+name: Bug report
+description: Something that is supposed to work does not.
+title: '[bug] <short summary>'
+labels: ['bug', 'needs-triage']
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Before you file
+
+        **Check [IMPLEMENTATION_STATUS.md](../blob/main/IMPLEMENTATION_STATUS.md)
+        first.** Most of this product is not built yet. A feature listed there as
+        "Not started" is not a bug - it is an accurate description of an
+        unfinished project. Please open a feature request or a discussion
+        instead.
+
+        ## Do not paste personal data
+
+        Logs, exports and screenshots from your own installation contain your
+        real CV, contact details and employment history. **Redact them.** Do not
+        attach a real CV to a public issue. Synthetic reproductions are always
+        better; `fixtures/` has a corpus you can use.
+
+        Never paste `.env`, a session cookie, a device token, an API key, or a
+        `SETUP_TOKEN`.
+
+        Found a **security** problem? Do not use this form - see SECURITY.md.
+
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what you got instead.
+      placeholder: |
+        I ran `docker compose up --build -d` and then `sh scripts/smoke.sh`.
+        Expected: the smoke test to pass.
+        Got: readiness never returned 200; it timed out after 90s.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Numbered, from a clean start if you can manage it.
+      placeholder: |
+        1. git clone ... && cd job-getter
+        2. cp .env.example .env
+        3. sh scripts/setup.sh
+        4. docker compose up --build -d
+        5. sh scripts/smoke.sh
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install_mode
+    attributes:
+      label: How are you running it?
+      options:
+        - Docker Compose (docker compose up)
+        - Local dev loop (scripts/dev.sh or scripts/dev.ps1)
+        - Other / not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      description: |
+        docs/spec/10_DEPLOYMENT.md is explicit that per-OS behaviour must be
+        tested separately and that unverified platforms are labelled as such.
+        Knowing which one you are on matters.
+      options:
+        - Linux
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Windows (Docker Desktop / WSL2)
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: versions
+    attributes:
+      label: Versions
+      description: |
+        Paste the output of:
+            git rev-parse --short HEAD
+            docker --version && docker compose version
+            node --version && pnpm --version
+            uv --version
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: |
+        `docker compose logs api --tail 100` and/or
+        `docker compose logs worker --tail 100`.
+
+        The API redacts CV text, answers, tokens and raw prompts by design, but
+        read what you paste anyway. If a log line contains something it should
+        not, that is itself a bug worth reporting - privately, via SECURITY.md.
+      render: shell
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: acknowledgements
+    attributes:
+      label: Acknowledgements
+      options:
+        - label: I checked IMPLEMENTATION_STATUS.md and this is a feature that is supposed to work, not one that is not built yet.
+          required: true
+        - label: This issue contains no secrets and no real personal data - not mine and not anyone else's.
+          required: true
+        - label: This is not a security vulnerability. (If it is, close this and follow SECURITY.md.)
+          required: true

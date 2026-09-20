@@ -164,10 +164,7 @@ export function createLogger(options: CreateLoggerOptions): Logger {
   return pino(loggerOptions);
 }
 
-export function loggerFromConfig(
-  config: Config,
-  destination?: DestinationStream,
-): Logger {
+export function loggerFromConfig(config: Config, destination?: DestinationStream): Logger {
   return createLogger({
     level: config.logLevel,
     pretty: !config.isHosted && process.stdout.isTTY === true && destination === undefined,

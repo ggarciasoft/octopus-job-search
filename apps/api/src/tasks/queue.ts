@@ -145,11 +145,7 @@ export async function claimTask(db: Db, input: ClaimInput): Promise<ClaimRespons
     // budget is terminated and the search continues rather than returning 204
     // while runnable work waits behind it.
     for (let inspected = 0; inspected < 10; inspected += 1) {
-      const candidate = await selectClaimCandidate(
-        trx,
-        input.capabilities,
-        workspaceFilter,
-      );
+      const candidate = await selectClaimCandidate(trx, input.capabilities, workspaceFilter);
       if (!candidate) return null;
 
       const isExpiredLease = candidate.state === 'leased';
@@ -460,11 +456,7 @@ interface FailInput {
 }
 
 /** Terminal failure of an already-locked row. */
-async function failTaskRow(
-  trx: DbTransaction,
-  task: TaskRow,
-  input: FailInput,
-): Promise<TaskRow> {
+async function failTaskRow(trx: DbTransaction, task: TaskRow, input: FailInput): Promise<TaskRow> {
   return (await trx
     .updateTable('tasks')
     .set({
@@ -800,7 +792,9 @@ export function assertKnownTaskType(type: string): asserts type is TaskType {
   }
 }
 
-export function assertSessionPrincipal(principal: Principal | null): asserts principal is Principal {
+export function assertSessionPrincipal(
+  principal: Principal | null,
+): asserts principal is Principal {
   if (principal === null) throw forbidden('A session is required.');
 }
 

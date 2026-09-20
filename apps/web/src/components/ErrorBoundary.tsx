@@ -51,13 +51,9 @@ export function AppErrorBoundary({ children }: { readonly children: ReactNode })
             <Callout tone="error" title={t('error.boundaryTitle')}>
               <p>{t('error.boundaryBody')}</p>
               <p className="font-mono text-xs break-words">{error.message}</p>
-              {failure.code ? (
-                <p className="font-mono text-xs">{failure.code}</p>
-              ) : null}
+              {failure.code ? <p className="font-mono text-xs">{failure.code}</p> : null}
               {failure.requestId ? (
-                <p className="text-xs">
-                  {t('common.requestId', { requestId: failure.requestId })}
-                </p>
+                <p className="text-xs">{t('common.requestId', { requestId: failure.requestId })}</p>
               ) : null}
             </Callout>
             <div className="flex gap-2">

@@ -92,7 +92,8 @@ export const en = {
   'setup.emailLabel': 'Email',
   'setup.emailDescription': 'Used to sign in. It is stored in your own database.',
   'setup.passwordLabel': 'Password',
-  'setup.passwordDescription': 'At least 12 characters. Hashed with Argon2id; never stored as text.',
+  'setup.passwordDescription':
+    'At least 12 characters. Hashed with Argon2id; never stored as text.',
   'setup.localeLabel': 'Interface language',
   'setup.submit': 'Create owner account',
   'setup.busy': 'Creating account',
@@ -289,8 +290,7 @@ export const en = {
     'Provider and model configuration, budgets, prompt and template choices, scan schedules, paired devices, and data export and deletion.',
 
   'status.not_checked.label': 'Not checked',
-  'status.not_checked.description':
-    'Nothing has looked at this yet. It is not a negative result.',
+  'status.not_checked.description': 'Nothing has looked at this yet. It is not a negative result.',
   'status.unknown.label': 'Unknown',
   'status.unknown.description':
     'This was checked and the answer could not be determined. Unknown never counts as a yes.',
@@ -344,5 +344,6 @@ export const en = {
     'The configured spending budget is exhausted. Review and export still work; new inference is blocked.',
   'error.PROVIDER_UNAVAILABLE':
     'The model provider did not respond. No other provider was substituted, and your work was kept.',
-  'error.INTERNAL_ERROR': 'The server hit an internal error. The request ID below identifies it in the logs.',
+  'error.INTERNAL_ERROR':
+    'The server hit an internal error. The request ID below identifies it in the logs.',
 } as const;

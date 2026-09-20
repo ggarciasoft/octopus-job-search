@@ -1,0 +1,87 @@
+# =============================================================================
+# Docker build context exclusions.
+#
+# Two jobs here, and the second one matters more:
+#   1. Keep the build context small and the layer cache stable.
+#   2. Keep SECRETS and PERSONAL DATA out of images. A file that reaches the
+#      build context can end up in a layer even if the final stage deletes it.
+#
+# The Dockerfiles use `COPY <specific path>` rather than `COPY . .`, so this is
+# defence in depth rather than the only line of defence.
+# =============================================================================
+
+# --- Secrets -----------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+backups/
+
+# --- Personal data -----------------------------------------------------------
+# Real CVs and exported workspaces must never be in git and must never be in a
+# build context either (docs/spec/09_SECURITY_PRIVACY.md).
+# fixtures/ IS intentionally allowed through: it is synthetic by policy, and CI
+# needs it. See fixtures/README.md.
+*.cv.pdf
+*.cv.docx
+my-cv*
+personal/
+private/
+
+# --- Dependencies and build output -------------------------------------------
+node_modules
+**/node_modules
+.pnpm-store
+**/dist
+**/build
+**/.vite
+**/coverage
+**/.turbo
+*.tsbuildinfo
+
+# Python
+**/.venv
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/htmlcov
+**/.coverage
+
+# --- VCS and CI --------------------------------------------------------------
+.git
+.gitignore
+.gitattributes
+.github
+
+# --- Editor / OS noise -------------------------------------------------------
+.vscode
+.idea
+*.swp
+.DS_Store
+Thumbs.db
+
+# --- Documentation and repo meta ---------------------------------------------
+# Excluded from images; read them in the repository.
+docs
+*.md
+!services/worker/README.md
+LICENSE
+NOTICE
+
+# --- Compose / infra that images do not need ---------------------------------
+docker-compose.yml
+docker-compose.override.yml
+docker-compose.override.yml.example
+scripts
+
+# --- Logs and temporary files ------------------------------------------------
+logs
+*.log
+tmp
+.tmp

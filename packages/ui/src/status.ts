@@ -37,22 +37,11 @@ export type StatusKey = (typeof STATUS_KEYS)[number];
  * - `user_reported` the user told us, and we say so out loud
  */
 export type StatusEvidence =
-  | 'none'
-  | 'insufficient'
-  | 'user_input'
-  | 'system'
-  | 'verified'
-  | 'user_reported';
+  'none' | 'insufficient' | 'user_input' | 'system' | 'verified' | 'user_reported';
 
 /** Icon *hint*: the design layer picks the glyph, the vocabulary picks meaning. */
 export type StatusIconHint =
-  | 'dash'
-  | 'question'
-  | 'inbox'
-  | 'eye'
-  | 'clock'
-  | 'check-verified'
-  | 'check-reported';
+  'dash' | 'question' | 'inbox' | 'eye' | 'clock' | 'check-verified' | 'check-reported';
 
 export interface StatusDescriptor {
   readonly key: StatusKey;

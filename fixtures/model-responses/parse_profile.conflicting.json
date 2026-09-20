@@ -17,10 +17,7 @@
             "evidence_reference": "revised CV, Northwind bullet 1"
           }
         ],
-        "skills": [
-          "Python",
-          "PostgreSQL"
-        ]
+        "skills": ["Python", "PostgreSQL"]
       },
       "source_excerpt": "Staff Backend Engineer, Northwind Logistics International, 2022-03 - Present",
       "source_locator": "page 1",

@@ -205,7 +205,9 @@ function normaliseOrigin(value: string, problems: string[]): string {
   try {
     url = new URL(value);
   } catch {
-    problems.push(`APP_ORIGIN must be an absolute URL such as http://localhost:3000; got "${value}".`);
+    problems.push(
+      `APP_ORIGIN must be an absolute URL such as http://localhost:3000; got "${value}".`,
+    );
     return value;
   }
   if (url.protocol !== 'http:' && url.protocol !== 'https:') {

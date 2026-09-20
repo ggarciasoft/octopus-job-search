@@ -1,0 +1,111 @@
+Job Getter
+Copyright 2026 Gregory Garcia
+
+This product includes software developed by the Job Getter project
+(https://github.com/ggarciasoft/job-getter).
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied. See the License for the
+specific language governing permissions and limitations under the License.
+
+The full licence text is in the LICENSE file at the root of this repository.
+
+--------------------------------------------------------------------------------
+LICENCE STATUS
+--------------------------------------------------------------------------------
+
+Apache-2.0 is a PROPOSAL, not a final decision.
+
+docs/spec/14_SOURCES_AND_DECISIONS.md, ADR09: "Apache-2.0 is a proposal only
+until owner approves publication license." docs/spec/13_BUSINESS_AND_OPEN_SOURCE.md
+adds that AGPL is an alternative if the owner prioritises reciprocity for
+modified network services, that appropriate advice should be taken before
+choosing, and that a public licence must not be finalised without the owner's
+decision.
+
+The practical consequence of Apache-2.0: competitors may reuse this code,
+including commercially and including in closed products, provided they comply
+with the licence. That trade-off is being made deliberately in exchange for
+permissive adoption.
+
+This notice will be updated when the owner confirms the licence.
+
+--------------------------------------------------------------------------------
+NAME
+--------------------------------------------------------------------------------
+
+"Job Getter" is an internal working name (docs/spec/12_IMPLEMENTATION_PLAN.md,
+owner decision defaults). It is NOT a cleared brand: no trademark search has
+been performed, and the name may change before any public release. The Apache
+License does not grant trademark rights (section 6).
+
+--------------------------------------------------------------------------------
+THIRD-PARTY SOFTWARE
+--------------------------------------------------------------------------------
+
+This project depends on third-party open-source software that is NOT covered by
+the copyright above and remains under its own licence terms.
+
+The authoritative, machine-readable lists of those dependencies and their exact
+resolved versions are:
+
+    pnpm-lock.yaml              Node.js / TypeScript dependencies
+    services/worker/uv.lock     Python dependencies
+
+Container base images are pinned by tag and digest in:
+
+    infra/api.Dockerfile        node:24-alpine
+    infra/web.Dockerfile        node:24-alpine, nginx:1.29-alpine
+    infra/worker.Dockerfile     python:3.12-slim-bookworm,
+                                ghcr.io/astral-sh/uv:0.12.17
+    docker-compose.yml          postgres:17-alpine, and optionally
+                                ollama/ollama (local-ai profile only)
+
+Those images carry their own licences and their own bundled third-party
+software.
+
+Notable runtime components and their licences, stated for convenience only --
+the lockfiles above are authoritative, and each dependency's own LICENSE file
+governs:
+
+    Fastify                     MIT
+    TypeBox                     MIT
+    Kysely                      MIT
+    node-postgres (pg)          MIT
+    Pino                        MIT
+    argon2 (node-argon2)        MIT
+    React                       MIT
+    Vite                        MIT
+    TanStack Query              MIT
+    Tailwind CSS                MIT
+    Pydantic                    MIT
+    httpx                       BSD-3-Clause
+    pypdf                       BSD-3-Clause
+    python-docx                 MIT
+    Jinja2                      BSD-3-Clause
+    structlog                   Apache-2.0 / MIT (dual)
+    tenacity                    Apache-2.0
+    Playwright (Python)         Apache-2.0
+    PostgreSQL                  PostgreSQL Licence
+    nginx                       BSD-2-Clause
+    uv                          Apache-2.0 / MIT (dual)
+
+BROWSER BINARIES: infra/worker.Dockerfile installs Chromium through Playwright
+for CV rendering. Chromium is distributed under its own licences (BSD-3-Clause
+and others, including third-party components under separate terms) and is not
+covered by this project's licence.
+
+MODEL WEIGHTS: this project ships NO model weights and recommends no particular
+model. If you enable the optional local-ai Compose profile you choose and
+download a model yourself, and you are responsible for reading and accepting
+that model's licence. See docker-compose.yml.
+
+Before any public release, generate a complete dependency attribution report
+from the lockfiles and verify the summary above against it.

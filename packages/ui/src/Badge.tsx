@@ -2,13 +2,7 @@ import type { ReactNode } from 'react';
 import { cn } from './cn';
 
 export type BadgeTone =
-  | 'neutral'
-  | 'info'
-  | 'success'
-  | 'warning'
-  | 'danger'
-  | 'attention'
-  | 'unknown';
+  'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'attention' | 'unknown';
 
 /**
  * `unknown` is deliberately its own tone rather than a grey "success". The

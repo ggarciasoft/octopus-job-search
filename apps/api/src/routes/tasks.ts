@@ -97,7 +97,11 @@ export const cancelTaskRoute: RouteHandler = async (context, request, reply) => 
   const { id } = request.params as { id: string };
 
   // Scope check first so a foreign id is a 404 before any state is touched.
-  const existing = await scope.selectFrom('tasks').select('id').where('id', '=', id).executeTakeFirst();
+  const existing = await scope
+    .selectFrom('tasks')
+    .select('id')
+    .where('id', '=', id)
+    .executeTakeFirst();
   if (!existing) throw notFound('No such task.');
 
   const row = await cancelTask(context.db, scope.workspaceId, id);

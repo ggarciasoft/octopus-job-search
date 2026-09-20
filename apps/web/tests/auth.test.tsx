@@ -131,7 +131,9 @@ describe('one-time setup', () => {
     expect(screen.getByText(/Creating one closes this route permanently/)).toBeTruthy();
     // Local and hosted are both explained before the account is created.
     expect(screen.getByText(/Local: everything runs on this machine/)).toBeTruthy();
-    expect(screen.getByText(/Hosted: the API, worker, database and files run on a server/)).toBeTruthy();
+    expect(
+      screen.getByText(/Hosted: the API, worker, database and files run on a server/),
+    ).toBeTruthy();
     expect(screen.getByText('This API reports that it is running in Local mode.')).toBeTruthy();
     // Provider configuration and profile import are named as absent, not faked.
     expect(screen.getByText(/Those arrive with M1 and are deliberately absent/)).toBeTruthy();

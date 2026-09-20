@@ -32,9 +32,7 @@
             "evidence_reference": "page 1, Meridian Tools bullet 1"
           }
         ],
-        "skills": [
-          "Kubernetes"
-        ]
+        "skills": ["Kubernetes"]
       },
       "source_excerpt": "Platform Engineer, Meridian Tools\n2021-01 - Present",
       "source_locator": "page 1",

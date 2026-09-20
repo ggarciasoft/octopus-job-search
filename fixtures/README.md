@@ -9,9 +9,9 @@ Deterministic test data for CI and local development.
 >
 > Not yours, not a friend's, not one you found online. Not "anonymised". Not
 > "just for a moment while I debug". `docs/spec/11_TESTING_ACCEPTANCE.md` is
-> explicit: *"no personal data in CI fixtures"*, and
-> `docs/spec/00_AI_IMPLEMENTATION_INSTRUCTIONS.md` closes with *"Keep secrets and
-> personal CVs out of git."*
+> explicit: _"no personal data in CI fixtures"_, and
+> `docs/spec/00_AI_IMPLEMENTATION_INSTRUCTIONS.md` closes with _"Keep secrets and
+> personal CVs out of git."_
 >
 > Git history is effectively permanent, and this repository is intended to be
 > public. A real CV committed here is a real person's name, address, phone
@@ -29,7 +29,7 @@ Three reasons, all of which matter:
 2. **The hard cases are the ones you cannot find on demand.** An encrypted PDF,
    a scanned CV with no extractable text, a `.docx` that is actually PDF bytes, a
    job description containing a prompt injection. These are exactly the inputs
-   that must fail *gracefully*, and you cannot wait for one to turn up.
+   that must fail _gracefully_, and you cannot wait for one to turn up.
 3. **Determinism.** The same bytes produce the same result on every machine, so
    a failure is a real regression rather than an environmental accident.
 
@@ -41,39 +41,38 @@ Three reasons, all of which matter:
 
 Every file is synthetic. The people, companies and dates are invented.
 
-| File | Property it exists to test |
-|---|---|
-| `text-cv.pdf` | Happy path. Two pages with extractable text. |
-| `text-cv-es.pdf` | Spanish, with accented characters. Guards the English/Spanish flow (AT27) and text-extraction encoding (AT12). |
-| `text-cv.docx` | Employment history inside a **table** — a shape naive DOCX parsers silently skip. |
-| `prompt-injection-cv.pdf` | Contains text engineered to manipulate a model. Nothing in it may be executed or obeyed (AT09). |
-| `scanned-cv.pdf` | **No extractable text.** Must produce an explicit, supported error — never an invented profile (AT03). |
-| `encrypted-cv.pdf` | Password-protected. Must fail cleanly (AT03). |
-| `too-short.pdf` | Technically valid, far too little content to extract a profile from. Must not be "helpfully" padded out. |
-| `malformed.pdf` | Corrupt container. Must not crash the worker (AT03). |
-| `malformed.docx` | Corrupt container. Same (AT03). |
-| `mislabelled.docx` | **PDF bytes with a `.docx` extension.** Proves validation checks the file *signature*, not just the name (`docs/spec/09_SECURITY_PRIVACY.md`). |
-| `linkedin-export.txt` | User-provided LinkedIn text export. The *only* supported LinkedIn path — no scraping, no Easy Apply. |
-| `ambiguous.txt` | Plain text a parser cannot confidently interpret. Ambiguity must surface to the user, not be resolved by guessing. |
+| File                      | Property it exists to test                                                                                                                     |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `text-cv.pdf`             | Happy path. Two pages with extractable text.                                                                                                   |
+| `text-cv-es.pdf`          | Spanish, with accented characters. Guards the English/Spanish flow (AT27) and text-extraction encoding (AT12).                                 |
+| `text-cv.docx`            | Employment history inside a **table** — a shape naive DOCX parsers silently skip.                                                              |
+| `prompt-injection-cv.pdf` | Contains text engineered to manipulate a model. Nothing in it may be executed or obeyed (AT09).                                                |
+| `scanned-cv.pdf`          | **No extractable text.** Must produce an explicit, supported error — never an invented profile (AT03).                                         |
+| `encrypted-cv.pdf`        | Password-protected. Must fail cleanly (AT03).                                                                                                  |
+| `too-short.pdf`           | Technically valid, far too little content to extract a profile from. Must not be "helpfully" padded out.                                       |
+| `malformed.pdf`           | Corrupt container. Must not crash the worker (AT03).                                                                                           |
+| `malformed.docx`          | Corrupt container. Same (AT03).                                                                                                                |
+| `mislabelled.docx`        | **PDF bytes with a `.docx` extension.** Proves validation checks the file _signature_, not just the name (`docs/spec/09_SECURITY_PRIVACY.md`). |
+| `linkedin-export.txt`     | User-provided LinkedIn text export. The _only_ supported LinkedIn path — no scraping, no Easy Apply.                                           |
+| `ambiguous.txt`           | Plain text a parser cannot confidently interpret. Ambiguity must surface to the user, not be resolved by guessing.                             |
 
 ### `model-responses/` — deterministic fake provider replies
 
 So provider-handling code can be tested with no API key, no network and no cost.
 
-| File | Property it exists to test |
-|---|---|
-| `parse_profile.text-cv.json` | A well-formed extraction result. |
-| `parse_profile.text-cv-es.json` *(if present)* | The Spanish equivalent. |
-| `parse_profile.ambiguous.json` | Low-confidence output. `confidence` is a parsing aid, **never** fact confirmation. |
-| `parse_profile.conflicting.json` | Contradicts already-confirmed facts. Verified facts must be preserved until the user resolves the conflict (AT04). |
-| `parse_profile.prompt-injection-cv.json` | What a model returns for the injected document. No instruction may be executed (AT09). |
-| `provider.always-invalid.json` | Output that never validates against the closed schema. The system must fail honestly, not coerce it into shape. |
-| `provider.malformed-then-valid.json` | Malformed first, valid on retry. Exercises bounded retry without masking a persistent failure. |
+| File                                     | Property it exists to test                                                                                         |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `parse_profile.text-cv.json`             | A well-formed extraction result.                                                                                   |
+| `parse_profile.ambiguous.json`           | Low-confidence output. `confidence` is a parsing aid, **never** fact confirmation.                                 |
+| `parse_profile.conflicting.json`         | Contradicts already-confirmed facts. Verified facts must be preserved until the user resolves the conflict (AT04). |
+| `parse_profile.prompt-injection-cv.json` | What a model returns for the injected document. No instruction may be executed (AT09).                             |
+| `provider.always-invalid.json`           | Output that never validates against the closed schema. The system must fail honestly, not coerce it into shape.    |
+| `provider.malformed-then-valid.json`     | Malformed first, valid on retry. Exercises bounded retry without masking a persistent failure.                     |
 
 ### `generate.py` and `verify.py`
 
 - **`generate.py`** builds the corpus. Deterministic: same input, same bytes.
-- **`verify.py`** asserts each fixture *really has* the property its tests rely
+- **`verify.py`** asserts each fixture _really has_ the property its tests rely
   on — that `scanned-cv.pdf` genuinely has no extractable text, that
   `encrypted-cv.pdf` genuinely will not open without a password, that
   `mislabelled.docx` genuinely starts with PDF magic bytes.
@@ -85,7 +84,16 @@ So provider-handling code can be tested with no API key, no network and no cost.
 - **`MANIFEST.sha256`** records the checksum of every fixture, so an accidental
   edit is visible.
 
-**46 of 46 checks passed** at the time of writing, and the corpus is
+  > **Note:** `verify.py` hashes _every_ non-`.py` file under `fixtures/`, which
+  > includes **this README**. Editing this file therefore changes the manifest
+  > and fails the determinism check until the manifest is regenerated (delete
+  > `MANIFEST.sha256` and re-run `verify.py`, which rewrites it). A one-line fix
+  > in `verify.py` — excluding `.md` alongside `.py` — would make documentation
+  > edits free; it has not been made here because `verify.py` belongs to the
+  > fixtures owner.
+
+**46 of 46 checks passed**, verified on 2026-09-20 with
+`uv run python ../../fixtures/verify.py` (exit 0), and the corpus is
 byte-for-byte reproducible.
 
 ```bash
@@ -106,10 +114,10 @@ CI runs exactly this (the `fixtures` job in `.github/workflows/ci.yml`) and
 Not created yet — they arrive with their milestones. Listed so nobody invents a
 different layout.
 
-| Directory | Contents | Milestone |
-|---|---|---|
-| `jobs/` | Normalized job records and raw connector responses per source | M2 |
-| `ats-pages/` | Saved synthetic application forms for browser tests | M4 |
+| Directory    | Contents                                                      | Milestone |
+| ------------ | ------------------------------------------------------------- | --------- |
+| `jobs/`      | Normalized job records and raw connector responses per source | M2        |
+| `ats-pages/` | Saved synthetic application forms for browser tests           | M4        |
 
 `ats-pages/` must eventually cover the fixture list in
 `docs/spec/11_TESTING_ACCEPTANCE.md`: text/select/radio/checkbox fields,
@@ -130,7 +138,7 @@ employer.**
 2. **Add a check to `verify.py`** asserting the property your test depends on.
    A fixture whose property is not asserted will eventually stop having it.
 3. **Regenerate the manifest** and commit everything together.
-4. **Document it** in the table above — what it is *for*, not just what it is.
+4. **Document it** in the table above — what it is _for_, not just what it is.
 
 ### Invented data only
 

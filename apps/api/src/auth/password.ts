@@ -41,10 +41,7 @@ export async function verifyPassword(hash: string, password: string): Promise<bo
 export async function verifyAgainstDummy(password: string): Promise<false> {
   const pending =
     dummyHashPromise ??
-    (dummyHashPromise = argon2.hash(
-      'job-getter-nonexistent-account-placeholder',
-      ARGON2_OPTIONS,
-    ));
+    (dummyHashPromise = argon2.hash('job-getter-nonexistent-account-placeholder', ARGON2_OPTIONS));
   const hash = await pending;
   await argon2.verify(hash, password).catch(() => false);
   return false;

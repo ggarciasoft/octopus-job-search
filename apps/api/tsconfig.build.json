@@ -1,0 +1,13 @@
+{
+  // Production build. rootDir is src/ so the entrypoint lands at
+  // dist/server.js, which is what package.json's `start` and the container
+  // entrypoints invoke. tsconfig.json keeps rootDir at the package root so it
+  // can also typecheck tests/, which cannot live under a src/ rootDir.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["tests/**/*.ts"]
+}

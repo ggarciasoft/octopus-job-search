@@ -67,7 +67,11 @@ async function insertRawTask(
   const result = await harness.pool.query<{ id: string }>(
     `INSERT INTO tasks (workspace_id, type, capability, max_attempts, payload)
      VALUES ($1, $2, $2, $3, '{}'::jsonb) RETURNING id`,
-    [overrides.workspaceId ?? session.workspaceId, type, overrides.maxAttempts ?? DEFAULT_MAX_ATTEMPTS],
+    [
+      overrides.workspaceId ?? session.workspaceId,
+      type,
+      overrides.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
+    ],
   );
   return result.rows[0]!.id;
 }
@@ -105,7 +109,11 @@ async function expireLease(taskId: string): Promise<void> {
 }
 
 async function taskRow(taskId: string) {
-  return harness.db.selectFrom('tasks').selectAll().where('id', '=', taskId).executeTakeFirstOrThrow();
+  return harness.db
+    .selectFrom('tasks')
+    .selectAll()
+    .where('id', '=', taskId)
+    .executeTakeFirstOrThrow();
 }
 
 // ---------------------------------------------------------------------------
@@ -175,7 +183,11 @@ describe('enqueue and claim', () => {
       asWorker({
         method: 'POST',
         url: '/internal/v1/tasks/claim',
-        payload: { worker_id: 'idle', capabilities: ['noop_echo'], protocol_version: PROTOCOL_VERSION },
+        payload: {
+          worker_id: 'idle',
+          capabilities: ['noop_echo'],
+          protocol_version: PROTOCOL_VERSION,
+        },
       }),
     );
     expect(response.statusCode).toBe(204);
@@ -419,7 +431,11 @@ describe('complete', () => {
       asWorker({
         method: 'POST',
         url: `/internal/v1/tasks/${taskId}/complete`,
-        payload: { lease_token: claimed.lease_token, result_schema_version: 1, result: validResult() },
+        payload: {
+          lease_token: claimed.lease_token,
+          result_schema_version: 1,
+          result: validResult(),
+        },
       }),
     );
     expect(response.statusCode).toBe(200);
@@ -443,7 +459,12 @@ describe('complete', () => {
           lease_token: claimed.lease_token,
           result_schema_version: 1,
           // `worker_runtime` is missing and an extra key is present.
-          result: { echoed: 'hi', worker_id: 'w', processed_at: new Date().toISOString(), extra: 1 },
+          result: {
+            echoed: 'hi',
+            worker_id: 'w',
+            processed_at: new Date().toISOString(),
+            extra: 1,
+          },
         },
       }),
     );
@@ -486,7 +507,11 @@ describe('complete', () => {
       asWorker({
         method: 'POST',
         url: `/internal/v1/tasks/${taskId}/complete`,
-        payload: { lease_token: claimed.lease_token, result_schema_version: 7, result: validResult() },
+        payload: {
+          lease_token: claimed.lease_token,
+          result_schema_version: 7,
+          result: validResult(),
+        },
       }),
     );
     expect(response.statusCode).toBe(422);

@@ -51,7 +51,10 @@ import {
 } from '../files/service.js';
 import type { RouteContext } from './context.js';
 
-const IdParams = Type.Object({ id: Type.String({ format: 'uuid' }) }, { additionalProperties: false });
+const IdParams = Type.Object(
+  { id: Type.String({ format: 'uuid' }) },
+  { additionalProperties: false },
+);
 const FileParams = Type.Object(
   { id: Type.String({ format: 'uuid' }), file_id: Type.String({ format: 'uuid' }) },
   { additionalProperties: false },
@@ -92,57 +95,53 @@ export function registerInternalRoutes(app: FastifyInstance, context: RouteConte
         request.principal = authenticateWorker(context.config, request);
       });
 
-      internal.post(
-        '/tasks/claim',
-        { schema: { body: ClaimRequest } },
-        async (request, reply) => {
-          const body = request.body as typeof ClaimRequest.static;
-          const principal = request.principal;
-          if (principal === null || principal.kind === 'session') {
-            throw conflict('A worker credential is required.');
-          }
+      internal.post('/tasks/claim', { schema: { body: ClaimRequest } }, async (request, reply) => {
+        const body = request.body as typeof ClaimRequest.static;
+        const principal = request.principal;
+        if (principal === null || principal.kind === 'session') {
+          throw conflict('A worker credential is required.');
+        }
 
-          // Recorded before the claim so `worker_online` is true even when the
-          // queue is empty and this poll returns 204.
-          await recordWorkerSeen(context.db, {
+        // Recorded before the claim so `worker_online` is true even when the
+        // queue is empty and this poll returns 204.
+        await recordWorkerSeen(context.db, {
+          workerId: body.worker_id,
+          kind: principal.kind === 'device' ? 'device' : 'worker',
+          capabilities: body.capabilities,
+          protocolVersion: body.protocol_version,
+          workspaceId: principal.kind === 'device' ? principal.workspaceId : null,
+        });
+
+        let claimed;
+        try {
+          claimed = await claimTask(context.db, {
+            principal,
             workerId: body.worker_id,
-            kind: principal.kind === 'device' ? 'device' : 'worker',
             capabilities: body.capabilities,
             protocolVersion: body.protocol_version,
-            workspaceId: principal.kind === 'device' ? principal.workspaceId : null,
           });
-
-          let claimed;
-          try {
-            claimed = await claimTask(context.db, {
-              principal,
-              workerId: body.worker_id,
-              capabilities: body.capabilities,
-              protocolVersion: body.protocol_version,
+        } catch (error) {
+          if (error instanceof ProtocolVersionError) {
+            throw unprocessable(error.message, {
+              protocol_version: `This API speaks protocol version ${PROTOCOL_VERSION}.`,
             });
-          } catch (error) {
-            if (error instanceof ProtocolVersionError) {
-              throw unprocessable(error.message, {
-                protocol_version: `This API speaks protocol version ${PROTOCOL_VERSION}.`,
-              });
-            }
-            throw error;
           }
+          throw error;
+        }
 
-          if (claimed === null) return reply.status(204).send();
+        if (claimed === null) return reply.status(204).send();
 
-          context.logger.info(
-            {
-              request_id: request.id,
-              task_id: claimed.task_id,
-              task_type: claimed.type,
-              attempt: claimed.attempt,
-            },
-            'task leased',
-          );
-          return reply.status(200).send(claimed);
-        },
-      );
+        context.logger.info(
+          {
+            request_id: request.id,
+            task_id: claimed.task_id,
+            task_type: claimed.type,
+            attempt: claimed.attempt,
+          },
+          'task leased',
+        );
+        return reply.status(200).send(claimed);
+      });
 
       internal.post(
         '/tasks/:id/heartbeat',

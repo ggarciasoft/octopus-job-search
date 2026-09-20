@@ -1,0 +1,25 @@
+# Blank issues are disabled. Every issue type this project accepts has a
+# template that asks for the information needed to act on it - most
+# importantly, a connector request is useless without fixtures and a policy
+# review, and asking for those after the fact wastes everybody's time.
+blank_issues_enabled: false
+
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/ggarciasoft/job-getter/security/advisories/new
+    about: >-
+      Do NOT open a public issue for a security problem. Report it privately
+      through GitHub Security Advisories, or by the channel in SECURITY.md.
+
+  - name: Question or idea
+    url: https://github.com/ggarciasoft/job-getter/discussions
+    about: >-
+      Usage questions, design discussion and "would you accept a PR that..."
+      belong in Discussions.
+
+  - name: What actually works today
+    url: https://github.com/ggarciasoft/job-getter/blob/main/IMPLEMENTATION_STATUS.md
+    about: >-
+      Before reporting that a feature is missing, check the implementation
+      status. Most of this product is not built yet, and that is documented
+      rather than hidden.

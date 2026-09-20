@@ -40,7 +40,8 @@ export function Dialog({ open, title, onClose, children, footer, className }: Di
     // Deliberately not filtered by `offsetParent`: that property is always null
     // in jsdom, which would make the trap untestable and silently empty.
     return Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
-      (element) => !element.hasAttribute('hidden') && element.getAttribute('aria-hidden') !== 'true',
+      (element) =>
+        !element.hasAttribute('hidden') && element.getAttribute('aria-hidden') !== 'true',
     );
   }, []);
 

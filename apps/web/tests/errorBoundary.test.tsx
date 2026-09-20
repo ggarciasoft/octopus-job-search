@@ -28,9 +28,7 @@ describe('top-level error boundary', () => {
     expect(screen.getByText('This screen stopped working')).toBeTruthy();
     expect(screen.getByText('Kaboom in a child component')).toBeTruthy();
     expect(screen.getByText('INTERNAL_ERROR')).toBeTruthy();
-    expect(
-      screen.getByText('Request ID: 77777777-7777-4777-8777-777777777777'),
-    ).toBeTruthy();
+    expect(screen.getByText('Request ID: 77777777-7777-4777-8777-777777777777')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
     expect(container.textContent?.trim()).not.toBe('');
   });

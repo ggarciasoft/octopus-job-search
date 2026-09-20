@@ -225,12 +225,13 @@ def main() -> int:
 
     print("determinism")
     manifest = FIXTURES / "MANIFEST.sha256"
-    # The manifest and the generator/verifier scripts are excluded: the
-    # manifest cannot contain its own digest, and the scripts are inputs.
+    # Excluded: the manifest cannot contain its own digest, the scripts are
+    # inputs rather than outputs, and documentation is not a fixture --
+    # editing the README must not look like a fixture changing.
     digests = {
         path.relative_to(FIXTURES).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
         for path in sorted(FIXTURES.rglob("*"))
-        if path.is_file() and path.suffix != ".py" and path != manifest
+        if path.is_file() and path.suffix not in {".py", ".md"} and path != manifest
     }
     lines = [f"{digest}  {name}\n" for name, digest in sorted(digests.items())]
     if manifest.exists():

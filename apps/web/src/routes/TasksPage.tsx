@@ -20,7 +20,10 @@ export function TasksPage() {
     initialPageParam: undefined as string | undefined,
     queryFn: ({ pageParam, signal }) =>
       api.listTasks({
-        query: pageParam === undefined ? { limit: PAGE_LIMIT } : { cursor: pageParam, limit: PAGE_LIMIT },
+        query:
+          pageParam === undefined
+            ? { limit: PAGE_LIMIT }
+            : { cursor: pageParam, limit: PAGE_LIMIT },
         signal,
       }),
     getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,

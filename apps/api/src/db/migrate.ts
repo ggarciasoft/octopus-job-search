@@ -91,7 +91,9 @@ export function migrationsDirectory(): string {
   if (existsSync(adjacent)) return adjacent;
   const fromDist = resolve(here, '..', '..', 'src', 'db', 'migrations');
   if (existsSync(fromDist)) return fromDist;
-  throw new Error(`Cannot locate the migrations directory (looked in ${adjacent} and ${fromDist}).`);
+  throw new Error(
+    `Cannot locate the migrations directory (looked in ${adjacent} and ${fromDist}).`,
+  );
 }
 
 /**
@@ -190,10 +192,10 @@ export async function runMigrations(
       try {
         await client.query('BEGIN');
         await client.query(migration.sql);
-        await client.query(
-          'INSERT INTO schema_migrations (name, checksum) VALUES ($1, $2)',
-          [migration.name, migration.checksum],
-        );
+        await client.query('INSERT INTO schema_migrations (name, checksum) VALUES ($1, $2)', [
+          migration.name,
+          migration.checksum,
+        ]);
         await client.query('COMMIT');
       } catch (error) {
         await client.query('ROLLBACK').catch(() => undefined);
@@ -202,9 +204,9 @@ export async function runMigrations(
       applied.push(migration.name);
     }
   } finally {
-    await client.query('SELECT pg_advisory_unlock($1)', [ADVISORY_LOCK_KEY.toString()]).catch(
-      () => undefined,
-    );
+    await client
+      .query('SELECT pg_advisory_unlock($1)', [ADVISORY_LOCK_KEY.toString()])
+      .catch(() => undefined);
     client.release();
   }
 
@@ -321,8 +323,7 @@ async function main(): Promise<void> {
 }
 
 const invokedDirectly =
-  process.argv[1] !== undefined &&
-  import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
+  process.argv[1] !== undefined && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
 
 if (invokedDirectly) {
   void main();

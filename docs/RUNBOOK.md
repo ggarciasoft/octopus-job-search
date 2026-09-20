@@ -1,0 +1,457 @@
+# Runbook
+
+Operational procedures for a Job Getter installation.
+
+Every procedure is labelled:
+
+- ✅ **Verified** — executed on a real installation and observed to work.
+- ⚠️ **Unverified** — written from the specification and the code, but **never
+  run end to end**, because the application does not exist yet.
+
+> **As of 2026-09-20 almost everything here is ⚠️ Unverified.** The API, web and
+> worker source trees are still being written; there is no working installation
+> to rehearse against. See [`IMPLEMENTATION_STATUS.md`](../IMPLEMENTATION_STATUS.md).
+>
+> Unverified does not mean wrong — it means nobody has run it. Treat the first
+> execution of any procedure below as a rehearsal, and update this file with
+> what actually happened.
+
+---
+
+## Contents
+
+1. [First run](#1-first-run) ⚠️
+2. [Migration](#2-migration) ⚠️
+3. [Backup and restore](#3-backup-and-restore) ⚠️
+4. [Stalled queue](#4-stalled-queue) ⚠️
+5. [Upgrade](#5-upgrade) ⚠️
+6. [Registry rate limits and TLS interception](#6-registry-rate-limits-and-tls-interception) ✅
+7. [Lost owner access](#7-lost-owner-access) ⚠️
+
+---
+
+## 1. First run
+
+**Status: ⚠️ Unverified.** The individual steps that _have_ been verified are
+marked inline.
+
+### Procedure
+
+```bash
+git clone <repository> && cd job-getter
+
+cp .env.example .env                 # ✅ verified
+
+sh scripts/setup.sh                  # ✅ verified (against a throwaway env file)
+# pwsh -File scripts/setup.ps1       # ✅ verified
+
+docker compose up --build -d         # ⚠️ never run
+# open http://localhost:3000 and enter the token setup printed
+sh scripts/smoke.sh                  # ⚠️ never passed
+```
+
+### What to expect at each step
+
+**`scripts/setup.sh`** generates `SESSION_SECRET`, `ENCRYPTION_KEY`,
+`WORKER_AUTH_TOKEN` and `SETUP_TOKEN` from a CSPRNG and prints the setup token
+**once**. It refuses to overwrite an existing `.env` without `--force`.
+
+> **Save the setup token now.** It is also in `.env`
+> (`grep '^SETUP_TOKEN=' .env`), but it is the only thing standing between you
+> and a reinstall until the owner account exists.
+
+**`docker compose up --build -d`** starts, in this order: `db` → healthy →
+`migrate` → exits 0 → `api` → healthy → `worker` and `web`. That ordering is
+enforced by `depends_on` conditions, not hoped for.
+
+Watch it: `docker compose ps` and `docker compose logs -f`.
+
+**One-time setup at `http://localhost:3000`.** Enter the token, an email and a
+password of at least 12 characters. The route then **closes permanently** — no
+token is accepted again on this installation, ever. That is by design
+(`docs/spec/09_SECURITY_PRIVACY.md`).
+
+**`scripts/smoke.sh`** is the real proof. It exercises browser origin → `/api`
+proxy → API → PostgreSQL → task queue → Python worker → stored result, and
+checks that an idempotency-key replay does not duplicate work. It exits non-zero
+and prints the actual response body on failure.
+
+### If something goes wrong
+
+| Symptom                               | Cause                                     | Fix                                                                                  |
+| ------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------ |
+| `env file ... .env not found`         | Compose needs `.env` before it will parse | `cp .env.example .env && sh scripts/setup.sh`                                        |
+| `migrate` exits non-zero              | Migration failure                         | `docker compose logs migrate`. **Do not start the API.** See §2                      |
+| `api` never healthy                   | Missing secret, or database unreachable   | `docker compose logs api`. Check `SESSION_SECRET` and `ENCRYPTION_KEY` are non-empty |
+| Ready but smoke times out on the task | Nothing is claiming it                    | `docker compose logs worker`; check `WORKER_CAPABILITIES` includes `noop_echo`       |
+| Port 3000 in use                      | Something else has it                     | Set `WEB_PORT` in `.env`                                                             |
+| Image pull fails with 429             | Docker Hub rate limit                     | See §6                                                                               |
+
+---
+
+## 2. Migration
+
+**Status: ⚠️ Unverified.** The migration runner exists in `apps/api` but this
+procedure has not been executed.
+
+> ### Back up first
+>
+> `docs/spec/10_DEPLOYMENT.md`: _"Back up before migration."_ Not a suggestion.
+>
+> ```bash
+> sh scripts/backup.sh --label pre-migration --age-recipient age1...
+> ```
+
+### Procedure
+
+```bash
+sh scripts/migrate.sh                # auto-detects Compose vs local
+sh scripts/migrate.sh --compose      # explicitly via the one-shot service
+sh scripts/migrate.sh --local        # explicitly on the host, via pnpm
+```
+
+The Compose path runs `docker compose run --rm --no-deps migrate`, which uses
+**the API image** — so migration code and serving code always come from the same
+build.
+
+**A non-zero exit means: do not start the API against this database.**
+
+### Rules
+
+- Migrations must be **repeatable from an empty database** and **idempotent** on
+  a populated one. CI asserts both by running them twice against a fresh
+  PostgreSQL 17 service container.
+- **Prefer additive changes.** Add a nullable column, backfill, then tighten in a
+  later migration — rather than a destructive single step.
+- **Never blindly run down migrations on live data.**
+  `docs/spec/10_DEPLOYMENT.md` is explicit, and `scripts/migrate.sh` has no
+  down-migration mode at all. To roll back: restore the backup you took.
+- **A rollback must preserve application outcome evidence.** Losing the record
+  that you applied somewhere is worse than losing the ability to apply.
+
+### If a migration fails halfway
+
+1. **Stop.** Do not start the API, do not re-run hopefully.
+2. `docker compose logs migrate` — read the actual SQL error.
+3. If the migration runner is transactional, the failed migration rolled back
+   and the database is at the previous version. Fix the migration and re-run.
+4. If it is not, or you are unsure: **restore the pre-migration backup** (§3)
+   and treat the migration as unreleased.
+
+---
+
+## 3. Backup and restore
+
+**Status: ⚠️ Unverified.** Both scripts are syntax-checked; neither has been run
+against a populated installation.
+
+### Backup
+
+```bash
+sh scripts/backup.sh --age-recipient age1...     # encrypted (recommended)
+sh scripts/backup.sh --gpg-recipient you@...     # encrypted
+sh scripts/backup.sh --no-encrypt                # plaintext, prompts first
+```
+
+Produces `database.dump` (pg_dump custom format), `files.tar.gz`,
+`manifest.json` and `SHA256SUMS`, then packs and encrypts them.
+
+**For a strictly consistent backup, quiesce first:**
+
+```bash
+docker compose stop api worker
+sh scripts/backup.sh --age-recipient age1...
+docker compose start api worker
+```
+
+Without that, the dump and the file archive are taken moments apart. The
+manifest records `stack_quiesced` so the restore can tell you which you have.
+
+> ### `.env` is NOT in the backup
+>
+> Deliberately. `docs/spec/09_SECURITY_PRIVACY.md` requires the operator
+> encryption key to live outside the database, so a stolen database backup
+> cannot decrypt stored provider API keys.
+>
+> **Keep `ENCRYPTION_KEY` somewhere safe and separate.** Without it a restore
+> recovers everything except stored provider API keys, which must be re-entered.
+> The manifest stores an 8-character hash prefix of the key so the restore can
+> tell you whether yours matches — see ADR17.
+
+**Schedule it.** Daily is the target from `docs/spec/10_DEPLOYMENT.md`. There is
+no built-in scheduler; use `cron` or Task Scheduler.
+
+### Restore
+
+```bash
+sh scripts/restore.sh --from backups/job-getter-<ts>.tar.gz.age --drop-existing
+```
+
+To a **separate installation** — the case the specification actually cares about:
+
+1. Clone the repository on the target machine.
+2. `sh scripts/setup.sh` — creates a **new** `.env` with **new** secrets.
+3. Replace `ENCRYPTION_KEY` in the new `.env` with the source installation's, if
+   you still have it.
+4. `docker compose up -d db`
+5. `sh scripts/restore.sh --from <backup> --drop-existing`
+6. `sh scripts/migrate.sh` — brings an older dump to the current schema.
+7. **Read the deletion-ledger warning** (below).
+8. Only then `docker compose up -d`, and `sh scripts/smoke.sh`.
+
+> ### ⚠️ The deletion ledger is not reapplied
+>
+> `docs/spec/10_DEPLOYMENT.md` requires a restore to reapply the deletion ledger
+> **before reopening access**, so data a user deleted after the backup was taken
+> is not resurrected.
+>
+> **The deletion ledger is M4 work and does not exist.** `scripts/restore.sh`
+> prints this warning, does **not** start the API, and explicitly declines to
+> describe its result as a verified restore. If anything was deleted after the
+> backup timestamp, restoring may bring it back. Decide deliberately whether
+> that is acceptable before serving.
+
+**What a successful restore proves — and does not:**
+
+| Proves                          | Does not prove                                                |
+| ------------------------------- | ------------------------------------------------------------- |
+| Checksums matched               | AT25 (profile, files, hashes, history restored) — needs M1–M4 |
+| `pg_restore` completed          | AT11 (original CV downloads byte-identical) — needs M1/M3     |
+| File count matches the manifest | That the deletion ledger was honoured — it does not exist     |
+
+**Recovery targets** from `docs/spec/10_DEPLOYMENT.md` — at most 24 hours data
+loss, restore within 4 hours — are **unvalidated targets**, not measured results.
+The spec says to validate before claiming them; that has not happened.
+
+### Rehearse it
+
+A backup you have never restored is a hypothesis. Restore into a scratch
+installation, time it, and record the result here. That is also what turns the
+recovery targets from claims into measurements.
+
+---
+
+## 4. Stalled queue
+
+**Status: ⚠️ Unverified.** Written from the queue semantics in
+`docs/spec/02_ARCHITECTURE.md`.
+
+**Symptom:** tasks sit in `queued`, or the UI shows work that never finishes.
+
+### Diagnose
+
+```bash
+docker compose ps                                   # is the worker even up?
+docker compose logs worker --tail 100
+grep WORKER_CAPABILITIES .env                       # must include the task's type
+docker compose logs api --tail 100 | grep -i claim
+```
+
+### By task state
+
+**Stuck in `queued`** — nothing is claiming it. In order of likelihood:
+
+1. **Worker is down or crash-looping.** `docker compose ps worker`, then the
+   logs. `docker compose restart worker`.
+2. **Capability mismatch.** The API only leases a task to a worker that declares
+   its type. A `parse_profile` task and a worker declaring only `noop_echo` will
+   wait forever. Fix `WORKER_CAPABILITIES` in `.env` and restart the worker.
+3. **`fill_local` with no desktop runner.** Correct behaviour, not a bug — the
+   container worker cannot do it (ADR16). Pair the desktop runner:
+   `uv run --project services/worker job-getter-runner pair --server http://localhost:3000`
+   (the pairing code is entered interactively and never goes into shell history).
+4. **Worker cannot reach the API.** Check `WORKER_API_BASE_URL` — `http://api:8080`
+   inside Compose, `http://127.0.0.1:8080` for the dev loop.
+5. **Wrong `WORKER_AUTH_TOKEN`.** Look for 401s from `/internal/v1/tasks/claim`.
+   Usually means the worker started before a `setup.sh --force`.
+6. **`run_after` is in the future.** A backed-off retry. Wait.
+
+**Stuck in `leased`** — a worker took it and stopped heartbeating. The lease is
+120 s with a 30 s heartbeat, so it should be reclaimed automatically within
+about two minutes. If it is not, the reclaim sweep is not running: check the API
+logs and restart the API.
+
+**Failing repeatedly** — check `attempt` against `max_attempts`. Ordinary tasks
+retry at most three times with exponential backoff and jitter.
+
+> **Browser filling is never blindly retried.** The page may have changed under
+> the user. If a `fill_local` task failed, a human looks at it.
+
+### Do not
+
+- ❌ **Do not delete rows from the task table** to "clear" a queue. Tasks carry
+  domain meaning and events reference them.
+- ❌ **Do not re-enqueue a submission-related task** whose outcome is uncertain.
+  Invariant 6. An uncertain outcome is recorded as `outcome_unknown` and left for
+  the user.
+- ❌ **Do not raise `max_attempts` to force something through.** Three failures
+  means it will fail a fourth time.
+
+### Connector 403/429
+
+Repeated rejections from a source are **not** a retry problem. Back off, honour
+`Retry-After`, and show source health. `docs/spec/05_DISCOVERY_CONNECTORS.md`:
+_"stop on repeated 403/429"_. Retrying harder is how an integration becomes
+abuse.
+
+---
+
+## 5. Upgrade
+
+**Status: ⚠️ Unverified.**
+
+```bash
+sh scripts/backup.sh --label pre-upgrade --age-recipient age1...   # 1. ALWAYS
+git pull                                                           # 2.
+docker compose build                                               # 3.
+docker compose up -d                                               # 4. runs migrate first
+sh scripts/smoke.sh                                                # 5. verify
+```
+
+Step 4 re-runs the one-shot `migrate` service before the API starts, so schema
+changes are applied in the right order without a separate command.
+
+### Before upgrading
+
+- Read the changelog for migration notes and breaking changes.
+- **Back up.** The backup is the rollback plan; there is no down migration.
+- For a hosted installation, tell users first — sessions may be invalidated.
+
+### Rolling back
+
+1. `git checkout <previous-tag> && docker compose build && docker compose up -d`
+2. If the upgrade applied a migration the old code cannot read, the code
+   rollback is **not enough** — restore the pre-upgrade backup (§3).
+3. A rollback must preserve application outcome evidence. If restoring would
+   lose the record that you applied somewhere, stop and work out a forward fix
+   instead.
+
+### Extension and protocol compatibility
+
+The server supports the **current and previous** protocol minor version
+(`docs/spec/10_DEPLOYMENT.md`). A browser extension one minor version behind
+keeps working; two behind must be updated. Check `protocol_version` in the
+device pairing response after an upgrade.
+
+### Release hygiene
+
+Releases ship **immutable container tags and digests** alongside the lockfiles
+and migrations. Never `docker compose pull` a moving tag into a production
+installation and hope.
+
+---
+
+## 6. Registry rate limits and TLS interception
+
+**Status: ✅ Verified** — both hazards were encountered and worked around during
+this build.
+
+### Symptom A — Docker Hub 429
+
+```
+ERROR: unexpected status from HEAD request to
+https://registry-1.docker.io/v2/library/postgres/manifests/17-alpine:
+429 Too Many Requests
+```
+
+Docker Hub rate-limits anonymous pulls by IP. On a shared or corporate network
+you can hit it without pulling anything yourself.
+
+**Workaround — the AWS ECR Public mirror**, which serves the same
+content-addressed images and is not rate-limited:
+
+```bash
+# in .env
+IMAGE_REGISTRY=public.ecr.aws/docker/library
+```
+
+It threads through `docker-compose.yml` and every Dockerfile as a build arg.
+The default stays `docker.io/library` because that is canonical — the mirror is
+a documented fallback, not a replacement (ADR12).
+
+Alternatives: `docker login` (authenticated pulls get a higher limit), or wait.
+
+> **Digest caveat.** The digests pinned in the Dockerfiles and
+> `docker-compose.yml` were resolved **through the ECR mirror**, because Docker
+> Hub was unreachable at pin time. ECR mirrors Docker Hub content-addressed, so
+> they should be identical — but that was not re-verified against Docker Hub. If
+> a pull ever fails on a digest mismatch, that is the pin doing its job: it
+> failed loudly instead of substituting an image. Re-resolve and update the pin.
+
+### Symptom B — TLS interception
+
+```
+certificate verify failed: unable to get local issuer certificate
+```
+
+A proxy is terminating and re-signing TLS with its own CA. Downloads from
+GitHub, PyPI and npm fail certificate validation.
+
+**Workarounds — none of which disable verification:**
+
+- **uv**: already handled. `services/worker/pyproject.toml` sets
+  `[tool.uv] system-certs = true`, so uv uses the OS trust store, which already
+  contains the proxy's CA.
+- **Node/npm/pnpm**: `export NODE_EXTRA_CA_CERTS=/path/to/corporate-ca.crt`
+- **Python/httpx**: `export SSL_CERT_FILE=/path/to/corporate-ca.crt`
+- **Inside the worker image** (the Playwright Chromium download is the step that
+  hits this): add the CA before the install step —
+  ```dockerfile
+  COPY infra/proxy/corporate-ca.crt /usr/local/share/ca-certificates/
+  RUN update-ca-certificates
+  ```
+  `infra/worker.Dockerfile` has this documented in place.
+
+> ❌ **Never** `NODE_TLS_REJECT_UNAUTHORIZED=0`, `--insecure`, `verify=False` or
+> `--trusted-host`. Disabling verification to get past an interception proxy
+> means you can no longer tell a proxy from an attacker.
+
+---
+
+## 7. Lost owner access
+
+**Status: ⚠️ Unverified.**
+
+**If bootstrap has not completed yet:** the token is still in `.env`.
+
+```bash
+grep '^SETUP_TOKEN=' .env
+```
+
+**If bootstrap has completed**, the setup route is **permanently closed**. A new
+`SETUP_TOKEN` will not reopen it — that is the security property, not a bug
+(`docs/spec/09_SECURITY_PRIVACY.md`).
+
+Options, in order of preference:
+
+1. **Password reset** — hosted mode only, and only if SMTP is configured. Local
+   installations send no email.
+2. **Reset the owner password directly in the database.** Requires generating an
+   Argon2id hash with the same parameters the API uses. Take a backup first, and
+   keep the API stopped while you do it.
+3. **Start fresh, keeping your data.** Back up, recreate the workspace, restore
+   the files — accepting the caveats in §3.
+
+Do **not** re-run `scripts/setup.sh --force` expecting it to help: it rotates
+`SESSION_SECRET` (logging everyone out) and `ENCRYPTION_KEY` (making stored
+provider keys undecryptable) without reopening the closed setup route.
+
+---
+
+## Quick reference
+
+```bash
+docker compose ps                        # what is running and healthy
+docker compose logs -f api               # follow API logs
+docker compose logs worker --tail 100    # worker, recent
+docker compose exec db psql -U jobgetter -d jobgetter
+
+docker compose down                      # stop; DATA PRESERVED
+docker compose down -v                   # stop; DATA DESTROYED. Back up first.
+
+sh scripts/smoke.sh                      # end-to-end check
+sh scripts/backup.sh --help              # every script has --help
+```
+
+**When you run one of these procedures for real, update its status in this
+file.** ⚠️ → ✅ with a date is the whole point.

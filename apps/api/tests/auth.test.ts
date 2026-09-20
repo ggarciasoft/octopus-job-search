@@ -376,7 +376,9 @@ describe('CSRF and origin verification', () => {
 describe('GET /me reports capabilities honestly (invariant 10)', () => {
   it('claims nothing beyond what this milestone implements', async () => {
     const session = await completeSetup(harness);
-    const response = await harness.app.inject(authed(session, { method: 'GET', url: '/api/v1/me' }));
+    const response = await harness.app.inject(
+      authed(session, { method: 'GET', url: '/api/v1/me' }),
+    );
 
     expect(response.statusCode).toBe(200);
     const body = response.json();
@@ -427,7 +429,9 @@ describe('GET /me reports capabilities honestly (invariant 10)', () => {
       `UPDATE worker_registrations SET last_seen_at = now() - interval '10 minutes'`,
     );
 
-    const response = await harness.app.inject(authed(session, { method: 'GET', url: '/api/v1/me' }));
+    const response = await harness.app.inject(
+      authed(session, { method: 'GET', url: '/api/v1/me' }),
+    );
     expect(response.json().capabilities.worker_online).toBe(false);
   });
 });

@@ -1,14 +1,7 @@
 import { ApiError } from '@job-getter/api-client';
 import { act, fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  TASK_ID,
-  createFakeApi,
-  makeCapabilities,
-  makeMe,
-  makeTask,
-  renderApp,
-} from './helpers';
+import { TASK_ID, createFakeApi, makeCapabilities, makeMe, makeTask, renderApp } from './helpers';
 
 /** Advances fake timers and flushes the promises they release. */
 async function advance(ms = 0): Promise<void> {
@@ -100,7 +93,9 @@ describe('diagnostics screen', () => {
     // processing it, not imply progress.
     const getTask = vi.fn().mockResolvedValue(makeTask({ state: 'queued', attempt: 0 }));
     const api = createFakeApi({
-      getMe: vi.fn(async () => makeMe({ capabilities: makeCapabilities({ worker_online: false }) })),
+      getMe: vi.fn(async () =>
+        makeMe({ capabilities: makeCapabilities({ worker_online: false }) }),
+      ),
       getTask,
     });
 

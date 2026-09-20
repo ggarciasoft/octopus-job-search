@@ -22,8 +22,7 @@ import { requireScope, requireSession, type RouteHandler } from './context.js';
 
 function isUploadablePurpose(value: unknown): value is FilePurpose {
   return (
-    typeof value === 'string' &&
-    (USER_UPLOADABLE_PURPOSES as readonly string[]).includes(value)
+    typeof value === 'string' && (USER_UPLOADABLE_PURPOSES as readonly string[]).includes(value)
   );
 }
 
@@ -62,10 +61,9 @@ export const uploadFile: RouteHandler = async (context, request, reply) => {
     });
   }
   if (!isUploadablePurpose(purpose)) {
-    throw unprocessable(
-      `"purpose" must be one of: ${USER_UPLOADABLE_PURPOSES.join(', ')}.`,
-      { purpose: 'Missing or unsupported purpose.' },
-    );
+    throw unprocessable(`"purpose" must be one of: ${USER_UPLOADABLE_PURPOSES.join(', ')}.`, {
+      purpose: 'Missing or unsupported purpose.',
+    });
   }
 
   const validated = await validateUpload(context.config, {
@@ -113,14 +111,16 @@ export const downloadFile: RouteHandler = async (context, request, reply) => {
   const stream = await context.storage.createReadStream(file.storage_key).catch(() => null);
   if (stream === null) throw notFound('No such file.');
 
-  return reply
-    .status(200)
-    // Always an attachment with a sanitised name, and `nosniff`, so uploaded
-    // HTML or SVG can never execute in the application's origin.
-    .header('content-type', downloadContentType(file.mime))
-    .header('content-disposition', contentDispositionFor(file.original_name))
-    .header('content-length', String(file.bytes))
-    .header('x-content-type-options', 'nosniff')
-    .header('cache-control', 'private, no-store')
-    .send(stream);
+  return (
+    reply
+      .status(200)
+      // Always an attachment with a sanitised name, and `nosniff`, so uploaded
+      // HTML or SVG can never execute in the application's origin.
+      .header('content-type', downloadContentType(file.mime))
+      .header('content-disposition', contentDispositionFor(file.original_name))
+      .header('content-length', String(file.bytes))
+      .header('x-content-type-options', 'nosniff')
+      .header('cache-control', 'private, no-store')
+      .send(stream)
+  );
 };

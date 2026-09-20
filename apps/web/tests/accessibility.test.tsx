@@ -42,9 +42,7 @@ describe('form accessibility', () => {
     );
     const input = screen.getByLabelText(/Setup token/);
     const describedBy = input.getAttribute('aria-describedby') ?? '';
-    expect(document.getElementById(describedBy)?.textContent).toBe(
-      'Printed once to the terminal.',
-    );
+    expect(document.getElementById(describedBy)?.textContent).toBe('Printed once to the terminal.');
     expect(input.getAttribute('aria-invalid')).toBeNull();
   });
 

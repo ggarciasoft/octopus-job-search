@@ -35,7 +35,10 @@ export const ALL_TASK_TYPES = [
 ] as const satisfies readonly TaskType[];
 
 /** Task types that have a real worker handler. Everything else must 501. */
-export const IMPLEMENTED_TASK_TYPES = ['noop_echo', 'parse_profile'] as const satisfies readonly TaskType[];
+export const IMPLEMENTED_TASK_TYPES = [
+  'noop_echo',
+  'parse_profile',
+] as const satisfies readonly TaskType[];
 
 export const TaskState = Type.Union([
   Type.Literal('queued'),

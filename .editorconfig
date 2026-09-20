@@ -1,0 +1,63 @@
+# EditorConfig - https://editorconfig.org
+#
+# This repository is developed on Windows, macOS and Linux. LF endings and a
+# final newline are enforced here so a shell script written on Windows still
+# runs inside a Linux container: a `#!/bin/sh` line with a CRLF ending produces
+# the infamous "bad interpreter: No such file or directory".
+#
+# Formatting of TS/TSX/JSON/MD/YAML is owned by Prettier (.prettierrc.json) and
+# Python by Ruff (services/worker/pyproject.toml). The values below are kept
+# consistent with those so the two tools do not fight.
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.{ts,tsx,js,jsx,mjs,cjs,json,jsonc,css,scss,html}]
+indent_size = 2
+
+[*.py]
+indent_size = 4
+# Matches [tool.ruff] line-length = 100 in services/worker/pyproject.toml.
+max_line_length = 100
+
+[*.{yml,yaml}]
+indent_size = 2
+
+[*.{sh,bash}]
+indent_size = 2
+# CRLF here is a runtime failure, not a style preference.
+end_of_line = lf
+
+[*.ps1]
+indent_size = 4
+# PowerShell tolerates LF; kept LF so the file hashes identically on every OS.
+end_of_line = lf
+
+[*.md]
+# Two trailing spaces are a hard line break in Markdown.
+trim_trailing_whitespace = false
+
+[Makefile]
+indent_style = tab
+
+[Dockerfile*]
+indent_size = 4
+
+[*.{sql}]
+indent_size = 2
+
+# Generated artifacts: do not hand-edit, do not reformat.
+[packages/contracts/generated/**]
+insert_final_newline = false
+trim_trailing_whitespace = false
+
+[{pnpm-lock.yaml,uv.lock}]
+insert_final_newline = false
+trim_trailing_whitespace = false

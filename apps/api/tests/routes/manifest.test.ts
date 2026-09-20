@@ -52,8 +52,7 @@ describe('route manifest', () => {
     const registered = new Set(registeredOperations());
     const missing = ROUTES.filter(
       (route) =>
-        !registered.has(route.operationId) &&
-        DEFERRED_OPERATIONS[route.operationId] === undefined,
+        !registered.has(route.operationId) && DEFERRED_OPERATIONS[route.operationId] === undefined,
     ).map((route) => `${route.method} ${route.path} (${route.operationId})`);
 
     expect(missing).toEqual([]);
@@ -69,9 +68,7 @@ describe('route manifest', () => {
   });
 
   it('exposes no public route the manifest does not declare', () => {
-    const declared = new Set(
-      ROUTES.map((route) => `${route.method} ${API_PREFIX}${route.path}`),
-    );
+    const declared = new Set(ROUTES.map((route) => `${route.method} ${API_PREFIX}${route.path}`));
     const undeclared = publicRoutes()
       .map((route) => `${route.method} ${route.url}`)
       .filter((key) => !declared.has(key));
@@ -126,8 +123,7 @@ describe('route manifest', () => {
   it('serves only documented operational routes outside the two prefixes', () => {
     const other = routes
       .filter(
-        (route) =>
-          !route.url.startsWith(API_PREFIX) && !route.url.startsWith(INTERNAL_PREFIX),
+        (route) => !route.url.startsWith(API_PREFIX) && !route.url.startsWith(INTERNAL_PREFIX),
       )
       .map((route) => `${route.method} ${route.url}`);
 

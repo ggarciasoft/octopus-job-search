@@ -96,11 +96,7 @@ export interface SessionsTable {
 
 export type FileState = 'staging' | 'ready' | 'deleting';
 export type FilePurposeColumn =
-  | 'cv_original'
-  | 'profile_text'
-  | 'generated_cv'
-  | 'export'
-  | 'evidence';
+  'cv_original' | 'profile_text' | 'generated_cv' | 'export' | 'evidence';
 
 export interface FilesTable {
   id: Generated<string>;

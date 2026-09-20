@@ -14,14 +14,7 @@ export interface CheckboxProps extends NativeCheckboxProps {
  * A checkbox keeps its label next to the box rather than above it, so it uses
  * its own layout instead of `FormField`; the ARIA wiring is identical.
  */
-export function Checkbox({
-  label,
-  description,
-  error,
-  id,
-  className,
-  ...rest
-}: CheckboxProps) {
+export function Checkbox({ label, description, error, id, className, ...rest }: CheckboxProps) {
   const generatedId = useId();
   const fieldId = id ?? generatedId;
   const descriptionId = `${fieldId}-description`;

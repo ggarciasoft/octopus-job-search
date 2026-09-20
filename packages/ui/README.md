@@ -15,7 +15,7 @@ is consumed as TypeScript through the workspace link, so there is no build step.
 ## What does not belong here
 
 - Anything that calls the API, reads a cookie, or knows what a "task" is.
-- Anything that renders example or placeholder *content*. `EmptyState` renders
+- Anything that renders example or placeholder _content_. `EmptyState` renders
   a title, an explanation and suggestions; it never renders sample rows.
   `08_UX_AND_CUSTOMIZATION.md`: empty job lists "suggest adding boards or
   relaxing filters, never fabricate examples as live results".
@@ -46,16 +46,16 @@ do the same or the classes will not be generated.
 
 ## The status vocabulary (`status.ts`)
 
-`08_UX_AND_CUSTOMIZATION.md` requires seven states to read *distinctly*:
+`08_UX_AND_CUSTOMIZATION.md` requires seven states to read _distinctly_:
 
-| Key | Label | Evidence |
-| --- | --- | --- |
-| `not_checked` | Not checked | `none` |
-| `unknown` | Unknown | `insufficient` |
-| `needs_your_answer` | Needs your answer | `user_input` |
-| `ready_for_review` | Ready for review | `system` |
-| `waiting_for_submission` | Waiting for submission | `system` |
-| `submitted_verified` | Submitted — verified | `verified` |
+| Key                         | Label                       | Evidence        |
+| --------------------------- | --------------------------- | --------------- |
+| `not_checked`               | Not checked                 | `none`          |
+| `unknown`                   | Unknown                     | `insufficient`  |
+| `needs_your_answer`         | Needs your answer           | `user_input`    |
+| `ready_for_review`          | Ready for review            | `system`        |
+| `waiting_for_submission`    | Waiting for submission      | `system`        |
+| `submitted_verified`        | Submitted — verified        | `verified`      |
 | `submitted_reported_by_you` | Submitted — reported by you | `user_reported` |
 
 `isVerifiedSubmission()` returns true for exactly one key. Invariant 5 of

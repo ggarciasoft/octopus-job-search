@@ -52,7 +52,10 @@ export function TaskLifecycle({ current }: { readonly current: TaskState }) {
   return (
     <div>
       <h3 className="text-sm font-semibold text-slate-900">{t('diagnostics.lifecycle')}</h3>
-      <ol className="mt-2 flex flex-wrap items-center gap-2" aria-label={t('diagnostics.lifecycle')}>
+      <ol
+        className="mt-2 flex flex-wrap items-center gap-2"
+        aria-label={t('diagnostics.lifecycle')}
+      >
         {LIFECYCLE_ORDER.map((state, index) => {
           const isCurrent = state === current;
           return (

@@ -102,9 +102,7 @@ export function CapabilityPanel({ capabilities }: CapabilityPanelProps) {
       </div>
 
       <div>
-        <h2 className="text-base font-semibold text-slate-900">
-          {t('dashboard.taskTypesTitle')}
-        </h2>
+        <h2 className="text-base font-semibold text-slate-900">{t('dashboard.taskTypesTitle')}</h2>
         <p className="mt-1 text-sm text-slate-600">{t('dashboard.taskTypesIntro')}</p>
         {capabilities.implemented_task_types.length === 0 ? (
           <p className="mt-2 text-sm text-slate-700">{t('dashboard.taskTypesNone')}</p>

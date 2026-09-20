@@ -26,8 +26,7 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
  * timestamp is the kind of silent inconsistency that later produces wrong
  * "last seen" and freshness decisions.
  */
-const DATE_TIME_PATTERN =
-  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?(Z|[+-]00:00)$/;
+const DATE_TIME_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?(Z|[+-]00:00)$/;
 
 function isValidDateTime(value: string): boolean {
   if (!DATE_TIME_PATTERN.test(value)) return false;

@@ -60,7 +60,9 @@ export function LoginPage() {
       <h1 className="text-2xl font-semibold text-slate-900">{t('login.title')}</h1>
       <p className="text-sm text-slate-700">{t('login.intro')}</p>
 
-      {error === null ? null : <ErrorNotice error={error} overrideMessage={loginMessage()} showServerMessage={false} />}
+      {error === null ? null : (
+        <ErrorNotice error={error} overrideMessage={loginMessage()} showServerMessage={false} />
+      )}
 
       <form className="flex flex-col gap-4" onSubmit={(event) => void onSubmit(event)} noValidate>
         <TextField

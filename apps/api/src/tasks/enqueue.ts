@@ -44,10 +44,7 @@ export class UnsupportedTaskTypeError extends Error {
  * The payload is validated against the contract's closed input schema here, so
  * a worker never has to defend against a malformed task the API created.
  */
-export async function enqueueTask(
-  trx: DbTransaction,
-  input: EnqueueTaskInput,
-): Promise<TaskRow> {
+export async function enqueueTask(trx: DbTransaction, input: EnqueueTaskInput): Promise<TaskRow> {
   const io = TASK_IO_SCHEMAS[input.type];
   if (!io) throw new UnsupportedTaskTypeError(input.type);
 

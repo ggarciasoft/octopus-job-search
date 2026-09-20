@@ -27,7 +27,10 @@ export const ParseProfileInput = Type.Object(
     format_hint: ProfileImportFormatHint,
     locale: Locale,
     /** Present when the user pasted text instead of uploading a document. */
-    inline_text: Type.Union([Type.String({ maxLength: PARSE_LIMITS.maxExtractedChars }), Type.Null()]),
+    inline_text: Type.Union([
+      Type.String({ maxLength: PARSE_LIMITS.maxExtractedChars }),
+      Type.Null(),
+    ]),
     /** file_id of the uploaded document, downloaded through the task scope. */
     source_file_id: Type.Union([Uuid, Type.Null()]),
     limits: Type.Object(
@@ -176,7 +179,9 @@ export type ProfileImportView = Static<typeof ProfileImportView>;
 export const CreateProfileImportRequest = Type.Object(
   {
     file_id: Type.Optional(Uuid),
-    pasted_text: Type.Optional(Type.String({ minLength: 1, maxLength: PARSE_LIMITS.maxExtractedChars })),
+    pasted_text: Type.Optional(
+      Type.String({ minLength: 1, maxLength: PARSE_LIMITS.maxExtractedChars }),
+    ),
     format_hint: Type.Optional(ProfileImportFormatHint),
   },
   { additionalProperties: false },

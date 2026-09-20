@@ -124,7 +124,11 @@ async function main(): Promise<void> {
     process.exitCode = 1;
     return;
   }
-  const pool = createPool({ connectionString: databaseUrl, max: 2, applicationName: 'job-getter-seed' });
+  const pool = createPool({
+    connectionString: databaseUrl,
+    max: 2,
+    applicationName: 'job-getter-seed',
+  });
   const db = createDb(pool);
   try {
     const result = await seedWorkspace(db);
@@ -139,8 +143,7 @@ async function main(): Promise<void> {
 }
 
 const invokedDirectly =
-  process.argv[1] !== undefined &&
-  import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
+  process.argv[1] !== undefined && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
 
 if (invokedDirectly) {
   void main();

@@ -57,7 +57,9 @@ describe('dashboard capability panel', () => {
     renderApp({ client: createFakeApi({ getMe: async () => me }), route: '/' });
 
     await screen.findByRole('heading', { name: 'Dashboard', level: 1 });
-    expect(screen.getByText(/no rate card is configured, which is not the same as zero/)).toBeTruthy();
+    expect(
+      screen.getByText(/no rate card is configured, which is not the same as zero/),
+    ).toBeTruthy();
   });
 
   it('distinguishes "Submitted — verified" from "Submitted — reported by you"', async () => {

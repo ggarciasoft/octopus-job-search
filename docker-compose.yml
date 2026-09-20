@@ -1,0 +1,330 @@
+# =============================================================================
+# Job Getter - local Compose stack
+#
+#   cp .env.example .env
+#   sh scripts/setup.sh              # generates the secrets in .env
+#   docker compose up --build -d
+#   # open http://localhost:3000 and complete one-time setup
+#
+#   docker compose --profile local-ai up -d   # optional local model, see below
+#
+# -----------------------------------------------------------------------------
+# DATA SAFETY - READ THIS
+# -----------------------------------------------------------------------------
+#   docker compose down        stops and removes the containers. Your database
+#                              and your uploaded/generated files SURVIVE,
+#                              because they live in the named volumes declared
+#                              at the bottom of this file.
+#
+#   docker compose down -v     ALSO DELETES THOSE VOLUMES. That is every
+#                              profile, every imported job, every uploaded CV,
+#                              every generated document and the whole
+#                              application history. It is not recoverable from
+#                              Docker. Take a backup first:
+#                                  sh scripts/backup.sh
+#                              See docs/RUNBOOK.md -> "Backup and restore".
+#
+# -----------------------------------------------------------------------------
+# What is deliberately absent
+# -----------------------------------------------------------------------------
+# No Kubernetes, no Kafka, no Redis, no BullMQ/Celery, no vector database, no
+# extra message broker. PostgreSQL is the queue (ADR02) and the scheduler is an
+# interval in the API process. docs/spec/00_AI_IMPLEMENTATION_INSTRUCTIONS.md
+# forbids adding those; do not "just add Redis" to bridge the two languages.
+# =============================================================================
+
+name: job-getter
+
+# ---------------------------------------------------------------------------
+# Shared fragments
+# ---------------------------------------------------------------------------
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: '10m'
+    max-file: '3'
+
+# Every application service reads the same environment contract
+# (docs/spec/10_DEPLOYMENT.md). `env_file` keeps generated secrets out of this
+# committed file and out of `docker compose config` output that people paste
+# into issues... note that `docker compose config` DOES interpolate ${...}, so
+# still review before pasting. See docs/RUNBOOK.md.
+x-app-env: &app-env
+  APP_MODE: ${APP_MODE:-local}
+  APP_ORIGIN: ${APP_ORIGIN:-http://localhost:3000}
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  DATABASE_URL: ${DATABASE_URL:-postgresql://jobgetter:jobgetter@db:5432/jobgetter}
+
+services:
+  # ---------------------------------------------------------------------------
+  # db - PostgreSQL 17 baseline (docs/spec/02_ARCHITECTURE.md)
+  #
+  # Image pin: postgres:17-alpine
+  #   sha256:f02121de6f74d30d8a94cd1d9584125e2178d7e6c377d8130112d4e52d867995
+  # Verified 2026-09-20 by pulling the image on this host and reading the digest
+  # back with:
+  #   docker image inspect postgres:17-alpine --format '{{index .RepoDigests 0}}'
+  # The running container reports "postgres (PostgreSQL) 17.11".
+  # Caveat: resolved through the AWS ECR Public mirror because Docker Hub was
+  # answering HTTP 429; not re-verified against docker.io. See docs/DECISIONS.md.
+  #
+  # NOT published to the host. docs/spec/10_DEPLOYMENT.md: "PostgreSQL/worker
+  # are not published to host by default." If you need psql access, use
+  # `docker compose exec db psql ...` or opt in through
+  # docker-compose.override.yml (see docker-compose.override.yml.example).
+  # ---------------------------------------------------------------------------
+  db:
+    image: ${IMAGE_REGISTRY:-docker.io/library}/postgres:17-alpine@sha256:f02121de6f74d30d8a94cd1d9584125e2178d7e6c377d8130112d4e52d867995
+    logging: *default-logging
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-jobgetter}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jobgetter}
+      POSTGRES_DB: ${POSTGRES_DB:-jobgetter}
+      # Deterministic collation so ORDER BY results do not depend on the host.
+      POSTGRES_INITDB_ARGS: '--encoding=UTF8 --locale=C'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      # -U/-d so the check fails if the credentials or database are wrong,
+      # rather than passing on the default `postgres` role.
+      test:
+        - CMD-SHELL
+        - pg_isready -U "${POSTGRES_USER:-jobgetter}" -d "${POSTGRES_DB:-jobgetter}" -h 127.0.0.1
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+    # A checkpoint on shutdown is much cheaper than crash recovery on start.
+    stop_grace_period: 30s
+
+  # ---------------------------------------------------------------------------
+  # migrate - one-shot schema migration
+  #
+  # Runs to completion BEFORE the API is considered ready. It reuses the api
+  # build (same image, different command) so the schema and the code that talks
+  # to it can never come from different builds.
+  #
+  # `restart: "no"` plus `service_completed_successfully` on the api dependency
+  # is what makes the ordering real: if this container exits non-zero, the api
+  # service does not start at all.
+  # ---------------------------------------------------------------------------
+  migrate:
+    build:
+      context: .
+      dockerfile: infra/api.Dockerfile
+      args:
+        IMAGE_REGISTRY: ${IMAGE_REGISTRY:-docker.io/library}
+    image: job-getter/api:dev
+    logging: *default-logging
+    restart: 'no'
+    # apps/api/tsconfig.json sets rootDir "." with include ["src/**/*.ts", ...],
+    # so tsc emits dist/src/db/migrate.js. Both layouts are tried so a later
+    # correction to that tsconfig does not silently break migrations. `exec`
+    # keeps the exit status of the migration as the container's exit status,
+    # which is what `service_completed_successfully` below depends on.
+    command:
+      [
+        'sh',
+        '-c',
+        'if [ -f apps/api/dist/src/db/migrate.js ]; then exec node apps/api/dist/src/db/migrate.js; else exec node apps/api/dist/db/migrate.js; fi',
+      ]
+    env_file:
+      - .env
+    environment:
+      <<: *app-env
+    depends_on:
+      db:
+        condition: service_healthy
+    stop_grace_period: 30s
+
+  # ---------------------------------------------------------------------------
+  # api - Fastify, owns all persistence, leases and scheduling (invariant 1)
+  #
+  # NOT published to the host: the web container proxies /api to it over the
+  # Compose network. That also keeps /internal/v1/* (the worker task protocol)
+  # off the host entirely, which docs/spec/10_DEPLOYMENT.md requires.
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: infra/api.Dockerfile
+      args:
+        IMAGE_REGISTRY: ${IMAGE_REGISTRY:-docker.io/library}
+    image: job-getter/api:dev
+    logging: *default-logging
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      <<: *app-env
+      PORT: '8080'
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
+      FILES_ROOT: ${FILES_ROOT:-/var/lib/job-getter/files}
+      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-10485760}
+      PROVIDER_DEFAULT: ${PROVIDER_DEFAULT:-none}
+      BILLING_ENABLED: ${BILLING_ENABLED:-false}
+    volumes:
+      - files-data:${FILES_ROOT:-/var/lib/job-getter/files}
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        # Real ordering, not a hopeful `depends_on: [migrate]`: the API only
+        # starts once the migration container has exited 0.
+        condition: service_completed_successfully
+    # Liveness comes from the image's HEALTHCHECK (GET /healthz). Readiness -
+    # database, schema version and storage configuration - is GET /readyz and is
+    # checked by scripts/smoke.sh, not by Docker: a container that is alive but
+    # not ready should stay up and report why, not be killed and restarted.
+    # Graceful shutdown: long enough to finish in-flight requests and release
+    # held task leases, so reclaim does not have to wait out the 120s lease.
+    stop_grace_period: 45s
+    security_opt:
+      - no-new-privileges:true
+
+  # ---------------------------------------------------------------------------
+  # worker - Python processing (parse, normalize, match, render)
+  #
+  # NOT published to the host: it polls the API outward and serves nothing.
+  # Its capabilities deliberately exclude fill_local - see infra/worker.Dockerfile.
+  # ---------------------------------------------------------------------------
+  worker:
+    build:
+      context: .
+      dockerfile: infra/worker.Dockerfile
+      args:
+        IMAGE_REGISTRY: ${IMAGE_REGISTRY:-docker.io/library}
+    image: job-getter/worker:dev
+    logging: *default-logging
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      APP_MODE: ${APP_MODE:-local}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      WORKER_API_BASE_URL: ${WORKER_API_BASE_URL:-http://api:8080}
+      WORKER_ID: ${WORKER_ID:-container-worker-1}
+      WORKER_CAPABILITIES: ${WORKER_CAPABILITIES:-noop_echo,parse_profile}
+      LOCAL_MODEL_BASE_URL: ${LOCAL_MODEL_BASE_URL:-}
+    depends_on:
+      api:
+        condition: service_healthy
+    # Longer than the 30s heartbeat interval so a worker being stopped can
+    # finish its current step, release the lease and exit, instead of leaving a
+    # task leased until the 120s lease expires
+    # (docs/spec/02_ARCHITECTURE.md -> Queue semantics).
+    stop_grace_period: 60s
+    # No host filesystem mounts beyond task input/output
+    # (docs/spec/09_SECURITY_PRIVACY.md). The worker downloads its inputs
+    # through task-scoped API endpoints; it does not share the files volume.
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      # Scratch space for document parsing and rendering. noexec/nosuid because
+      # untrusted uploaded content lands here and must never be executable.
+      - /tmp:rw,noexec,nosuid,size=512m
+
+  # ---------------------------------------------------------------------------
+  # web - static React bundle + /api reverse proxy
+  #
+  # The ONLY service published to the host, and only on loopback.
+  # docs/spec/10_DEPLOYMENT.md: "Expose web on 127.0.0.1:3000."
+  # There is no TLS and no hosted authentication here; binding 0.0.0.0 would put
+  # an unencrypted single-owner application on your network.
+  # ---------------------------------------------------------------------------
+  web:
+    build:
+      context: .
+      dockerfile: infra/web.Dockerfile
+      args:
+        IMAGE_REGISTRY: ${IMAGE_REGISTRY:-docker.io/library}
+    image: job-getter/web:dev
+    logging: *default-logging
+    restart: unless-stopped
+    ports:
+      - '${WEB_BIND_ADDRESS:-127.0.0.1}:${WEB_PORT:-3000}:8080'
+    depends_on:
+      api:
+        condition: service_healthy
+    stop_grace_period: 15s
+    security_opt:
+      - no-new-privileges:true
+
+  # ---------------------------------------------------------------------------
+  # ollama - OPTIONAL local model runtime
+  #
+  #   docker compose --profile local-ai up -d
+  #
+  # Kept behind a profile on purpose (docs/spec/02_ARCHITECTURE.md: "Optional
+  # Ollama is a separate Compose profile or configurable existing local
+  # endpoint"). Without the profile it is never created, never pulled and costs
+  # nothing.
+  #
+  # YOU MUST CHOOSE AND DOWNLOAD A MODEL YOURSELF. This project ships no model
+  # weights and makes no model recommendation. Model files carry their own
+  # licences, which you are responsible for reading and accepting. After the
+  # service is up:
+  #
+  #   docker compose --profile local-ai exec ollama ollama pull <model-you-chose>
+  #
+  # then set in .env:
+  #   PROVIDER_DEFAULT=ollama
+  #   LOCAL_MODEL_BASE_URL=http://ollama:11434
+  #
+  # ALTERNATIVE - use a model server you already run, and skip this profile
+  # entirely. Point LOCAL_MODEL_BASE_URL at it instead:
+  #   Docker Desktop (Windows/macOS): http://host.docker.internal:11434
+  #   Linux:                          http://172.17.0.1:11434
+  # This is an operator-allowlisted endpoint. It must not be used to widen the
+  # job-page fetcher's network policy (docs/spec/05_DISCOVERY_CONNECTORS.md).
+  #
+  # RAM/VRAM requirements depend entirely on the model and hardware you pick and
+  # must be measured, not assumed. The project's 8 GB target is for the stack
+  # WITHOUT a local model.
+  #
+  # Image: OLLAMA_IMAGE, default ollama/ollama:0.34.0.
+  # TODO(digest): this tag was confirmed to EXIST (docker manifest inspect
+  # ollama/ollama:0.34.0 returned a manifest, 2026-09-20) but its digest could
+  # not be resolved - Docker Hub started returning HTTP 429 mid-verification.
+  # It is pinned by tag only. Resolve and pin the digest before any release:
+  #   docker buildx imagetools inspect ollama/ollama:0.34.0 \
+  #     --format '{{.Manifest.Digest}}'
+  # ---------------------------------------------------------------------------
+  ollama:
+    profiles: ['local-ai']
+    image: ${OLLAMA_IMAGE:-ollama/ollama:0.34.0}
+    logging: *default-logging
+    restart: unless-stopped
+    volumes:
+      # Downloaded weights are large; a named volume keeps them across
+      # `docker compose down` like the rest of your data.
+      - ollama-models:/root/.ollama
+    # Not published to the host by default: the API and worker reach it over the
+    # Compose network. Uncomment in docker-compose.override.yml if you want to
+    # talk to it from your machine.
+    healthcheck:
+      test: ['CMD', 'ollama', 'list']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    # Model unload and any in-flight generation need room to finish.
+    stop_grace_period: 60s
+
+volumes:
+  # ---------------------------------------------------------------------------
+  # Named volumes, not bind mounts: `docker compose down` must preserve data
+  # (docs/spec/10_DEPLOYMENT.md). `docker compose down -v` destroys everything
+  # here - see the warning at the top of this file.
+  # ---------------------------------------------------------------------------
+  db-data:
+    name: job-getter-db-data
+  files-data:
+    name: job-getter-files-data
+  ollama-models:
+    name: job-getter-ollama-models
+
+networks:
+  default:
+    name: job-getter

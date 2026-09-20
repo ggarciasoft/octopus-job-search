@@ -197,3 +197,7 @@ test-results/
 playwright-report/
 .playwright/
 *.tsbuildinfo
+
+# Local Compose overrides are per-developer machine configuration. The
+# committed example file documents what belongs here.
+docker-compose.override.yml

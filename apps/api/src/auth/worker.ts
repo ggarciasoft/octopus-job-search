@@ -93,9 +93,7 @@ export function assertCapabilitiesAllowed(
   }
 
   if (principal.kind === 'device') {
-    const notAllowed = capabilities.filter(
-      (capability) => !isRunnerOnlyCapability(capability),
-    );
+    const notAllowed = capabilities.filter((capability) => !isRunnerOnlyCapability(capability));
     if (notAllowed.length > 0) {
       throw forbidden(
         `A paired device may only claim ${RUNNER_ONLY_CAPABILITIES.join(', ')}; ` +

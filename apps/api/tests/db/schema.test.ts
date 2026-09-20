@@ -15,6 +15,7 @@ import {
   migrationStatus,
   runMigrations,
 } from '../../src/db/migrate.js';
+import { OPERATOR_GLOBAL_TABLES, WORKSPACE_SCOPED_TABLES } from '../../src/db/types.js';
 import { createPool } from '../../src/db/pool.js';
 import { startTestDatabase, type TestDatabase } from '../helpers/postgres.js';
 
@@ -91,10 +92,9 @@ describe('AT01 — migrations apply to an empty database', () => {
     const original = await pool.query<{ checksum: string }>(
       `SELECT checksum FROM schema_migrations WHERE name = '0001_foundation'`,
     );
-    await pool.query(
-      `UPDATE schema_migrations SET checksum = $1 WHERE name = '0001_foundation'`,
-      ['0'.repeat(64)],
-    );
+    await pool.query(`UPDATE schema_migrations SET checksum = $1 WHERE name = '0001_foundation'`, [
+      '0'.repeat(64),
+    ]);
 
     await expect(runMigrations(pool)).rejects.toBeInstanceOf(MigrationChecksumError);
 
@@ -104,10 +104,9 @@ describe('AT01 — migrations apply to an empty database', () => {
     expect(drift.current).toBe(false);
     expect(drift.drifted).toContain('0001_foundation');
 
-    await pool.query(
-      `UPDATE schema_migrations SET checksum = $1 WHERE name = '0001_foundation'`,
-      [original.rows[0]!.checksum],
-    );
+    await pool.query(`UPDATE schema_migrations SET checksum = $1 WHERE name = '0001_foundation'`, [
+      original.rows[0]!.checksum,
+    ]);
   });
 
   it('status reports each migration as applied with a matching checksum', async () => {
@@ -243,10 +242,10 @@ describe('structural invariants (03_DATA_MODEL.md)', () => {
       [`second-${randomUUID()}@job-getter.invalid`],
     );
     await expect(
-      pool.query(
-        `INSERT INTO memberships (workspace_id, user_id, role) VALUES ($1, $2, 'owner')`,
-        [workspace, second.rows[0]!.id],
-      ),
+      pool.query(`INSERT INTO memberships (workspace_id, user_id, role) VALUES ($1, $2, 'owner')`, [
+        workspace,
+        second.rows[0]!.id,
+      ]),
     ).rejects.toMatchObject({ code: '23505' });
   });
 
@@ -299,7 +298,9 @@ describe('structural invariants (03_DATA_MODEL.md)', () => {
     );
     const definitions = rows.rows.map((row) => row.indexdef.replace(/\s+/g, ' '));
 
-    expect(definitions.some((def) => /tasks USING btree \(state, run_after\)/.test(def))).toBe(true);
+    expect(definitions.some((def) => /tasks USING btree \(state, run_after\)/.test(def))).toBe(
+      true,
+    );
     expect(
       definitions.some((def) =>
         /tasks USING btree \(lease_expires_at\) WHERE \(state = 'leased'::text\)/.test(def),
@@ -324,6 +325,50 @@ describe('structural invariants (03_DATA_MODEL.md)', () => {
         'timestamp with time zone',
       );
     }
+  });
+
+  it('marks worker_registrations as operator-global, not private data', async () => {
+    // It holds a worker id, declared capabilities and a last-seen timestamp:
+    // operator infrastructure, nothing a user entered.
+    const comment = await pool.query<{ comment: string | null }>(
+      `SELECT obj_description('public.worker_registrations'::regclass, 'pg_class') AS comment`,
+    );
+    expect(comment.rows[0]?.comment ?? '').toContain('operator-global');
+    expect(comment.rows[0]?.comment ?? '').toContain('excluded from workspace export and deletion');
+
+    // The application-side classification must agree with the database's.
+    expect(OPERATOR_GLOBAL_TABLES).toContain('worker_registrations');
+    expect(WORKSPACE_SCOPED_TABLES as readonly string[]).not.toContain('worker_registrations');
+  });
+
+  it('keeps no table in both the scoped and operator-global lists', () => {
+    const overlap = (WORKSPACE_SCOPED_TABLES as readonly string[]).filter((table) =>
+      (OPERATOR_GLOBAL_TABLES as readonly string[]).includes(table),
+    );
+    expect(overlap).toEqual([]);
+  });
+
+  it('does not cascade worker_registrations when a workspace is deleted', async () => {
+    const workspace = await seedWorkspace();
+    await pool.query(
+      `INSERT INTO worker_registrations (worker_id, workspace_id, kind, protocol_version)
+       VALUES ('runner-under-test', $1, 'device', 1)`,
+      [workspace],
+    );
+
+    await pool.query('DELETE FROM memberships WHERE workspace_id = $1', [workspace]);
+    await pool.query('DELETE FROM workspaces WHERE id = $1', [workspace]);
+
+    // The operator's record of a running process survives; only the workspace
+    // association is dropped. Cascading it would destroy infrastructure state
+    // in response to a user action.
+    const row = await pool.query<{ workspace_id: string | null }>(
+      `SELECT workspace_id FROM worker_registrations WHERE worker_id = 'runner-under-test'`,
+    );
+    expect(row.rows).toHaveLength(1);
+    expect(row.rows[0]!.workspace_id).toBeNull();
+
+    await pool.query(`DELETE FROM worker_registrations WHERE worker_id = 'runner-under-test'`);
   });
 
   it('gives append-only audit_events no updated_at column', async () => {

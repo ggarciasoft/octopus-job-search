@@ -1,0 +1,472 @@
+# =============================================================================
+# Job Getter CI
+#
+# -----------------------------------------------------------------------------
+# CURRENT STATUS - READ THIS BEFORE ASKING WHY CI IS RED
+# -----------------------------------------------------------------------------
+# Status as measured on the development host on 2026-09-20. Each claim below is
+# something that was actually run, not assumed.
+#
+# PASSING (verified locally):
+#     contracts      `pnpm contracts:check` -> "generated artifacts are up to
+#                    date (62 files)"
+#     fixtures       `uv run python fixtures/verify.py` -> 46/46, exit 0
+#     hygiene        `sh -n scripts/*.sh` and the PowerShell parser both clean
+#     node-quality   `pnpm typecheck` and `pnpm lint` both pass across all five
+#                    workspace projects - EXCEPT its `pnpm format:check` step,
+#                    which fails for an unrelated reason (see FORMATTING below)
+#
+# EXPECTED TO FAIL (verified locally, and owned by other work in flight):
+#     worker         `uv run ruff check .` reports 3 errors; `ruff format
+#                    --check` would reformat 1 file; `uv run mypy` fails with
+#                    "There are no .py[i] files in directory 'tests'". The
+#                    worker's source and tests are still landing.
+#     node-test      not run here - needs a PostgreSQL service container. The
+#                    API's Vitest suites exist; whether they pass is unverified.
+#     compose-build  not run here - `docker compose up --build` was deliberately
+#                    not attempted while sources were landing in parallel. The
+#                    Dockerfiles have NEVER been built.
+#
+# Nothing is marked `continue-on-error`. A job that always passes tells you
+# nothing, and docs/spec/00_AI_IMPLEMENTATION_INSTRUCTIONS.md invariant 10
+# forbids presenting unfinished work as working. The honest state is a partly
+# red build with this note explaining exactly which jobs are red and why.
+#
+# As each milestone lands, move the corresponding line from the second list to
+# the first - with the command output that justifies the move.
+# IMPLEMENTATION_STATUS.md tracks the same information in more detail.
+#
+# FORMATTING
+# `pnpm format:check` currently fails on `docs/spec/**`, which is the IMMUTABLE
+# input specification and must not be reformatted. The fix is one line in
+# .prettierignore:
+#
+#     docs/spec/
+#
+# That file was outside this change's scope, so the failure is documented here
+# rather than silently worked around by dropping the step. Once the ignore line
+# is added, `format:check` passes for every tree that has landed.
+# -----------------------------------------------------------------------------
+#
+# ACTION VERSIONS
+# Every action below is pinned to a full commit SHA with the human-readable tag
+# in a trailing comment. A tag can be moved; a commit SHA cannot. All SHAs were
+# resolved on 2026-09-20 against the GitHub REST API, for example:
+#     curl -s https://api.github.com/repos/actions/checkout/releases/latest
+#     curl -s https://api.github.com/repos/actions/checkout/git/ref/tags/v7.0.1
+# and, for the annotated tag on pnpm/action-setup, dereferenced through
+#     curl -s https://api.github.com/repos/pnpm/action-setup/git/tags/<sha>
+# so the pin is the underlying commit rather than the tag object.
+# =============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A force-push or a quick follow-up commit should cancel the previous run
+# rather than queue behind it. `main` is excluded so the recorded history of
+# what passed on the default branch stays complete.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+env:
+  # Toolchain versions verified on the development host on 2026-09-20:
+  #   node --version   -> v24.13.0
+  #   pnpm --version   -> 11.3.0
+  #   uv --version     -> uv 0.12.17
+  #   python (uv)      -> 3.12.14
+  # NODE_VERSION uses the 24.x line rather than a frozen patch so security
+  # patches are picked up; package.json pins the range (>=24.0.0 <25).
+  NODE_VERSION: '24'
+  PNPM_VERSION: '11.3.0'
+  PYTHON_VERSION: '3.12'
+  UV_VERSION: '0.12.17'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # The contract drift gate.
+  #
+  # docs/spec/00_AI_IMPLEMENTATION_INSTRUCTIONS.md: "Generate OpenAPI and JSON
+  # Schema artifacts, TypeScript client, and Pydantic worker models from the
+  # authoritative schemas. Check drift in CI. No handwritten parallel enum
+  # sets."
+  #
+  # This runs FIRST and everything else needs it. If the generated artifacts do
+  # not match the TypeBox schemas, nothing downstream is trustworthy: the API,
+  # the web client and the Python worker would be compiled against three
+  # different versions of the same contract.
+  # ---------------------------------------------------------------------------
+  contracts:
+    name: Contracts (drift gate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      # --frozen-lockfile: fail if pnpm-lock.yaml does not already satisfy every
+      # manifest. CI must never resolve a dependency version the lockfile does
+      # not name.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check generated contracts for drift
+        run: pnpm contracts:check
+
+      - name: Explain a drift failure
+        if: failure()
+        run: |
+          echo "::error::Generated contract artifacts do not match the TypeBox schemas."
+          echo "Run 'pnpm contracts:generate' locally and commit the result."
+          echo "Do not hand-edit anything under packages/contracts/generated/."
+
+  # ---------------------------------------------------------------------------
+  # Typecheck and lint the whole pnpm workspace.
+  # ---------------------------------------------------------------------------
+  node-quality:
+    name: Node typecheck and lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: contracts
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Generated artifacts are inputs to the typecheck, so build them first.
+      - name: Build contracts
+        run: pnpm --filter @job-getter/contracts build
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      # KNOWN FAILURE: this fails on docs/spec/**, the immutable input
+      # specification, because .prettierignore does not exclude it. See
+      # FORMATTING in the header of this file for the one-line fix.
+      - name: Check formatting
+        run: pnpm format:check
+
+  # ---------------------------------------------------------------------------
+  # Node tests against a REAL PostgreSQL 17.
+  #
+  # docs/spec/11_TESTING_ACCEPTANCE.md requires "Node domain/API tests against
+  # real ephemeral PostgreSQL for scope, constraints, revisions and leases".
+  # A mocked database cannot exercise SELECT FOR UPDATE SKIP LOCKED, which is
+  # the entire task-lease mechanism, so a service container it is.
+  # ---------------------------------------------------------------------------
+  node-test:
+    name: Node tests (PostgreSQL 17)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: contracts
+    services:
+      postgres:
+        # PostgreSQL 17 baseline, per docs/spec/02_ARCHITECTURE.md.
+        #
+        # Pinned by TAG only, deliberately. docker-compose.yml pins this image
+        # by tag AND digest, but that digest was resolved through the AWS ECR
+        # Public mirror because Docker Hub was rate-limiting the development
+        # network. GitHub runners pull from Docker Hub, so asserting an
+        # ECR-resolved digest here would be claiming a verification that was
+        # not performed against the registry this job actually uses.
+        # TODO(digest): pin once the digest can be confirmed against Docker Hub:
+        #   docker buildx imagetools inspect postgres:17-alpine \
+        #     --format '{{.Manifest.Digest}}'
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: jobgetter
+          POSTGRES_PASSWORD: jobgetter
+          POSTGRES_DB: jobgetter_test
+        ports:
+          - 5432:5432
+        # Without this the test step races the database's first-boot
+        # initialisation and fails intermittently, which is worse than failing
+        # consistently.
+        options: >-
+          --health-cmd "pg_isready -U jobgetter -d jobgetter_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql://jobgetter:jobgetter@127.0.0.1:5432/jobgetter_test
+      # Non-secret values for a throwaway CI database. These are NOT the
+      # defaults for any real installation: scripts/setup.sh generates random
+      # ones, and .env.example ships every secret empty.
+      APP_MODE: local
+      APP_ORIGIN: http://localhost:3000
+      SESSION_SECRET: Y2ktb25seS1ub3QtYS1yZWFsLXNlY3JldC1wbGFjZWhvbGRlcg==
+      ENCRYPTION_KEY: Y2ktb25seS0zMi1ieXRlLWtleS1ub3QtYS1zZWNyZXQhIQ==
+      WORKER_AUTH_TOKEN: ci-only-worker-token-not-a-secret
+      SETUP_TOKEN: ci-only-setup-token-not-a-secret
+      STORAGE_DRIVER: local
+      FILES_ROOT: /tmp/job-getter-files
+      PROVIDER_DEFAULT: none
+      LOG_LEVEL: warn
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build contracts
+        run: pnpm --filter @job-getter/contracts build
+
+      - name: Prepare file storage
+        run: mkdir -p "$FILES_ROOT"
+
+      # Migrations must be repeatable from an EMPTY database
+      # (docs/spec/00_AI_IMPLEMENTATION_INSTRUCTIONS.md). CI starts from empty
+      # every time, so this step is that guarantee, checked on every push.
+      - name: Run migrations from an empty database
+        run: pnpm --filter @job-getter/api migrate
+
+      # Running them twice proves they are idempotent. An upgrade on a live
+      # installation re-runs the whole set; if the second pass fails here, it
+      # would fail on a user's data.
+      - name: Re-run migrations (idempotency check)
+        run: pnpm --filter @job-getter/api migrate
+
+      - name: Test
+        run: pnpm test
+
+  # ---------------------------------------------------------------------------
+  # Python worker: lint, types, tests.
+  # ---------------------------------------------------------------------------
+  worker:
+    name: Python worker (ruff, mypy, pytest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: services/worker
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: services/worker/uv.lock
+
+      # --frozen: fail if uv.lock does not already satisfy pyproject.toml.
+      # The Python equivalent of pnpm's --frozen-lockfile.
+      - name: Install locked dependencies
+        run: uv sync --frozen --all-extras --dev
+
+      - name: Ruff (lint)
+        run: uv run ruff check .
+
+      - name: Ruff (format check)
+        run: uv run ruff format --check .
+
+      - name: mypy
+        run: uv run mypy
+
+      - name: pytest
+        run: uv run pytest
+
+  # ---------------------------------------------------------------------------
+  # Fixture integrity.
+  #
+  # The fixture corpus is only useful if each file really has the property its
+  # tests rely on: scanned-cv.pdf must genuinely have no extractable text,
+  # encrypted-cv.pdf must genuinely be encrypted, and so on. verify.py asserts
+  # each of those. Without this job a fixture could silently lose its property
+  # and the test that depends on it would start passing for the wrong reason.
+  #
+  # The corpus is also byte-for-byte reproducible, so regenerating it must not
+  # change MANIFEST.sha256. A diff here means generate.py became
+  # non-deterministic.
+  # ---------------------------------------------------------------------------
+  fixtures:
+    name: Fixture integrity
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: services/worker
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: services/worker/uv.lock
+
+      - name: Install locked dependencies
+        run: uv sync --frozen --all-extras --dev
+
+      - name: Verify every fixture still has its claimed property
+        run: uv run python ../../fixtures/verify.py
+
+      - name: Regenerate the corpus
+        run: uv run python ../../fixtures/generate.py
+
+      - name: Fail if regeneration was not byte-for-byte reproducible
+        working-directory: .
+        run: |
+          if ! git diff --exit-code --stat -- fixtures/; then
+            echo "::error::Regenerating the fixtures changed them."
+            echo "fixtures/generate.py must be deterministic. Investigate before merging."
+            exit 1
+          fi
+          echo "Fixture corpus is reproducible."
+
+      - name: Re-verify after regeneration
+        run: uv run python ../../fixtures/verify.py
+
+  # ---------------------------------------------------------------------------
+  # Container build smoke.
+  #
+  # Proves the Dockerfiles and docker-compose.yml still build. It does NOT run
+  # the stack and does NOT run scripts/smoke.sh: that needs a booted database, a
+  # completed one-time setup and a live worker, which belongs in a separate
+  # end-to-end workflow once M0 is finished. Claiming an end-to-end pass from a
+  # build-only job would be exactly the kind of unearned green this project
+  # refuses to ship.
+  # ---------------------------------------------------------------------------
+  compose-build:
+    name: Container build smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # docker-compose.yml declares `env_file: .env`, which must exist before
+      # Compose will even parse the file. The example contains no secrets - every
+      # secret-valued entry in it is empty - so this is safe in CI. It is NOT a
+      # working configuration and nothing here is started with it.
+      - name: Create a placeholder .env
+        run: cp .env.example .env
+
+      - name: Validate the Compose file parses
+        run: docker compose config --quiet
+
+      - name: Confirm web is published on loopback only
+        run: |
+          # docs/spec/10_DEPLOYMENT.md: "Expose web on 127.0.0.1:3000."
+          # A change that binds 0.0.0.0 would put an unencrypted, single-owner
+          # application on the network, so it fails the build here.
+          if docker compose config | grep -E 'host_ip:\s*0\.0\.0\.0'; then
+            echo "::error::A service is published on 0.0.0.0. Only 127.0.0.1 is allowed."
+            exit 1
+          fi
+          echo "No 0.0.0.0 bindings."
+
+      - name: Confirm the database is not published by default
+        run: |
+          # docs/spec/10_DEPLOYMENT.md: "PostgreSQL/worker are not published to
+          # host by default."
+          if docker compose config | grep -E 'published:\s*"?5432"?'; then
+            echo "::error::The database is published to the host in the committed Compose file."
+            exit 1
+          fi
+          echo "Database is not published."
+
+      - name: Build the images
+        run: docker compose build --progress plain
+
+      - name: Remove the placeholder .env
+        if: always()
+        run: rm -f .env
+
+  # ---------------------------------------------------------------------------
+  # Cheap, always-runnable hygiene checks. Deliberately has no `needs:` so it
+  # reports even when the build jobs above are failing.
+  # ---------------------------------------------------------------------------
+  hygiene:
+    name: Repository hygiene
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: No committed .env
+        run: |
+          # .env holds SESSION_SECRET, ENCRYPTION_KEY and WORKER_AUTH_TOKEN.
+          if git ls-files --error-unmatch .env 2>/dev/null; then
+            echo "::error::.env is tracked by git. It contains secrets. Remove it and rotate every value in it."
+            exit 1
+          fi
+          echo "No tracked .env."
+
+      - name: Shell script syntax
+        run: |
+          status=0
+          for f in scripts/*.sh; do
+            if sh -n "$f"; then
+              echo "ok   $f"
+            else
+              echo "::error file=$f::shell syntax error"
+              status=1
+            fi
+          done
+          exit $status
+
+      - name: PowerShell script syntax
+        shell: pwsh
+        run: |
+          $failed = $false
+          Get-ChildItem scripts -Filter *.ps1 | ForEach-Object {
+            $errors = $null
+            $null = [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$null, [ref]$errors)
+            if ($errors.Count -gt 0) {
+              Write-Host "::error file=scripts/$($_.Name)::$($errors[0].Message)"
+              $failed = $true
+            } else {
+              Write-Host "ok   scripts/$($_.Name)"
+            }
+          }
+          if ($failed) { exit 1 }
+
+      - name: Scripts are executable
+        run: |
+          status=0
+          for f in scripts/*.sh; do
+            if [ ! -x "$f" ]; then
+              echo "::error file=$f::not executable. Fix with: git update-index --chmod=+x $f"
+              status=1
+            fi
+          done
+          exit $status

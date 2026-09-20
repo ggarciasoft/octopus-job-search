@@ -155,7 +155,12 @@ export function DiagnosticsPage() {
             onChange={(event) => setDelayMs(Number(event.currentTarget.value))}
           />
           <div className="flex items-center gap-3">
-            <Button type="submit" variant="primary" busy={submitting} busyLabel={t('diagnostics.busy')}>
+            <Button
+              type="submit"
+              variant="primary"
+              busy={submitting}
+              busyLabel={t('diagnostics.busy')}
+            >
               {t('diagnostics.submit')}
             </Button>
           </div>

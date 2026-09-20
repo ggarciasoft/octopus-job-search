@@ -27,8 +27,7 @@ export const es: Record<MessageKey, string> = {
   'nav.tracker': 'Seguimiento',
   'nav.settings': 'Ajustes',
   'nav.unavailable': 'Aún no disponible',
-  'nav.unavailableHint':
-    'Abre una explicación de lo que falta. No es una pantalla funcional.',
+  'nav.unavailableHint': 'Abre una explicación de lo que falta. No es una pantalla funcional.',
 
   'action.signOut': 'Cerrar sesión',
   'action.signIn': 'Iniciar sesión',
@@ -245,7 +244,8 @@ export const es: Record<MessageKey, string> = {
   'taskState.cancelled.description': 'Se detuvo antes de terminar a petición tuya.',
 
   'tasks.title': 'Tareas',
-  'tasks.intro': 'Trabajo en segundo plano de este espacio de trabajo, del más reciente al más antiguo.',
+  'tasks.intro':
+    'Trabajo en segundo plano de este espacio de trabajo, del más reciente al más antiguo.',
   'tasks.caption': 'Tareas recientes',
   'tasks.columnType': 'Tipo',
   'tasks.columnState': 'Estado',
@@ -289,8 +289,7 @@ export const es: Record<MessageKey, string> = {
     'La configuración de proveedores y modelos, los presupuestos, las opciones de prompts y plantillas, los horarios de escaneo, los dispositivos emparejados y la exportación y eliminación de datos.',
 
   'status.not_checked.label': 'Sin comprobar',
-  'status.not_checked.description':
-    'Todavía nada ha revisado esto. No es un resultado negativo.',
+  'status.not_checked.description': 'Todavía nada ha revisado esto. No es un resultado negativo.',
   'status.unknown.label': 'Desconocido',
   'status.unknown.description':
     'Se comprobó y no se pudo determinar la respuesta. Desconocido nunca cuenta como un sí.',

@@ -205,13 +205,10 @@ export async function buildApp(config: Config, deps: BuildAppDeps = {}): Promise
     return reply.status(apiError.status).send(apiError.toEnvelope(request.id));
   });
 
-  app.setNotFoundHandler(
-    { preHandler: app.rateLimit() },
-    (request, reply) => {
-      const error = new ApiError(404, 'NOT_FOUND', 'Not found.');
-      return reply.status(404).send(error.toEnvelope(request.id));
-    },
-  );
+  app.setNotFoundHandler({ preHandler: app.rateLimit() }, (request, reply) => {
+    const error = new ApiError(404, 'NOT_FOUND', 'Not found.');
+    return reply.status(404).send(error.toEnvelope(request.id));
+  });
 
   // --- Routes ---------------------------------------------------------------
   registerHealthRoutes(app, { config, pool, storage, startedAt: Date.now() });

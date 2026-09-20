@@ -113,10 +113,7 @@ export function payloadTooLarge(message = 'The upload exceeds the permitted size
   return new ApiError(413, 'PAYLOAD_TOO_LARGE', message);
 }
 
-export function unprocessable(
-  message: string,
-  fields?: Record<string, string>,
-): ApiError {
+export function unprocessable(message: string, fields?: Record<string, string>): ApiError {
   return new ApiError(422, 'UNPROCESSABLE', message, fields ? { fields } : {});
 }
 
@@ -212,7 +209,9 @@ export function toApiError(error: unknown): ApiError {
   const mapped = mapDatabaseError(error);
   if (mapped) return mapped;
 
-  const fastifyError = (typeof error === 'object' && error !== null ? error : {}) as FastifyErrorLike;
+  const fastifyError = (
+    typeof error === 'object' && error !== null ? error : {}
+  ) as FastifyErrorLike;
   const code = fastifyError.code;
   if (code && FASTIFY_STATUS_CODES[code] !== undefined) {
     const status = FASTIFY_STATUS_CODES[code];

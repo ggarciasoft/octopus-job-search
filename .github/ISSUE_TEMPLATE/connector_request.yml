@@ -1,0 +1,191 @@
+name: Connector or form-adapter request
+description: Request or propose support for a new job board, ATS or application form.
+title: '[connector] <source name>'
+labels: ['connector', 'needs-triage']
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Before you fill this in
+
+        A connector is a maintenance commitment, not a one-off patch. Sites
+        change their markup and their policies, and every supported source has
+        to keep working or be honestly marked as broken.
+
+        **Two things are mandatory and this form will not be accepted without
+        them:**
+
+        1. **Fixtures.** Saved, synthetic-or-public sample responses the
+           connector can be tested against offline, so CI does not depend on a
+           live third party.
+        2. **A policy review.** A link to the source's terms of service or
+           robots policy, and the date you read it.
+
+        **What will not be accepted, ever:**
+
+        - CAPTCHA solving or evasion
+        - Proxy rotation, fingerprint spoofing or any restriction bypass
+        - Anything that requires storing a user's job-site password
+        - LinkedIn scraping or Easy Apply automation
+        - Hidden data collection of any kind
+
+        Those are not "not yet" - they are out of scope permanently
+        (docs/spec/00_AI_IMPLEMENTATION_INSTRUCTIONS.md, invariant 7).
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of connector is this?
+      options:
+        - Discovery connector (reads a job board's public listings)
+        - Form adapter (fills an application form in the user's browser)
+        - Both
+    validations:
+      required: true
+
+  - type: input
+    id: source
+    attributes:
+      label: Source name
+      description: The board or ATS, e.g. "Greenhouse", "Lever", "SmartRecruiters".
+      placeholder: Greenhouse
+    validations:
+      required: true
+
+  - type: input
+    id: example_url
+    attributes:
+      label: Example public URL
+      description: A real, public listing or board page. No URLs that need a login.
+      placeholder: https://boards.greenhouse.io/example
+    validations:
+      required: true
+
+  - type: textarea
+    id: access_method
+    attributes:
+      label: How is the data obtained?
+      description: |
+        A documented public API is strongly preferred over HTML parsing.
+        Say which, and link the documentation if there is any.
+      placeholder: |
+        Documented public JSON API:
+          GET https://boards-api.greenhouse.io/v1/boards/{token}/jobs?content=true
+        Docs: https://docs.greenhouse.io/job-board.html
+    validations:
+      required: true
+
+  - type: input
+    id: policy_url
+    attributes:
+      label: 'MANDATORY - Policy review: link'
+      description: |
+        Link to the terms of service, acceptable use policy or robots.txt that
+        covers automated reading of this source. The connector contract requires
+        a policy_review_url.
+      placeholder: https://example.com/terms
+    validations:
+      required: true
+
+  - type: input
+    id: policy_date
+    attributes:
+      label: 'MANDATORY - Policy review: date you read it (YYYY-MM-DD)'
+      description: |
+        The connector contract requires a policy_review_date. Site policies
+        change; a review with no date is not a review.
+      placeholder: '2026-09-20'
+    validations:
+      required: true
+
+  - type: textarea
+    id: policy_summary
+    attributes:
+      label: 'MANDATORY - What does that policy actually say?'
+      description: |
+        Quote or summarise the relevant clause. If the policy prohibits
+        automated access, say so - the answer is then a paste/manual mode, not
+        a connector, and that is a perfectly good outcome.
+      placeholder: |
+        Section 4 permits automated reading of public job board endpoints at a
+        reasonable rate. It prohibits submitting applications through the API
+        without an employer agreement, so this request is read-only.
+    validations:
+      required: true
+
+  - type: textarea
+    id: fixtures
+    attributes:
+      label: 'MANDATORY - Fixtures'
+      description: |
+        What sample data will the tests use? Attach or link the files.
+
+        Requirements:
+          * Synthetic, or captured from a genuinely public page.
+          * NO personal data: no real names, emails, phone numbers, or anyone's
+            real employment history. fixtures/README.md is the full policy.
+          * Enough variety to be meaningful - a happy path alone is not enough.
+
+        For a form adapter, the browser fixture list in
+        docs/spec/11_TESTING_ACCEPTANCE.md applies: text/select/radio/checkbox
+        fields, repeated labels, a required unknown question, a file
+        attachment, a multi-step form, a validation error, an iframe, a changed
+        fingerprint, a confirmation page and a timeout.
+      placeholder: |
+        - fixtures/jobs/<source>/board-listing.json   (2 open roles, 1 closed)
+        - fixtures/jobs/<source>/job-detail.json      (salary range present)
+        - fixtures/jobs/<source>/job-no-salary.json   (salary absent -> unknown)
+        - fixtures/jobs/<source>/empty-board.json
+        All synthetic. Company "Example Corp", no real people.
+    validations:
+      required: true
+
+  - type: textarea
+    id: rate_policy
+    attributes:
+      label: Rate limits and politeness
+      description: |
+        Defaults are per-host concurrency 1, at least one second between
+        requests, 24-hour scan interval with jitter, 20-second timeout, maximum
+        1000 jobs per scan and 100 pages. If this source documents stricter
+        limits, say so.
+      placeholder: Documented limit is 60 requests/minute; defaults are well inside that.
+    validations:
+      required: true
+
+  - type: textarea
+    id: field_mapping
+    attributes:
+      label: Field mapping to the normalized job schema
+      description: |
+        Which normalized fields can this source populate, and which are simply
+        absent? Absent must stay absent: an inferred value carries
+        `inferred: true` and a source excerpt, and a published date is never
+        invented.
+      placeholder: |
+        external_id   <- id
+        canonical_url <- absolute_url
+        salary        <- not provided by this source; stays null (NOT inferred)
+        published_at  <- updated_at is a modification time, not a publish date;
+                         leaving published_at null rather than guessing.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: acknowledgements
+    attributes:
+      label: Acknowledgements
+      options:
+        - label: I have read the policy linked above and quoted the relevant part, and it does not prohibit what this connector does.
+          required: true
+        - label: My fixtures contain no personal data - no real CVs, no real names, no real contact details, no real employment history.
+          required: true
+        - label: This connector does not bypass CAPTCHAs, rotate proxies, spoof fingerprints, or evade any access restriction.
+          required: true
+        - label: This connector does not require storing a job-site password, and does not export browser cookies.
+          required: true
+        - label: I understand read access does not imply permission to submit applications, and that final submission stays manual.
+          required: true
+        - label: I understand an untested source will be shown as unsupported in the UI rather than presented as a working integration.
+          required: true
