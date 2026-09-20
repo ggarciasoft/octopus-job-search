@@ -1,0 +1,28 @@
+@import 'tailwindcss';
+
+/*
+ * Tailwind CSS 4 is configured through the Vite plugin and this import; there
+ * is no tailwind.config.js. `@source` is required for `packages/ui` because
+ * automatic content detection stops at this app's own directory and would
+ * otherwise drop every class used by the shared primitives.
+ */
+@source "../../../packages/ui/src";
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased;
+}
+
+/* Respect a reduced-motion preference for the spinner and skeleton shimmer. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

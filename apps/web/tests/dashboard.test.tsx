@@ -1,0 +1,93 @@
+import { screen, within } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+import { createFakeApi, makeCapabilities, makeMe, renderApp } from './helpers';
+
+describe('dashboard capability panel', () => {
+  it('renders false flags as unavailable and never as available', async () => {
+    const me = makeMe({
+      capabilities: makeCapabilities({
+        worker_online: false,
+        ai_provider_configured: true,
+        profile_import: false,
+        job_discovery: false,
+        cv_generation: false,
+        applications: false,
+        browser_filling: false,
+        extension: false,
+      }),
+    });
+    renderApp({ client: createFakeApi({ getMe: async () => me }), route: '/' });
+
+    await screen.findByRole('heading', { name: 'Dashboard', level: 1 });
+
+    const unavailableKeys = [
+      'profile_import',
+      'job_discovery',
+      'cv_generation',
+      'applications',
+      'browser_filling',
+      'extension',
+    ];
+    for (const key of unavailableKeys) {
+      const row = screen.getByTestId(`capability-${key}`);
+      expect(row.dataset.available).toBe('false');
+      expect(within(row).getByText('Unavailable')).toBeTruthy();
+      expect(within(row).queryByText('Available')).toBeNull();
+    }
+
+    const configured = screen.getByTestId('capability-ai_provider_configured');
+    expect(configured.dataset.available).toBe('true');
+    expect(within(configured).getByText('Available')).toBeTruthy();
+  });
+
+  it('shows an offline worker prominently and explains that queued work will not finish', async () => {
+    const me = makeMe({ capabilities: makeCapabilities({ worker_online: false }) });
+    renderApp({ client: createFakeApi({ getMe: async () => me }), route: '/' });
+
+    await screen.findByRole('heading', { name: 'Dashboard', level: 1 });
+
+    const status = screen.getByTestId('worker-status');
+    expect(status.dataset.online).toBe('false');
+    expect(status.textContent).toBe('No worker has claimed a task recently.');
+    expect(screen.getByText(/Queued tasks stay queued until a worker comes back/)).toBeTruthy();
+  });
+
+  it('reports an unmeasured cost as unknown rather than zero', async () => {
+    const me = makeMe();
+    renderApp({ client: createFakeApi({ getMe: async () => me }), route: '/' });
+
+    await screen.findByRole('heading', { name: 'Dashboard', level: 1 });
+    expect(screen.getByText(/no rate card is configured, which is not the same as zero/)).toBeTruthy();
+  });
+
+  it('distinguishes "Submitted — verified" from "Submitted — reported by you"', async () => {
+    renderApp({ route: '/' });
+    await screen.findByRole('heading', { name: 'Dashboard', level: 1 });
+
+    const verified = screen.getByTestId('status-submitted_verified');
+    const reported = screen.getByTestId('status-submitted_reported_by_you');
+
+    expect(verified.dataset.evidence).toBe('verified');
+    expect(reported.dataset.evidence).toBe('user_reported');
+
+    expect(within(verified).getByText('Submitted — verified')).toBeTruthy();
+    expect(within(reported).getByText('Submitted — reported by you')).toBeTruthy();
+
+    // The user-reported state must never present itself as verified evidence.
+    expect(within(reported).queryByText('Submitted — verified')).toBeNull();
+    expect(reported.textContent).toContain('No evidence was captured');
+    expect(verified.textContent).toContain('Evidence of the submission was captured');
+    expect(verified.textContent).not.toBe(reported.textContent);
+  });
+
+  it('marks unbuilt screens in the navigation instead of hiding them', async () => {
+    renderApp({ route: '/' });
+    await screen.findByRole('heading', { name: 'Dashboard', level: 1 });
+
+    const profileLink = screen.getByRole('link', { name: /Profile/ });
+    expect(profileLink.textContent).toContain('M1');
+    expect(profileLink.getAttribute('href')).toBe('/profile');
+    // The accessible name says it is unavailable, not only the badge colour.
+    expect(profileLink.textContent).toContain('Not available yet');
+  });
+});

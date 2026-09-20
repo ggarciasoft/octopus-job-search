@@ -15,6 +15,7 @@ registerContractFormats();
 
 export * from './formats.js';
 export * from './common.js';
+export * from './http.js';
 export * from './schemas/auth.js';
 export * from './schemas/files.js';
 export * from './schemas/preferences.js';
