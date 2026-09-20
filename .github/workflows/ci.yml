@@ -9,7 +9,7 @@
 #
 # PASSING (verified locally):
 #     contracts      `pnpm contracts:check` -> "generated artifacts are up to
-#                    date (62 files)"; 191 contract tests
+#                    date (87 files)"; 191 contract tests
 #     fixtures       `uv run python fixtures/verify.py` -> 46/46, exit 0
 #     hygiene        `sh -n scripts/*.sh` and the PowerShell parser both clean
 #     node-quality   `pnpm typecheck`, `pnpm lint` and `pnpm format:check` all
@@ -18,37 +18,29 @@
 #                    97 web tests, 7 ui tests
 #     worker         `ruff check`, `ruff format --check`, `mypy --strict` clean;
 #                    136 pytest
-#     compose-build  all three images build and `docker compose up` + the
-#                    smoke test pass locally - BUT only with the `build_ca`
-#                    BuildKit secret, because this development host sits behind
-#                    TLS interception (Norton Web Shield). On a GitHub runner
-#                    there is no interception and every `build_ca` guard is a
-#                    no-op by construction; that path has NOT been observed.
-#                    If this job fails here and the error mentions
-#                    "certificate", see docs/RUNBOOK.md section 6.
+#     compose-build  all three images build; observed green on ubuntu-latest
+#                    (run for 9d98557) with NO `build_ca` secret, so the
+#                    no-interception path is verified, not assumed. On the
+#                    development host (TLS-intercepted by Norton Web Shield)
+#                    the same build needs `--secret id=build_ca,...`; see
+#                    docs/RUNBOOK.md section 6 if a build here fails on a
+#                    certificate error.
 #
 # EXPECTED TO FAIL: nothing, as of this measurement. If a job is red, it is a
 # real failure - do not add it to this list without a measured reason.
 #
 # Nothing is marked `continue-on-error`. A job that always passes tells you
 # nothing, and docs/spec/00_AI_IMPLEMENTATION_INSTRUCTIONS.md invariant 10
-# forbids presenting unfinished work as working. The honest state is a partly
-# red build with this note explaining exactly which jobs are red and why.
+# forbids presenting unfinished work as working. When a job is red, this
+# header must say why, with measured output - or the failure is real.
 #
-# As each milestone lands, move the corresponding line from the second list to
-# the first - with the command output that justifies the move.
-# IMPLEMENTATION_STATUS.md tracks the same information in more detail.
-#
-# FORMATTING
-# `pnpm format:check` currently fails on `docs/spec/**`, which is the IMMUTABLE
-# input specification and must not be reformatted. The fix is one line in
-# .prettierignore:
-#
-#     docs/spec/
-#
-# That file was outside this change's scope, so the failure is documented here
-# rather than silently worked around by dropping the step. Once the ignore line
-# is added, `format:check` passes for every tree that has landed.
+# The first three pushes of this repository were red for reasons that could
+# not show on the development machine (files present on disk but ignored by
+# git, missing executable bits, a `dist/` that CI never built, line endings
+# inside a generated bundle). Those are recorded in the commit history and in
+# docs/DECISIONS.md ADR21; the fixes made the root `typecheck` and `test`
+# scripts self-sufficient from a clean clone, which is what this workflow
+# relies on. IMPLEMENTATION_STATUS.md tracks the same information in detail.
 # -----------------------------------------------------------------------------
 #
 # ACTION VERSIONS
@@ -172,9 +164,11 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-      # KNOWN FAILURE: this fails on docs/spec/**, the immutable input
-      # specification, because .prettierignore does not exclude it. See
-      # FORMATTING in the header of this file for the one-line fix.
+      # docs/spec/** (the immutable input specification), the generated
+      # contract artifacts, the fixture corpus and the migration bundle are
+      # excluded via .prettierignore: none of them may be reformatted by hand,
+      # and formatting generated files made them disagree with their
+      # generators once already.
       - name: Check formatting
         run: pnpm format:check
 
