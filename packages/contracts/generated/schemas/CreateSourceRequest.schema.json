@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/CreateSourceRequest.schema.json",
+  "title": "CreateSourceRequest",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "connector",
+    "board_key"
+  ],
+  "properties": {
+    "connector": {
+      "anyOf": [
+        {
+          "const": "greenhouse",
+          "type": "string"
+        },
+        {
+          "const": "lever",
+          "type": "string"
+        }
+      ]
+    },
+    "board_key": {
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^[A-Za-z0-9._-]+$",
+      "type": "string"
+    },
+    "base_url": {
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

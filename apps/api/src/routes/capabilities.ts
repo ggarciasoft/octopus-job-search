@@ -23,6 +23,9 @@ import { DEFERRED_OPERATIONS } from './index.js';
 const CREATING_OPERATION: Partial<Record<TaskType, string>> = {
   noop_echo: 'createDiagnosticTask',
   parse_profile: 'createProfileImport',
+  // M2: advertised automatically once these routes leave DEFERRED_OPERATIONS.
+  fetch_board: 'scanSource',
+  fetch_job: 'importJob',
 };
 
 export function enqueueableTaskTypes(): readonly TaskType[] {

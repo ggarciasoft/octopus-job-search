@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/JobSourceView.schema.json",
+  "title": "JobSourceView",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "id",
+    "source_id",
+    "connector",
+    "external_id",
+    "canonical_url",
+    "apply_url",
+    "retrieved_at"
+  ],
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "source_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "connector": {
+      "anyOf": [
+        {
+          "const": "greenhouse",
+          "type": "string"
+        },
+        {
+          "const": "lever",
+          "type": "string"
+        },
+        {
+          "const": "manual",
+          "type": "string"
+        },
+        {
+          "const": "url",
+          "type": "string"
+        }
+      ]
+    },
+    "external_id": {
+      "maxLength": 200,
+      "type": "string"
+    },
+    "canonical_url": {
+      "maxLength": 2000,
+      "type": "string"
+    },
+    "apply_url": {
+      "anyOf": [
+        {
+          "maxLength": 2000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "retrieved_at": {
+      "format": "date-time",
+      "type": "string"
+    }
+  }
+}

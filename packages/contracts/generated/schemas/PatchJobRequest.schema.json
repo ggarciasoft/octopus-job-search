@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/PatchJobRequest.schema.json",
+  "title": "PatchJobRequest",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "expected_revision"
+  ],
+  "properties": {
+    "expected_revision": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "saved": {
+      "type": "boolean"
+    },
+    "status": {
+      "const": "closed",
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/JobsListQuery.schema.json",
+  "title": "JobsListQuery",
+  "additionalProperties": false,
+  "type": "object",
+  "properties": {
+    "query": {
+      "maxLength": 200,
+      "type": "string"
+    },
+    "status": {
+      "anyOf": [
+        {
+          "const": "active",
+          "type": "string"
+        },
+        {
+          "const": "closed",
+          "type": "string"
+        },
+        {
+          "const": "unknown",
+          "type": "string"
+        }
+      ]
+    },
+    "min_score": {
+      "minimum": 0,
+      "maximum": 100,
+      "type": "integer"
+    },
+    "eligible": {
+      "anyOf": [
+        {
+          "const": "yes",
+          "type": "string"
+        },
+        {
+          "const": "no",
+          "type": "string"
+        },
+        {
+          "const": "unknown",
+          "type": "string"
+        }
+      ]
+    },
+    "include_excluded": {
+      "type": "boolean"
+    },
+    "saved": {
+      "type": "boolean"
+    },
+    "cursor": {
+      "type": "string"
+    },
+    "limit": {
+      "minimum": 1,
+      "maximum": 100,
+      "type": "integer"
+    }
+  }
+}

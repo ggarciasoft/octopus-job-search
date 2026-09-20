@@ -1,0 +1,190 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/SourceView.schema.json",
+  "title": "SourceView",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "id",
+    "connector",
+    "connector_version",
+    "board_key",
+    "base_url",
+    "enabled",
+    "last_success_at",
+    "last_scan_id",
+    "next_scan_after",
+    "health",
+    "job_count",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "connector": {
+      "anyOf": [
+        {
+          "const": "greenhouse",
+          "type": "string"
+        },
+        {
+          "const": "lever",
+          "type": "string"
+        },
+        {
+          "const": "manual",
+          "type": "string"
+        },
+        {
+          "const": "url",
+          "type": "string"
+        }
+      ]
+    },
+    "connector_version": {
+      "maxLength": 32,
+      "type": "string"
+    },
+    "board_key": {
+      "minLength": 1,
+      "maxLength": 200,
+      "type": "string"
+    },
+    "base_url": {
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "last_success_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "last_scan_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "next_scan_after": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "health": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "state",
+        "consecutive_failures",
+        "last_error_code",
+        "last_error_at",
+        "detail"
+      ],
+      "properties": {
+        "state": {
+          "anyOf": [
+            {
+              "const": "unknown",
+              "type": "string"
+            },
+            {
+              "const": "ok",
+              "type": "string"
+            },
+            {
+              "const": "degraded",
+              "type": "string"
+            },
+            {
+              "const": "blocked",
+              "type": "string"
+            },
+            {
+              "const": "disabled",
+              "type": "string"
+            }
+          ]
+        },
+        "consecutive_failures": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "last_error_code": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "last_error_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "detail": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "job_count": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "created_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "type": "string"
+    }
+  }
+}

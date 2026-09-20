@@ -38,6 +38,8 @@ export const ALL_TASK_TYPES = [
 export const IMPLEMENTED_TASK_TYPES = [
   'noop_echo',
   'parse_profile',
+  'fetch_board',
+  'fetch_job',
 ] as const satisfies readonly TaskType[];
 
 export const TaskState = Type.Union([

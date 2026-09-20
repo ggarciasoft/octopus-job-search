@@ -12,6 +12,6 @@ DEFAULT_MAX_ATTEMPTS: Final = 3
 ARTIFACT_STAGING_TTL_HOURS: Final = 24
 SETTINGS_VERSION: Final = 1
 MAX_UPLOAD_BYTES: Final = 10485760
-IMPLEMENTED_TASK_TYPES: Final = ("noop_echo", "parse_profile")
+IMPLEMENTED_TASK_TYPES: Final = ("noop_echo", "parse_profile", "fetch_board", "fetch_job")
 RUNNER_ONLY_CAPABILITIES: Final = ("fill_local",)
 NO_RETRY_TASK_TYPES: Final = ("fill_local",)

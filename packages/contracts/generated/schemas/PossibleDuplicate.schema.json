@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/PossibleDuplicate.schema.json",
+  "title": "PossibleDuplicate",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "job_id",
+    "reason",
+    "detail"
+  ],
+  "properties": {
+    "job_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "reason": {
+      "anyOf": [
+        {
+          "const": "same_apply_url",
+          "type": "string"
+        },
+        {
+          "const": "same_requisition",
+          "type": "string"
+        },
+        {
+          "const": "similar_title_and_location",
+          "type": "string"
+        }
+      ]
+    },
+    "detail": {
+      "maxLength": 300,
+      "type": "string"
+    }
+  }
+}

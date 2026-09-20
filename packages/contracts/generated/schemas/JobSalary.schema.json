@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/JobSalary.schema.json",
+  "title": "JobSalary",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "min",
+    "max",
+    "currency",
+    "period",
+    "source_excerpt"
+  ],
+  "properties": {
+    "min": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "max": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "currency": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Z]{3}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "period": {
+      "anyOf": [
+        {
+          "anyOf": [
+            {
+              "const": "year",
+              "type": "string"
+            },
+            {
+              "const": "month",
+              "type": "string"
+            },
+            {
+              "const": "week",
+              "type": "string"
+            },
+            {
+              "const": "day",
+              "type": "string"
+            },
+            {
+              "const": "hour",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "source_excerpt": {
+      "minLength": 1,
+      "maxLength": 300,
+      "type": "string"
+    }
+  }
+}

@@ -108,7 +108,12 @@ export async function loadMigrationsFromDisk(
   const files = entries.filter((entry) => entry.endsWith('.sql')).sort();
   const migrations: MigrationFile[] = [];
   for (const file of files) {
-    const sql = await readFile(join(directory, file), 'utf8');
+    // Normalise line endings before anything hashes or embeds the text. A
+    // .sql written on Windows after checkout is CRLF on disk while the
+    // repository blob (and a Linux checkout) is LF; without this the bundle
+    // and its checksum depended on which machine ran the generator, and the
+    // drift test failed on CI against a bundle that was correct on Windows.
+    const sql = (await readFile(join(directory, file), 'utf8')).replace(/\r\n/g, '\n');
     migrations.push({ name: file.replace(/\.sql$/, ''), sql, checksum: checksum(sql) });
   }
   return migrations;

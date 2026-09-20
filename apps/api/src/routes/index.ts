@@ -43,6 +43,17 @@ import type { RouteContext, RouteHandler } from './context.js';
  * pass — the list cannot rot silently.
  */
 export const DEFERRED_OPERATIONS: Readonly<Record<string, string>> = {
+  // --- Milestone M2: discovery (contracts landed; routes not yet built) ----
+  listSources: 'M2 — source registry',
+  createSource: 'M2 — source registry',
+  patchSource: 'M2 — source registry',
+  deleteSource: 'M2 — source registry',
+  scanSource: 'M2 — board scanning',
+  getScan: 'M2 — board scanning',
+  importJob: 'M2 — manual job import',
+  listJobs: 'M2 — job listing',
+  getJob: 'M2 — job detail',
+  patchJob: 'M2 — save/close a job',
   // --- Milestone M6: hosted authentication (needs email delivery) --------
   register: 'M6 — hosted invitation signup requires the email service',
   requestPasswordReset: 'M6 — password reset requires the email service',

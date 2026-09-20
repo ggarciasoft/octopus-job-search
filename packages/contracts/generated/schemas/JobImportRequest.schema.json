@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/JobImportRequest.schema.json",
+  "title": "JobImportRequest",
+  "additionalProperties": false,
+  "type": "object",
+  "properties": {
+    "url": {
+      "minLength": 8,
+      "maxLength": 2000,
+      "type": "string"
+    },
+    "description_text": {
+      "minLength": 20,
+      "maxLength": 200000,
+      "type": "string"
+    },
+    "company": {
+      "minLength": 1,
+      "maxLength": 200,
+      "type": "string"
+    },
+    "title": {
+      "minLength": 1,
+      "maxLength": 300,
+      "type": "string"
+    },
+    "apply_url": {
+      "maxLength": 2000,
+      "type": "string"
+    }
+  }
+}

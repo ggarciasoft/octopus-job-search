@@ -59,8 +59,11 @@ describe('generated JSON Schema documents', () => {
   it('emits one draft 2020-12 document per exported schema', () => {
     const artifacts = buildArtifacts();
     for (const name of Object.keys(EXPORTED_SCHEMAS)) {
+      // Match the whole basename, separator included: a bare suffix match let
+      // `SourceView` resolve to `JobSourceView.schema.json`. Keys carry the
+      // host's separator, so normalise before comparing.
       const path = [...artifacts.keys()].find((candidate) =>
-        candidate.endsWith(`${name}.schema.json`),
+        candidate.replace(/\\/g, '/').endsWith(`/${name}.schema.json`),
       );
       expect(path, `no document for ${name}`).toBeDefined();
       const document = JSON.parse(artifacts.get(path!)!) as Record<string, unknown>;
@@ -147,9 +150,12 @@ describe('generated Pydantic models', () => {
         expect(python.constants).toContain(`${name}: Final = (`);
       }
     }
-    expect(python.constants).toContain(
-      'IMPLEMENTED_TASK_TYPES: Final = ("noop_echo", "parse_profile")',
-    );
+    // Derived from the contract rather than hard-coded, so adding a task type
+    // does not turn this into a test of yesterday's list.
+    const implemented = (EXPORTED_CONSTANTS.IMPLEMENTED_TASK_TYPES as readonly string[])
+      .map((type) => `"${type}"`)
+      .join(', ');
+    expect(python.constants).toContain(`IMPLEMENTED_TASK_TYPES: Final = (${implemented})`);
     expect(python.constants).toContain('RUNNER_ONLY_CAPABILITIES: Final = ("fill_local",)');
   });
 

@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/InferredField.schema.json",
+  "title": "InferredField",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "field",
+    "source_excerpt"
+  ],
+  "properties": {
+    "field": {
+      "anyOf": [
+        {
+          "const": "remote_type",
+          "type": "string"
+        },
+        {
+          "const": "locations",
+          "type": "string"
+        },
+        {
+          "const": "eligible_countries",
+          "type": "string"
+        },
+        {
+          "const": "employment_type",
+          "type": "string"
+        },
+        {
+          "const": "salary",
+          "type": "string"
+        },
+        {
+          "const": "language",
+          "type": "string"
+        },
+        {
+          "const": "requirements",
+          "type": "string"
+        }
+      ]
+    },
+    "source_excerpt": {
+      "minLength": 1,
+      "maxLength": 600,
+      "type": "string"
+    }
+  }
+}

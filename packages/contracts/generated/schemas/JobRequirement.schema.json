@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/JobRequirement.schema.json",
+  "title": "JobRequirement",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "text",
+    "kind",
+    "evidence_excerpt"
+  ],
+  "properties": {
+    "text": {
+      "minLength": 1,
+      "maxLength": 600,
+      "type": "string"
+    },
+    "kind": {
+      "anyOf": [
+        {
+          "const": "required",
+          "type": "string"
+        },
+        {
+          "const": "preferred",
+          "type": "string"
+        },
+        {
+          "const": "unknown",
+          "type": "string"
+        }
+      ]
+    },
+    "evidence_excerpt": {
+      "minLength": 1,
+      "maxLength": 600,
+      "type": "string"
+    }
+  }
+}

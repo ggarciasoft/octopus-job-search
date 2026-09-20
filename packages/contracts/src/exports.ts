@@ -5,6 +5,8 @@ import * as Files from './schemas/files.js';
 import * as Preferences from './schemas/preferences.js';
 import * as Profile from './schemas/profile.js';
 import * as Providers from './schemas/providers.js';
+import * as Jobs from './schemas/jobs.js';
+import * as FetchBoard from './tasks/fetch-board.js';
 import * as NoopEcho from './tasks/noop-echo.js';
 import * as ParseProfile from './tasks/parse-profile.js';
 import * as Protocol from './tasks/protocol.js';
@@ -18,6 +20,8 @@ import * as Registry from './tasks/registry.js';
 export const TASK_IO_SCHEMAS: Record<string, { input: TSchema; output: TSchema }> = {
   noop_echo: { input: NoopEcho.NoopEchoInput, output: NoopEcho.NoopEchoResult },
   parse_profile: { input: ParseProfile.ParseProfileInput, output: ParseProfile.ParseProfileResult },
+  fetch_board: { input: FetchBoard.FetchBoardInput, output: FetchBoard.FetchBoardResult },
+  fetch_job: { input: FetchBoard.FetchJobInput, output: FetchBoard.FetchJobResult },
 };
 
 /**
@@ -92,6 +96,33 @@ export const EXPORTED_SCHEMAS: Record<string, TSchema> = {
   ProfileImportView: ParseProfile.ProfileImportView,
   CreateProfileImportRequest: ParseProfile.CreateProfileImportRequest,
   ConfirmImportRequest: ParseProfile.ConfirmImportRequest,
+
+  // --- M2 discovery ---
+  JobLocation: Jobs.JobLocation,
+  JobSalary: Jobs.JobSalary,
+  JobRequirement: Jobs.JobRequirement,
+  InferredField: Jobs.InferredField,
+  NormalizedJob: Jobs.NormalizedJob,
+  SourceHealth: Jobs.SourceHealth,
+  SourceView: Jobs.SourceView,
+  CreateSourceRequest: Jobs.CreateSourceRequest,
+  PatchSourceRequest: Jobs.PatchSourceRequest,
+  ScanCounts: Jobs.ScanCounts,
+  ScanView: Jobs.ScanView,
+  JobSourceView: Jobs.JobSourceView,
+  PossibleDuplicate: Jobs.PossibleDuplicate,
+  MatchSummary: Jobs.MatchSummary,
+  JobView: Jobs.JobView,
+  JobDetailView: Jobs.JobDetailView,
+  JobsListQuery: Jobs.JobsListQuery,
+  JobImportRequest: Jobs.JobImportRequest,
+  PatchJobRequest: Jobs.PatchJobRequest,
+  FetchLimits: FetchBoard.FetchLimits,
+  FetchWarning: FetchBoard.FetchWarning,
+  FetchBoardInput: FetchBoard.FetchBoardInput,
+  FetchBoardResult: FetchBoard.FetchBoardResult,
+  FetchJobInput: FetchBoard.FetchJobInput,
+  FetchJobResult: FetchBoard.FetchJobResult,
 };
 
 /** Enumerations mirrored into Python so there is one source of truth. */
@@ -102,6 +133,8 @@ export const EXPORTED_ENUMS: Record<string, readonly string[]> = {
   EmploymentType: Profile.ALL_EMPLOYMENT_TYPES,
   FilePurpose: Files.ALL_FILE_PURPOSES,
   ProviderId: Providers.ALL_PROVIDER_IDS,
+  ConnectorId: Jobs.ALL_CONNECTOR_IDS,
+  JobStatus: Jobs.ALL_JOB_STATUSES,
 };
 
 /** Shared numeric constants that must not diverge between runtimes. */

@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/FetchLimits.schema.json",
+  "title": "FetchLimits",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "max_jobs",
+    "max_pages",
+    "timeout_seconds",
+    "min_request_interval_ms"
+  ],
+  "properties": {
+    "max_jobs": {
+      "minimum": 1,
+      "maximum": 1000,
+      "type": "integer"
+    },
+    "max_pages": {
+      "minimum": 1,
+      "maximum": 100,
+      "type": "integer"
+    },
+    "timeout_seconds": {
+      "minimum": 1,
+      "maximum": 120,
+      "type": "integer"
+    },
+    "min_request_interval_ms": {
+      "minimum": 1000,
+      "type": "integer"
+    }
+  }
+}

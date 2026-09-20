@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/FetchJobInput.schema.json",
+  "title": "FetchJobInput",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "job_import_id",
+    "url",
+    "description_text",
+    "company_hint",
+    "title_hint",
+    "apply_url_hint",
+    "policy"
+  ],
+  "properties": {
+    "job_import_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "url": {
+      "anyOf": [
+        {
+          "maxLength": 2000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "description_text": {
+      "anyOf": [
+        {
+          "maxLength": 200000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "company_hint": {
+      "anyOf": [
+        {
+          "maxLength": 200,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "title_hint": {
+      "anyOf": [
+        {
+          "maxLength": 300,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "apply_url_hint": {
+      "anyOf": [
+        {
+          "maxLength": 2000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "policy": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "max_redirects",
+        "max_html_bytes",
+        "timeout_seconds"
+      ],
+      "properties": {
+        "max_redirects": {
+          "minimum": 0,
+          "maximum": 3,
+          "type": "integer"
+        },
+        "max_html_bytes": {
+          "minimum": 1024,
+          "maximum": 2097152,
+          "type": "integer"
+        },
+        "timeout_seconds": {
+          "minimum": 1,
+          "maximum": 20,
+          "type": "integer"
+        }
+      }
+    }
+  }
+}

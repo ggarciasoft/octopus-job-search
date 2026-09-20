@@ -1,0 +1,423 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/NormalizedJob.schema.json",
+  "title": "NormalizedJob",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "external_id",
+    "source_key",
+    "canonical_url",
+    "apply_url",
+    "company",
+    "title",
+    "description_text",
+    "published_at",
+    "updated_at",
+    "locations",
+    "remote_type",
+    "eligible_countries",
+    "employment_type",
+    "salary",
+    "language",
+    "requirements",
+    "inferred",
+    "content_hash",
+    "retrieved_at"
+  ],
+  "properties": {
+    "external_id": {
+      "minLength": 1,
+      "maxLength": 200,
+      "type": "string"
+    },
+    "source_key": {
+      "minLength": 1,
+      "maxLength": 500,
+      "type": "string"
+    },
+    "canonical_url": {
+      "minLength": 1,
+      "maxLength": 2000,
+      "type": "string"
+    },
+    "apply_url": {
+      "anyOf": [
+        {
+          "maxLength": 2000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "company": {
+      "minLength": 1,
+      "maxLength": 200,
+      "type": "string"
+    },
+    "title": {
+      "minLength": 1,
+      "maxLength": 300,
+      "type": "string"
+    },
+    "description_text": {
+      "minLength": 1,
+      "maxLength": 200000,
+      "type": "string"
+    },
+    "published_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "updated_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "locations": {
+      "maxItems": 50,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "country",
+          "region",
+          "city",
+          "source_excerpt"
+        ],
+        "properties": {
+          "country": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Z]{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "region": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "city": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_excerpt": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "remote_type": {
+      "anyOf": [
+        {
+          "const": "remote",
+          "type": "string"
+        },
+        {
+          "const": "hybrid",
+          "type": "string"
+        },
+        {
+          "const": "onsite",
+          "type": "string"
+        },
+        {
+          "const": "unknown",
+          "type": "string"
+        }
+      ]
+    },
+    "eligible_countries": {
+      "anyOf": [
+        {
+          "maxItems": 250,
+          "type": "array",
+          "items": {
+            "pattern": "^[A-Z]{2}$",
+            "type": "string"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "employment_type": {
+      "anyOf": [
+        {
+          "anyOf": [
+            {
+              "const": "full_time",
+              "type": "string"
+            },
+            {
+              "const": "part_time",
+              "type": "string"
+            },
+            {
+              "const": "contract",
+              "type": "string"
+            },
+            {
+              "const": "internship",
+              "type": "string"
+            },
+            {
+              "const": "temporary",
+              "type": "string"
+            },
+            {
+              "const": "freelance",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "salary": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "min",
+            "max",
+            "currency",
+            "period",
+            "source_excerpt"
+          ],
+          "properties": {
+            "min": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "max": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "currency": {
+              "anyOf": [
+                {
+                  "pattern": "^[A-Z]{3}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "period": {
+              "anyOf": [
+                {
+                  "anyOf": [
+                    {
+                      "const": "year",
+                      "type": "string"
+                    },
+                    {
+                      "const": "month",
+                      "type": "string"
+                    },
+                    {
+                      "const": "week",
+                      "type": "string"
+                    },
+                    {
+                      "const": "day",
+                      "type": "string"
+                    },
+                    {
+                      "const": "hour",
+                      "type": "string"
+                    }
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source_excerpt": {
+              "minLength": 1,
+              "maxLength": 300,
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "language": {
+      "anyOf": [
+        {
+          "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "requirements": {
+      "maxItems": 200,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "text",
+          "kind",
+          "evidence_excerpt"
+        ],
+        "properties": {
+          "text": {
+            "minLength": 1,
+            "maxLength": 600,
+            "type": "string"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "const": "required",
+                "type": "string"
+              },
+              {
+                "const": "preferred",
+                "type": "string"
+              },
+              {
+                "const": "unknown",
+                "type": "string"
+              }
+            ]
+          },
+          "evidence_excerpt": {
+            "minLength": 1,
+            "maxLength": 600,
+            "type": "string"
+          }
+        }
+      }
+    },
+    "inferred": {
+      "maxItems": 20,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "field",
+          "source_excerpt"
+        ],
+        "properties": {
+          "field": {
+            "anyOf": [
+              {
+                "const": "remote_type",
+                "type": "string"
+              },
+              {
+                "const": "locations",
+                "type": "string"
+              },
+              {
+                "const": "eligible_countries",
+                "type": "string"
+              },
+              {
+                "const": "employment_type",
+                "type": "string"
+              },
+              {
+                "const": "salary",
+                "type": "string"
+              },
+              {
+                "const": "language",
+                "type": "string"
+              },
+              {
+                "const": "requirements",
+                "type": "string"
+              }
+            ]
+          },
+          "source_excerpt": {
+            "minLength": 1,
+            "maxLength": 600,
+            "type": "string"
+          }
+        }
+      }
+    },
+    "content_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "retrieved_at": {
+      "format": "date-time",
+      "type": "string"
+    }
+  }
+}

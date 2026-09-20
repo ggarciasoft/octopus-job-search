@@ -384,7 +384,16 @@ describe('GET /me reports capabilities honestly (invariant 10)', () => {
     const body = response.json();
     expect(Value.Check(MeResponse, body)).toBe(true);
 
-    expect(body.capabilities.implemented_task_types).toEqual([...IMPLEMENTED_TASK_TYPES]);
+    // The advertised list is the contract's IMPLEMENTED_TASK_TYPES intersected
+    // with the task types a *registered* route can create. A worker handler
+    // alone is not a capability the user can reach. M2's contracts landed
+    // before its routes, so fetch_board/fetch_job exist in the contract but
+    // must not be advertised until scanSource/importJob stop being deferred.
+    const advertised: string[] = body.capabilities.implemented_task_types;
+    for (const type of advertised) expect(IMPLEMENTED_TASK_TYPES).toContain(type);
+    expect(advertised).toEqual(expect.arrayContaining(['noop_echo', 'parse_profile']));
+    expect(advertised).not.toContain('fetch_board');
+    expect(advertised).not.toContain('fetch_job');
     // M1 landed: the profile import routes exist, so this flag is now true and
     // `parse_profile` appears above. Everything beyond M1 must still be false.
     expect(body.capabilities.profile_import).toBe(true);

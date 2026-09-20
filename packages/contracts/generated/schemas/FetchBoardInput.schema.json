@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/FetchBoardInput.schema.json",
+  "title": "FetchBoardInput",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "scan_id",
+    "source_id",
+    "connector",
+    "connector_version",
+    "board_key",
+    "base_url",
+    "etag",
+    "last_modified",
+    "limits"
+  ],
+  "properties": {
+    "scan_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "source_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "connector": {
+      "anyOf": [
+        {
+          "const": "greenhouse",
+          "type": "string"
+        },
+        {
+          "const": "lever",
+          "type": "string"
+        }
+      ]
+    },
+    "connector_version": {
+      "minLength": 1,
+      "maxLength": 32,
+      "type": "string"
+    },
+    "board_key": {
+      "minLength": 1,
+      "maxLength": 200,
+      "type": "string"
+    },
+    "base_url": {
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "etag": {
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "last_modified": {
+      "anyOf": [
+        {
+          "maxLength": 100,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "limits": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "max_jobs",
+        "max_pages",
+        "timeout_seconds",
+        "min_request_interval_ms"
+      ],
+      "properties": {
+        "max_jobs": {
+          "minimum": 1,
+          "maximum": 1000,
+          "type": "integer"
+        },
+        "max_pages": {
+          "minimum": 1,
+          "maximum": 100,
+          "type": "integer"
+        },
+        "timeout_seconds": {
+          "minimum": 1,
+          "maximum": 120,
+          "type": "integer"
+        },
+        "min_request_interval_ms": {
+          "minimum": 1000,
+          "type": "integer"
+        }
+      }
+    }
+  }
+}

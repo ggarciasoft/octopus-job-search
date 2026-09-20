@@ -3,11 +3,18 @@ import type {
   AcceptedResponse,
   ConfirmImportRequest,
   CreateProfileImportRequest,
+  CreateSourceRequest,
   ErrorCode,
   FileUploadResponse,
+  JobDetailView,
+  JobImportRequest,
+  JobView,
+  JobsListQuery,
   LoginRequest,
   MeResponse,
   NoopEchoInput,
+  PatchJobRequest,
+  PatchSourceRequest,
   PreferencesPutRequest,
   PreferencesView,
   Profile,
@@ -17,8 +24,10 @@ import type {
   ProviderSettingsView,
   ProviderTestResult,
   RegisterRequest,
+  ScanView,
   SetupRequest,
   SetupStatus,
+  SourceView,
   TaskView,
 } from '@job-getter/contracts';
 
@@ -455,6 +464,127 @@ export class JobGetterApiClient {
       signal: args.signal,
     });
   }
+
+  /** Configured boards with health and last-scan state. (`GET /api/v1/sources`) */
+  listSources(args: ListSourcesArgs = {}): Promise<ListSourcesResult> {
+    return this.#request<ListSourcesResult>({
+      method: 'GET',
+      prefix: API_PREFIX,
+      path: '/sources',
+      signal: args.signal,
+    });
+  }
+
+  /** Register a Greenhouse board token or Lever site slug. (`POST /api/v1/sources`) */
+  createSource(args: CreateSourceArgs): Promise<CreateSourceResult> {
+    return this.#request<CreateSourceResult>({
+      method: 'POST',
+      prefix: API_PREFIX,
+      path: '/sources',
+      json: args.body,
+      csrf: true,
+      signal: args.signal,
+    });
+  }
+
+  /** Enable, disable or reconfigure a source; jobs are kept. (`PATCH /api/v1/sources/:id`) */
+  patchSource(args: PatchSourceArgs): Promise<PatchSourceResult> {
+    return this.#request<PatchSourceResult>({
+      method: 'PATCH',
+      prefix: API_PREFIX,
+      path: '/sources/:id',
+      params: args.params,
+      json: args.body,
+      csrf: true,
+      signal: args.signal,
+    });
+  }
+
+  /** Remove a source; historical jobs and provenance are kept. (`DELETE /api/v1/sources/:id`) */
+  deleteSource(args: DeleteSourceArgs): Promise<DeleteSourceResult> {
+    return this.#request<DeleteSourceResult>({
+      method: 'DELETE',
+      prefix: API_PREFIX,
+      path: '/sources/:id',
+      params: args.params,
+      csrf: true,
+      noContent: true,
+      signal: args.signal,
+    });
+  }
+
+  /** Queue a fetch of this board now. (`POST /api/v1/sources/:id/scan`) */
+  scanSource(args: ScanSourceArgs): Promise<ScanSourceResult> {
+    return this.#request<ScanSourceResult>({
+      method: 'POST',
+      prefix: API_PREFIX,
+      path: '/sources/:id/scan',
+      params: args.params,
+      json: {},
+      csrf: true,
+      idempotencyKey: args.idempotencyKey,
+      signal: args.signal,
+    });
+  }
+
+  /** One scan: status, counts, whether the snapshot was complete. (`GET /api/v1/scans/:id`) */
+  getScan(args: GetScanArgs): Promise<GetScanResult> {
+    return this.#request<GetScanResult>({
+      method: 'GET',
+      prefix: API_PREFIX,
+      path: '/scans/:id',
+      params: args.params,
+      signal: args.signal,
+    });
+  }
+
+  /** Import a job from a public URL or pasted description. (`POST /api/v1/jobs/import`) */
+  importJob(args: ImportJobArgs): Promise<ImportJobResult> {
+    return this.#request<ImportJobResult>({
+      method: 'POST',
+      prefix: API_PREFIX,
+      path: '/jobs/import',
+      json: args.body,
+      csrf: true,
+      idempotencyKey: args.idempotencyKey,
+      signal: args.signal,
+    });
+  }
+
+  /** Jobs with provenance and the current match marker. (`GET /api/v1/jobs`) */
+  listJobs(args: ListJobsArgs = {}): Promise<ListJobsResult> {
+    return this.#request<ListJobsResult>({
+      method: 'GET',
+      prefix: API_PREFIX,
+      path: '/jobs',
+      query: args.query,
+      signal: args.signal,
+    });
+  }
+
+  /** Normalised job, requirements with evidence, provenance, duplicates. (`GET /api/v1/jobs/:id`) */
+  getJob(args: GetJobArgs): Promise<GetJobResult> {
+    return this.#request<GetJobResult>({
+      method: 'GET',
+      prefix: API_PREFIX,
+      path: '/jobs/:id',
+      params: args.params,
+      signal: args.signal,
+    });
+  }
+
+  /** Save, unsave or explicitly close a job. (`PATCH /api/v1/jobs/:id`) */
+  patchJob(args: PatchJobArgs): Promise<PatchJobResult> {
+    return this.#request<PatchJobResult>({
+      method: 'PATCH',
+      prefix: API_PREFIX,
+      path: '/jobs/:id',
+      params: args.params,
+      json: args.body,
+      csrf: true,
+      signal: args.signal,
+    });
+  }
 }
 
 /** Arguments for `GET /api/v1/setup`. */
@@ -688,3 +818,109 @@ export interface CreateDiagnosticTaskArgs {
 
 /** Result of `createDiagnosticTask`. */
 export type CreateDiagnosticTaskResult = AcceptedResponse;
+
+/** Arguments for `GET /api/v1/sources`. */
+export interface ListSourcesArgs {
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `listSources`. */
+export type ListSourcesResult = { items: Array<SourceView>; next_cursor: string | null };
+
+/** Arguments for `POST /api/v1/sources`. */
+export interface CreateSourceArgs {
+  /** JSON request body. */
+  readonly body: CreateSourceRequest;
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `createSource`. */
+export type CreateSourceResult = SourceView;
+
+/** Arguments for `PATCH /api/v1/sources/:id`. */
+export interface PatchSourceArgs {
+  /** Path parameters. */
+  readonly params: { id: string };
+  /** JSON request body. */
+  readonly body: PatchSourceRequest;
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `patchSource`. */
+export type PatchSourceResult = SourceView;
+
+/** Arguments for `DELETE /api/v1/sources/:id`. */
+export interface DeleteSourceArgs {
+  /** Path parameters. */
+  readonly params: { id: string };
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `deleteSource`. */
+export type DeleteSourceResult = void;
+
+/** Arguments for `POST /api/v1/sources/:id/scan`. */
+export interface ScanSourceArgs {
+  /** Path parameters. */
+  readonly params: { id: string };
+  /** Required: sent as the `Idempotency-Key` header (04_API_CONTRACTS.md). */
+  readonly idempotencyKey: string;
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `scanSource`. */
+export type ScanSourceResult = AcceptedResponse;
+
+/** Arguments for `GET /api/v1/scans/:id`. */
+export interface GetScanArgs {
+  /** Path parameters. */
+  readonly params: { id: string };
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `getScan`. */
+export type GetScanResult = ScanView;
+
+/** Arguments for `POST /api/v1/jobs/import`. */
+export interface ImportJobArgs {
+  /** JSON request body. */
+  readonly body: JobImportRequest;
+  /** Required: sent as the `Idempotency-Key` header (04_API_CONTRACTS.md). */
+  readonly idempotencyKey: string;
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `importJob`. */
+export type ImportJobResult = AcceptedResponse;
+
+/** Arguments for `GET /api/v1/jobs`. */
+export interface ListJobsArgs {
+  /** Query string parameters. */
+  readonly query?: JobsListQuery;
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `listJobs`. */
+export type ListJobsResult = { items: Array<JobView>; next_cursor: string | null };
+
+/** Arguments for `GET /api/v1/jobs/:id`. */
+export interface GetJobArgs {
+  /** Path parameters. */
+  readonly params: { id: string };
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `getJob`. */
+export type GetJobResult = JobDetailView;
+
+/** Arguments for `PATCH /api/v1/jobs/:id`. */
+export interface PatchJobArgs {
+  /** Path parameters. */
+  readonly params: { id: string };
+  /** JSON request body. */
+  readonly body: PatchJobRequest;
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `patchJob`. */
+export type PatchJobResult = JobView;

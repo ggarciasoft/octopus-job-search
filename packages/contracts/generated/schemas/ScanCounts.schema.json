@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ScanCounts.schema.json",
+  "title": "ScanCounts",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "fetched",
+    "created",
+    "updated",
+    "unchanged",
+    "closed",
+    "pages"
+  ],
+  "properties": {
+    "fetched": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "created": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "updated": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "unchanged": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "closed": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "pages": {
+      "minimum": 0,
+      "type": "integer"
+    }
+  }
+}

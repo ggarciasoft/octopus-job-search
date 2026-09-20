@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/FetchWarning.schema.json",
+  "title": "FetchWarning",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "code",
+    "message"
+  ],
+  "properties": {
+    "code": {
+      "anyOf": [
+        {
+          "const": "RATE_LIMITED",
+          "type": "string"
+        },
+        {
+          "const": "ACCESS_DENIED",
+          "type": "string"
+        },
+        {
+          "const": "NOT_MODIFIED",
+          "type": "string"
+        },
+        {
+          "const": "PAGE_LIMIT_REACHED",
+          "type": "string"
+        },
+        {
+          "const": "JOB_LIMIT_REACHED",
+          "type": "string"
+        },
+        {
+          "const": "SCHEMA_DRIFT",
+          "type": "string"
+        },
+        {
+          "const": "ROBOTS_DISALLOWED",
+          "type": "string"
+        },
+        {
+          "const": "BLOCKED_DESTINATION",
+          "type": "string"
+        },
+        {
+          "const": "REDIRECT_LIMIT",
+          "type": "string"
+        },
+        {
+          "const": "CONTENT_TYPE_REJECTED",
+          "type": "string"
+        },
+        {
+          "const": "BODY_TRUNCATED",
+          "type": "string"
+        },
+        {
+          "const": "NO_STRUCTURED_DATA",
+          "type": "string"
+        },
+        {
+          "const": "MULTIPLE_POSTINGS",
+          "type": "string"
+        },
+        {
+          "const": "FIELD_INFERRED",
+          "type": "string"
+        },
+        {
+          "const": "FIELD_DROPPED_INVALID",
+          "type": "string"
+        }
+      ]
+    },
+    "message": {
+      "maxLength": 500,
+      "type": "string"
+    },
+    "detail": {
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

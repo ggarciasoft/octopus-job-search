@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/SourceHealth.schema.json",
+  "title": "SourceHealth",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "state",
+    "consecutive_failures",
+    "last_error_code",
+    "last_error_at",
+    "detail"
+  ],
+  "properties": {
+    "state": {
+      "anyOf": [
+        {
+          "const": "unknown",
+          "type": "string"
+        },
+        {
+          "const": "ok",
+          "type": "string"
+        },
+        {
+          "const": "degraded",
+          "type": "string"
+        },
+        {
+          "const": "blocked",
+          "type": "string"
+        },
+        {
+          "const": "disabled",
+          "type": "string"
+        }
+      ]
+    },
+    "consecutive_failures": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "last_error_code": {
+      "anyOf": [
+        {
+          "maxLength": 64,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "last_error_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "detail": {
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

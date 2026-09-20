@@ -61,3 +61,16 @@ class ProviderId(StrEnum):
     FAKE = "fake"
     OLLAMA = "ollama"
     OPENAI_COMPATIBLE = "openai_compatible"
+
+
+class ConnectorId(StrEnum):
+    GREENHOUSE = "greenhouse"
+    LEVER = "lever"
+    MANUAL = "manual"
+    URL = "url"
+
+
+class JobStatus(StrEnum):
+    ACTIVE = "active"
+    CLOSED = "closed"
+    UNKNOWN = "unknown"

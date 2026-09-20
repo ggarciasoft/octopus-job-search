@@ -864,3 +864,392 @@ class ConfirmImportRequest(BaseModel):
 
     expected_profile_revision: Annotated[int, Field(ge=1)]
     accepted_fields: Annotated[list[ConfirmImportRequestAcceptedFieldsItem], Field(max_length=500)]
+
+
+class JobLocation(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    country: Annotated[str, Field(pattern=r"^[A-Z]{2}$")] | None
+    region: Annotated[str, Field(max_length=120)] | None
+    city: Annotated[str, Field(max_length=120)] | None
+    source_excerpt: Annotated[str, Field(max_length=300)] | None
+
+
+class JobSalary(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    min: Annotated[float, Field(ge=0)] | None
+    max: Annotated[float, Field(ge=0)] | None
+    currency: Annotated[str, Field(pattern=r"^[A-Z]{3}$")] | None
+    period: Literal["year", "month", "week", "day", "hour"] | None
+    source_excerpt: Annotated[str, Field(min_length=1, max_length=300)]
+
+
+class JobRequirement(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    text: Annotated[str, Field(min_length=1, max_length=600)]
+    kind: Literal["required", "preferred", "unknown"]
+    evidence_excerpt: Annotated[str, Field(min_length=1, max_length=600)]
+
+
+class InferredField(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    field: Literal[
+        "remote_type",
+        "locations",
+        "eligible_countries",
+        "employment_type",
+        "salary",
+        "language",
+        "requirements"
+    ]
+    source_excerpt: Annotated[str, Field(min_length=1, max_length=600)]
+
+
+class NormalizedJob(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    external_id: Annotated[str, Field(min_length=1, max_length=200)]
+    source_key: Annotated[str, Field(min_length=1, max_length=500)]
+    canonical_url: Annotated[str, Field(min_length=1, max_length=2000)]
+    apply_url: Annotated[str, Field(max_length=2000)] | None
+    company: Annotated[str, Field(min_length=1, max_length=200)]
+    title: Annotated[str, Field(min_length=1, max_length=300)]
+    description_text: Annotated[str, Field(min_length=1, max_length=200000)]
+    published_at: TimestampString | None
+    updated_at: TimestampString | None
+    locations: Annotated[list[JobLocation], Field(max_length=50)]
+    remote_type: Literal["remote", "hybrid", "onsite", "unknown"]
+    eligible_countries: Annotated[
+        list[Annotated[str, Field(pattern=r"^[A-Z]{2}$")]],
+        Field(max_length=250)
+    ] | None
+    employment_type: Literal[
+        "full_time",
+        "part_time",
+        "contract",
+        "internship",
+        "temporary",
+        "freelance"
+    ] | None
+    salary: JobSalary | None
+    language: Annotated[str, Field(pattern=r"^[a-z]{2}(-[A-Z]{2})?$")] | None
+    requirements: Annotated[list[JobRequirement], Field(max_length=200)]
+    inferred: Annotated[list[InferredField], Field(max_length=20)]
+    content_hash: Annotated[str, Field(pattern=r"^[a-f0-9]{64}$")]
+    retrieved_at: TimestampString
+
+
+class SourceHealth(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    state: Literal["unknown", "ok", "degraded", "blocked", "disabled"]
+    consecutive_failures: Annotated[int, Field(ge=0)]
+    last_error_code: Annotated[str, Field(max_length=64)] | None
+    last_error_at: TimestampString | None
+    detail: Annotated[str, Field(max_length=500)] | None
+
+
+class SourceView(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: UuidString
+    connector: Literal["greenhouse", "lever", "manual", "url"]
+    connector_version: Annotated[str, Field(max_length=32)]
+    board_key: Annotated[str, Field(min_length=1, max_length=200)]
+    base_url: Annotated[str, Field(max_length=500)] | None
+    enabled: bool
+    last_success_at: TimestampString | None
+    last_scan_id: UuidString | None
+    next_scan_after: TimestampString | None
+    health: SourceHealth
+    job_count: Annotated[int, Field(ge=0)]
+    created_at: TimestampString
+    updated_at: TimestampString
+
+
+class CreateSourceRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    connector: Literal["greenhouse", "lever"]
+    board_key: Annotated[str, Field(min_length=1, max_length=200, pattern=r"^[A-Za-z0-9._-]+$")]
+    base_url: Annotated[str, Field(max_length=500)] | None = None
+
+
+class PatchSourceRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool | None = None
+    base_url: Annotated[str, Field(max_length=500)] | None = None
+
+
+class ScanCounts(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    fetched: Annotated[int, Field(ge=0)]
+    created: Annotated[int, Field(ge=0)]
+    updated: Annotated[int, Field(ge=0)]
+    unchanged: Annotated[int, Field(ge=0)]
+    closed: Annotated[int, Field(ge=0)]
+    pages: Annotated[int, Field(ge=0)]
+
+
+class ScanView(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: UuidString
+    source_id: UuidString
+    task_id: UuidString | None
+    status: Literal["queued", "running", "succeeded", "partial", "failed", "cancelled"]
+    complete_snapshot: bool
+    counts: ScanCounts
+    error_code: Annotated[str, Field(max_length=64)] | None
+    error_message: Annotated[str, Field(max_length=500)] | None
+    started_at: TimestampString | None
+    completed_at: TimestampString | None
+    created_at: TimestampString
+
+
+class JobSourceView(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: UuidString
+    source_id: UuidString | None
+    connector: Literal["greenhouse", "lever", "manual", "url"]
+    external_id: Annotated[str, Field(max_length=200)]
+    canonical_url: Annotated[str, Field(max_length=2000)]
+    apply_url: Annotated[str, Field(max_length=2000)] | None
+    retrieved_at: TimestampString
+
+
+class PossibleDuplicate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    job_id: UuidString
+    reason: Literal["same_apply_url", "same_requisition", "similar_title_and_location"]
+    detail: Annotated[str, Field(max_length=300)]
+
+
+class MatchSummary(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    match_id: UuidString
+    eligible: Literal["yes", "no", "unknown"]
+    score: Annotated[int, Field(ge=0, le=100)] | None
+    coverage_percent: Annotated[int, Field(ge=0, le=100)]
+    algorithm_version: Annotated[str, Field(max_length=16)]
+    stale: bool
+    computed_at: TimestampString
+
+
+class JobView(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: UuidString
+    canonical_key: Annotated[str, Field(max_length=500)]
+    company: Annotated[str, Field(max_length=200)]
+    title: Annotated[str, Field(max_length=300)]
+    status: Literal["active", "closed", "unknown"]
+    remote_type: Literal["remote", "hybrid", "onsite", "unknown"]
+    locations: list[JobLocation]
+    eligible_countries: list[Annotated[str, Field(pattern=r"^[A-Z]{2}$")]] | None
+    employment_type: Literal[
+        "full_time",
+        "part_time",
+        "contract",
+        "internship",
+        "temporary",
+        "freelance"
+    ] | None
+    salary: JobSalary | None
+    language: str | None
+    published_at: TimestampString | None
+    first_seen_at: TimestampString
+    last_seen_at: TimestampString
+    last_fetched_at: TimestampString | None
+    revision: Annotated[int, Field(ge=1)]
+    saved: bool
+    excluded_reason: Annotated[str, Field(max_length=200)] | None
+    sources: list[JobSourceView]
+    match: MatchSummary | None
+    possible_duplicates: list[PossibleDuplicate]
+
+
+class JobDetailView(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: UuidString
+    canonical_key: Annotated[str, Field(max_length=500)]
+    company: Annotated[str, Field(max_length=200)]
+    title: Annotated[str, Field(max_length=300)]
+    status: Literal["active", "closed", "unknown"]
+    remote_type: Literal["remote", "hybrid", "onsite", "unknown"]
+    locations: list[JobLocation]
+    eligible_countries: list[Annotated[str, Field(pattern=r"^[A-Z]{2}$")]] | None
+    employment_type: Literal[
+        "full_time",
+        "part_time",
+        "contract",
+        "internship",
+        "temporary",
+        "freelance"
+    ] | None
+    salary: JobSalary | None
+    language: str | None
+    published_at: TimestampString | None
+    first_seen_at: TimestampString
+    last_seen_at: TimestampString
+    last_fetched_at: TimestampString | None
+    revision: Annotated[int, Field(ge=1)]
+    saved: bool
+    excluded_reason: Annotated[str, Field(max_length=200)] | None
+    sources: list[JobSourceView]
+    match: MatchSummary | None
+    possible_duplicates: list[PossibleDuplicate]
+    description_text: str
+    requirements: list[JobRequirement]
+    inferred: list[InferredField]
+    content_hash: Annotated[str, Field(pattern=r"^[a-f0-9]{64}$")]
+
+
+class JobsListQuery(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    query: Annotated[str, Field(max_length=200)] | None = None
+    status: Literal["active", "closed", "unknown"] | None = None
+    min_score: Annotated[int, Field(ge=0, le=100)] | None = None
+    eligible: Literal["yes", "no", "unknown"] | None = None
+    include_excluded: bool | None = None
+    saved: bool | None = None
+    cursor: str | None = None
+    limit: Annotated[int, Field(ge=1, le=100)] | None = None
+
+
+class JobImportRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    url: Annotated[str, Field(min_length=8, max_length=2000)] | None = None
+    description_text: Annotated[str, Field(min_length=20, max_length=200000)] | None = None
+    company: Annotated[str, Field(min_length=1, max_length=200)] | None = None
+    title: Annotated[str, Field(min_length=1, max_length=300)] | None = None
+    apply_url: Annotated[str, Field(max_length=2000)] | None = None
+
+
+class PatchJobRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    expected_revision: Annotated[int, Field(ge=1)]
+    saved: bool | None = None
+    status: Literal["closed"] | None = None
+
+
+class FetchLimits(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    max_jobs: Annotated[int, Field(ge=1, le=1000)]
+    max_pages: Annotated[int, Field(ge=1, le=100)]
+    timeout_seconds: Annotated[int, Field(ge=1, le=120)]
+    min_request_interval_ms: Annotated[int, Field(ge=1000)]
+
+
+class FetchWarning(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    code: Literal[
+        "RATE_LIMITED",
+        "ACCESS_DENIED",
+        "NOT_MODIFIED",
+        "PAGE_LIMIT_REACHED",
+        "JOB_LIMIT_REACHED",
+        "SCHEMA_DRIFT",
+        "ROBOTS_DISALLOWED",
+        "BLOCKED_DESTINATION",
+        "REDIRECT_LIMIT",
+        "CONTENT_TYPE_REJECTED",
+        "BODY_TRUNCATED",
+        "NO_STRUCTURED_DATA",
+        "MULTIPLE_POSTINGS",
+        "FIELD_INFERRED",
+        "FIELD_DROPPED_INVALID"
+    ]
+    message: Annotated[str, Field(max_length=500)]
+    detail: Annotated[str, Field(max_length=500)] | None = None
+
+
+class FetchBoardInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    scan_id: UuidString
+    source_id: UuidString
+    connector: Literal["greenhouse", "lever"]
+    connector_version: Annotated[str, Field(min_length=1, max_length=32)]
+    board_key: Annotated[str, Field(min_length=1, max_length=200)]
+    base_url: Annotated[str, Field(max_length=500)] | None
+    etag: Annotated[str, Field(max_length=500)] | None
+    last_modified: Annotated[str, Field(max_length=100)] | None
+    limits: FetchLimits
+
+
+class FetchBoardResultObservedHealth(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    state: Literal["unknown", "ok", "degraded", "blocked", "disabled"]
+    http_status: Annotated[int, Field(ge=100, le=599)] | None
+    retry_after_seconds: Annotated[int, Field(ge=0)] | None
+
+
+class FetchBoardResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    jobs: Annotated[list[NormalizedJob], Field(max_length=1000)]
+    complete_snapshot: bool
+    next_cursor: Annotated[str, Field(max_length=500)] | None
+    pages_fetched: Annotated[int, Field(ge=0)]
+    etag: Annotated[str, Field(max_length=500)] | None
+    last_modified: Annotated[str, Field(max_length=100)] | None
+    observed_health: FetchBoardResultObservedHealth
+    warnings: Annotated[list[FetchWarning], Field(max_length=100)]
+    fetched_at: TimestampString
+
+
+class FetchJobInputPolicy(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    max_redirects: Annotated[int, Field(ge=0, le=3)]
+    max_html_bytes: Annotated[int, Field(ge=1024, le=2097152)]
+    timeout_seconds: Annotated[int, Field(ge=1, le=20)]
+
+
+class FetchJobInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    job_import_id: UuidString
+    url: Annotated[str, Field(max_length=2000)] | None
+    description_text: Annotated[str, Field(max_length=200000)] | None
+    company_hint: Annotated[str, Field(max_length=200)] | None
+    title_hint: Annotated[str, Field(max_length=300)] | None
+    apply_url_hint: Annotated[str, Field(max_length=2000)] | None
+    policy: FetchJobInputPolicy
+
+
+class FetchJobResultFetch(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    performed: bool
+    final_url: Annotated[str, Field(max_length=2000)] | None
+    http_status: Annotated[int, Field(ge=100, le=599)] | None
+    content_type: Annotated[str, Field(max_length=120)] | None
+    bytes: Annotated[int, Field(ge=0)] | None
+    redirects: Annotated[int, Field(ge=0)]
+    extraction: Literal["jsonld_jobposting", "html_text", "pasted_text", "none"]
+
+
+class FetchJobResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    job: NormalizedJob | None
+    candidates: Annotated[list[NormalizedJob], Field(max_length=50)]
+    fetch: FetchJobResultFetch
+    warnings: Annotated[list[FetchWarning], Field(max_length=100)]

@@ -25,6 +25,8 @@ export * from './tasks/registry.js';
 export * from './tasks/protocol.js';
 export * from './tasks/noop-echo.js';
 export * from './tasks/parse-profile.js';
+export * from './schemas/jobs.js';
+export * from './tasks/fetch-board.js';
 export * from './routes.js';
 export {
   TASK_IO_SCHEMAS,

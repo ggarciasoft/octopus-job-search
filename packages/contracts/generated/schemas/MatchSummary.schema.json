@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/MatchSummary.schema.json",
+  "title": "MatchSummary",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "match_id",
+    "eligible",
+    "score",
+    "coverage_percent",
+    "algorithm_version",
+    "stale",
+    "computed_at"
+  ],
+  "properties": {
+    "match_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "eligible": {
+      "anyOf": [
+        {
+          "const": "yes",
+          "type": "string"
+        },
+        {
+          "const": "no",
+          "type": "string"
+        },
+        {
+          "const": "unknown",
+          "type": "string"
+        }
+      ]
+    },
+    "score": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "maximum": 100,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "coverage_percent": {
+      "minimum": 0,
+      "maximum": 100,
+      "type": "integer"
+    },
+    "algorithm_version": {
+      "maxLength": 16,
+      "type": "string"
+    },
+    "stale": {
+      "type": "boolean"
+    },
+    "computed_at": {
+      "format": "date-time",
+      "type": "string"
+    }
+  }
+}
