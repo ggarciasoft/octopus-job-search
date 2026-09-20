@@ -125,14 +125,22 @@ env_set() {
 # CSPRNGs. $RANDOM, date, $$ and similar are NOT used anywhere: they are
 # trivially predictable and would make SESSION_SECRET and ENCRYPTION_KEY
 # guessable.
+# Emits base64 with no trailing line ending of any kind.
+#
+# Deleting only the newline is not enough on Windows: openssl there ends its
+# output with CRLF, and a command substitution strips the LF but leaves the
+# CR behind. That carriage return is invisible in a terminal and travels into
+# every generated secret -- a SETUP_TOKEN nobody can successfully copy by
+# eye, and, when such a value is sent as an HTTP header, a request the server
+# rejects at the protocol level before it reaches any route. Delete both.
 random_b64() {
   _bytes=$1
   if command -v openssl >/dev/null 2>&1; then
-    openssl rand -base64 "$_bytes" | tr -d '\n'
+    openssl rand -base64 "$_bytes" | tr -d '\r\n'
     return 0
   fi
   if [ -r /dev/urandom ] && command -v base64 >/dev/null 2>&1; then
-    dd if=/dev/urandom bs="$_bytes" count=1 2>/dev/null | base64 | tr -d '\n'
+    dd if=/dev/urandom bs="$_bytes" count=1 2>/dev/null | base64 | tr -d '\r\n'
     return 0
   fi
   if command -v python3 >/dev/null 2>&1; then
@@ -145,7 +153,7 @@ random_b64() {
 # URL-safe token with no padding: it travels in an HTTP body and gets copied
 # and pasted by a human, so +, / and = are avoidable friction.
 random_token() {
-  random_b64 "${1:-32}" | tr '+/' '-_' | tr -d '='
+  random_b64 "${1:-32}" | tr '+/' '-_' | tr -d '=\r\n'
 }
 
 # --- HTTP --------------------------------------------------------------------

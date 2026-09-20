@@ -88,24 +88,30 @@ describe('route manifest', () => {
     }
   });
 
-  it('defers exactly the M1 and M6 surface and nothing else', () => {
+  it('defers exactly the M6 surface and nothing else', () => {
+    // M1 landed: profile, imports, preferences and provider settings are all
+    // registered, so only the routes that need an email service remain.
     expect(Object.keys(DEFERRED_OPERATIONS).sort()).toEqual(
-      [
-        'confirmPasswordReset',
-        'confirmProfileImport',
-        'createProfileImport',
-        'getPreferences',
-        'getProfile',
-        'getProfileImport',
-        'getProviderSettings',
-        'patchProfile',
-        'putPreferences',
-        'putProviderSettings',
-        'register',
-        'requestPasswordReset',
-        'testProviderSettings',
-      ].sort(),
+      ['confirmPasswordReset', 'register', 'requestPasswordReset'].sort(),
     );
+  });
+
+  it('registers the whole M1 surface', () => {
+    const registered = new Set(registeredOperations());
+    for (const operationId of [
+      'getProfile',
+      'patchProfile',
+      'createProfileImport',
+      'getProfileImport',
+      'confirmProfileImport',
+      'getPreferences',
+      'putPreferences',
+      'getProviderSettings',
+      'putProviderSettings',
+      'testProviderSettings',
+    ]) {
+      expect(registered.has(operationId), operationId).toBe(true);
+    }
   });
 
   it('keeps internal worker routes out of the public manifest', () => {

@@ -30,6 +30,7 @@ import {
   type TaskProgress,
   type TaskType,
   type TaskView,
+  type ParseProfileResult,
 } from '@job-getter/contracts';
 import type { Db, DbExecutor, DbTransaction } from '../db/pool.js';
 import type { TaskRow } from '../db/types.js';
@@ -38,6 +39,40 @@ import { generateToken, sha256Hex } from '../util/crypto.js';
 import { checkSchema } from '../validation.js';
 import { assertCapabilitiesAllowed } from '../auth/worker.js';
 import type { Principal } from '../auth/scope.js';
+import { applyParseProfileFailure, applyParseProfileResult } from '../profile/imports.js';
+
+/**
+ * Applies a validated task result to the domain rows it owns.
+ *
+ * `noop_echo` has no domain effect by design — it is the M0 probe, and its
+ * result lives only on the task row. Every task type with real consequences
+ * registers here instead, and the call happens *inside* the completing
+ * transaction so the task state and the domain state cannot disagree
+ * (04_API_CONTRACTS.md: "Domain transitions occur only after API validation,
+ * ownership checks, revision checks and task lease checks in one
+ * transaction").
+ */
+async function applyDomainResult(
+  trx: DbTransaction,
+  task: TaskRow,
+  result: unknown,
+): Promise<void> {
+  if (task.type === 'parse_profile') {
+    await applyParseProfileResult(trx, task, result as ParseProfileResult);
+  }
+}
+
+/** The mirror image: a terminal failure must reach the domain row too. */
+async function applyDomainFailure(
+  trx: DbTransaction,
+  task: TaskRow,
+  code: string,
+  message: string,
+): Promise<void> {
+  if (task.type === 'parse_profile') {
+    await applyParseProfileFailure(trx, task, code, message);
+  }
+}
 
 export const LEASE_MS = LEASE_SECONDS * 1000;
 
@@ -153,6 +188,9 @@ export async function claimTask(db: Db, input: ClaimInput): Promise<ClaimRespons
       const neverRetry = NO_RETRY.has(candidate.type);
 
       if (isExpiredLease && (exhausted || neverRetry)) {
+        const message = neverRetry
+          ? 'The lease expired and this task type is never retried automatically.'
+          : 'The lease expired and no retry attempts remain.';
         await trx
           .updateTable('tasks')
           .set({
@@ -161,14 +199,13 @@ export async function claimTask(db: Db, input: ClaimInput): Promise<ClaimRespons
             lease_expires_at: null,
             leased_by: null,
             error_code: 'TIMEOUT',
-            error_message: neverRetry
-              ? 'The lease expired and this task type is never retried automatically.'
-              : 'The lease expired and no retry attempts remain.',
+            error_message: message,
             error_retryable: false,
             updated_at: new Date(),
           })
           .where('id', '=', candidate.id)
           .execute();
+        await applyDomainFailure(trx, candidate, 'TIMEOUT', message);
         continue;
       }
 
@@ -431,6 +468,8 @@ export async function completeTask(
       .returningAll()
       .executeTakeFirstOrThrow()) as TaskRow;
 
+    await applyDomainResult(trx, updated, result);
+
     await trx
       .insertInto('audit_events')
       .values({
@@ -457,7 +496,7 @@ interface FailInput {
 
 /** Terminal failure of an already-locked row. */
 async function failTaskRow(trx: DbTransaction, task: TaskRow, input: FailInput): Promise<TaskRow> {
-  return (await trx
+  const row = (await trx
     .updateTable('tasks')
     .set({
       state: 'failed',
@@ -472,6 +511,11 @@ async function failTaskRow(trx: DbTransaction, task: TaskRow, input: FailInput):
     .where('id', '=', task.id)
     .returningAll()
     .executeTakeFirstOrThrow()) as TaskRow;
+
+  // Without this, an import whose task failed would sit at "queued" forever
+  // while the task row said "failed" — a dead end rather than an error.
+  await applyDomainFailure(trx, row, input.code, input.message);
+  return row;
 }
 
 function truncateMessage(message: string): string {
@@ -632,6 +676,9 @@ export async function reclaimExpiredLeases(
       const exhausted = task.attempt >= task.max_attempts;
       const neverRetry = NO_RETRY.has(task.type);
       if (exhausted || neverRetry || task.cancel_requested) {
+        const message = neverRetry
+          ? 'The lease expired and this task type is never retried automatically.'
+          : 'The lease expired and no retry attempts remain.';
         await trx
           .updateTable('tasks')
           .set({
@@ -640,14 +687,20 @@ export async function reclaimExpiredLeases(
             lease_expires_at: null,
             leased_by: null,
             error_code: 'TIMEOUT',
-            error_message: neverRetry
-              ? 'The lease expired and this task type is never retried automatically.'
-              : 'The lease expired and no retry attempts remain.',
+            error_message: message,
             error_retryable: false,
             updated_at: new Date(),
           })
           .where('id', '=', task.id)
           .execute();
+        // The domain row must not be left mid-flight while the task is
+        // terminal; the sweep is the only path that reaches some tasks.
+        await applyDomainFailure(
+          trx,
+          task,
+          task.cancel_requested ? 'CANCELLED' : 'TIMEOUT',
+          message,
+        );
         failed.push(task.id);
         continue;
       }

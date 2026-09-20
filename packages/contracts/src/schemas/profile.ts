@@ -1,5 +1,5 @@
 import { Type, type Static } from '@sinclair/typebox';
-import { IsoMonth, Locale, TriState, Timestamp, Uuid } from '../common.js';
+import { IsoMonth, Locale, OptionalNullable, TriState, Timestamp, Uuid } from '../common.js';
 
 export const FactKind = Type.Union([
   Type.Literal('contact'),
@@ -38,9 +38,9 @@ export const ContactValue = Type.Object(
   {
     full_name: Type.String({ minLength: 1, maxLength: 200 }),
     email: Type.String({ minLength: 3, maxLength: 320 }),
-    phone: Type.Optional(Type.String({ maxLength: 40 })),
-    city: Type.Optional(Type.String({ maxLength: 120 })),
-    country: Type.Optional(Type.String({ maxLength: 120 })),
+    phone: OptionalNullable(Type.String({ maxLength: 40 })),
+    city: OptionalNullable(Type.String({ maxLength: 120 })),
+    country: OptionalNullable(Type.String({ maxLength: 120 })),
     links: Type.Optional(Type.Array(Link, { maxItems: 12 })),
   },
   { additionalProperties: false },
@@ -96,7 +96,7 @@ export const ExperienceValue = Type.Object(
     end_month: Type.Union([IsoMonth, Type.Null()]),
     current: Type.Boolean(),
     employment_type: EmploymentType,
-    location: Type.Optional(Type.String({ maxLength: 200 })),
+    location: OptionalNullable(Type.String({ maxLength: 200 })),
     bullets: Type.Array(ExperienceBullet, { maxItems: 30 }),
     skills: Type.Array(Type.String({ maxLength: 80 }), { maxItems: 60 }),
   },
@@ -162,7 +162,7 @@ export const AuthorizationValue = Type.Object(
     country: Type.String({ pattern: '^[A-Z]{2}$' }),
     authorized: TriState,
     sponsorship_required: TriState,
-    note: Type.Optional(Type.String({ maxLength: 300 })),
+    note: OptionalNullable(Type.String({ maxLength: 300 })),
   },
   { additionalProperties: false },
 );

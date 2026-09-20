@@ -385,8 +385,9 @@ describe('GET /me reports capabilities honestly (invariant 10)', () => {
     expect(Value.Check(MeResponse, body)).toBe(true);
 
     expect(body.capabilities.implemented_task_types).toEqual([...IMPLEMENTED_TASK_TYPES]);
-    // Every milestone beyond M0 must report false.
-    expect(body.capabilities.profile_import).toBe(false);
+    // M1 landed: the profile import routes exist, so this flag is now true and
+    // `parse_profile` appears above. Everything beyond M1 must still be false.
+    expect(body.capabilities.profile_import).toBe(true);
     expect(body.capabilities.job_discovery).toBe(false);
     expect(body.capabilities.cv_generation).toBe(false);
     expect(body.capabilities.applications).toBe(false);

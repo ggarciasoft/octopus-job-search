@@ -23,6 +23,10 @@ import { getMe } from './me.js';
 import { cancelTaskRoute, getTask, listTasks } from './tasks.js';
 import { createDiagnosticTask } from './diagnostics.js';
 import { downloadFile, uploadFile } from './files.js';
+import { getProfile, patchProfile } from './profile.js';
+import { confirmProfileImport, createProfileImport, getProfileImport } from './imports.js';
+import { getPreferences, putPreferences } from './preferences.js';
+import { getProviderSettings, putProviderSettings, testProviderSettings } from './providers.js';
 import type { RouteContext, RouteHandler } from './context.js';
 
 /**
@@ -39,18 +43,6 @@ import type { RouteContext, RouteHandler } from './context.js';
  * pass — the list cannot rot silently.
  */
 export const DEFERRED_OPERATIONS: Readonly<Record<string, string>> = {
-  // --- Milestone M1: profile, imports, preferences, provider settings -----
-  getProfile: 'M1 — profile read',
-  patchProfile: 'M1 — profile mutation with optimistic revisions',
-  createProfileImport: 'M1 — CV/text import',
-  getProfileImport: 'M1 — extraction review',
-  confirmProfileImport: 'M1 — user confirmation of extracted facts',
-  getPreferences: 'M1 — preference read',
-  putPreferences: 'M1 — preference write',
-  getProviderSettings: 'M1 — model provider configuration',
-  putProviderSettings: 'M1 — model provider configuration',
-  testProviderSettings: 'M1 — provider connectivity probe',
-
   // --- Milestone M6: hosted authentication (needs email delivery) --------
   register: 'M6 — hosted invitation signup requires the email service',
   requestPasswordReset: 'M6 — password reset requires the email service',
@@ -63,19 +55,43 @@ export const OPERATIONAL_ROUTES: Readonly<Record<string, string>> = {
   'GET /health/ready': 'readiness probe (database, schema, storage) — 10_DEPLOYMENT.md',
 };
 
-const HANDLERS: Readonly<Record<string, RouteHandler>> = {
-  getSetupStatus,
-  completeSetup,
-  login,
-  logout,
-  getMe,
-  uploadFile,
-  downloadFile,
-  getTask,
-  listTasks,
-  cancelTask: cancelTaskRoute,
-  createDiagnosticTask,
-};
+/**
+ * Built on demand rather than as a module-level constant.
+ *
+ * `routes/capabilities.ts` reads `DEFERRED_OPERATIONS` from this module, and
+ * `routes/me.ts` reads `capabilities.ts`, so this module sits in an import
+ * cycle with the handler modules it names. Evaluating the table eagerly makes
+ * its contents depend on which module an entry point happened to load first —
+ * a handler imported while its own module was still initialising would be
+ * `undefined`, and the route would silently fail to register. Building it
+ * inside a function defers every read until after all modules have finished
+ * evaluating, so the table is complete regardless of entry point.
+ */
+function handlers(): Readonly<Record<string, RouteHandler>> {
+  return {
+    getSetupStatus,
+    completeSetup,
+    login,
+    logout,
+    getMe,
+    uploadFile,
+    downloadFile,
+    getTask,
+    listTasks,
+    cancelTask: cancelTaskRoute,
+    createDiagnosticTask,
+    getProfile,
+    patchProfile,
+    createProfileImport,
+    getProfileImport,
+    confirmProfileImport,
+    getPreferences,
+    putPreferences,
+    getProviderSettings,
+    putProviderSettings,
+    testProviderSettings,
+  };
+}
 
 /** Rate limits for the credential-guessing surface (09_SECURITY_PRIVACY.md). */
 const ROUTE_RATE_LIMITS: Readonly<Record<string, { max: number; timeWindow: string }>> = {
@@ -128,8 +144,9 @@ export function registerApiRoutes(
 
   app.register(
     async (api) => {
+      const table = handlers();
       for (const route of ROUTES) {
-        const handler = HANDLERS[route.operationId];
+        const handler = table[route.operationId];
         if (!handler) {
           if (DEFERRED_OPERATIONS[route.operationId] === undefined) {
             // A manifest entry with neither a handler nor a documented
@@ -182,7 +199,8 @@ function buildSchema(route: RouteDefinition): RouteOptions['schema'] {
 
 /** The public surface this build actually serves. Used by the manifest test. */
 export function registeredOperations(): string[] {
-  return ROUTES.filter((route) => HANDLERS[route.operationId] !== undefined).map(
+  const table = handlers();
+  return ROUTES.filter((route) => table[route.operationId] !== undefined).map(
     (route) => route.operationId,
   );
 }

@@ -76,8 +76,15 @@
       ]
     },
     "location": {
-      "maxLength": 200,
-      "type": "string"
+      "anyOf": [
+        {
+          "maxLength": 200,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "bullets": {
       "maxItems": 30,

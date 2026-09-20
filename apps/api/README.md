@@ -4,7 +4,8 @@ Node 24 + Fastify + TypeBox + Kysely/pg. This service owns **persistence and
 workflow**; the Python worker owns processing and automation and never writes to
 the database (invariant 1).
 
-This package currently implements **milestone M0 — Foundation**.
+This package currently implements **milestone M0 — Foundation** and
+**milestone M1 — Profile, imports, preferences and provider settings**.
 
 ## What is implemented
 
@@ -21,14 +22,18 @@ This package currently implements **milestone M0 — Foundation**.
 | File upload/download, local storage driver                   | complete                 |
 | Scheduler (lease reclaim, artifact sweep, pruning)           | complete                 |
 | `POST /api/v1/diagnostics/echo` end-to-end probe             | complete                 |
-| Profile / preferences / provider settings / imports          | **not implemented — M1** |
+| Profile read/patch with optimistic revisions                 | complete                 |
+| Profile import (`parse_profile`), review and confirmation    | complete                 |
+| Preferences (closed schema, weights sum to 100)              | complete                 |
+| Provider settings, encrypted write-only secret, probe        | complete                 |
 | Hosted signup, email verification, password reset            | **not implemented — M6** |
 | S3 storage driver                                            | **not implemented — M6** |
 
 Unimplemented routes are **absent**, not stubbed. `src/routes/index.ts` holds
 `DEFERRED_OPERATIONS`, a documented list asserted by
-`tests/routes/manifest.test.ts`; an agent implementing M1 must delete the
-corresponding entry for the suite to pass. Nothing returns a success it did not
+`tests/routes/manifest.test.ts`; an agent implementing a milestone must delete
+the corresponding entries for the suite to pass. M1 has done so, and only the
+three routes that need an email service remain deferred. Nothing returns a success it did not
 achieve (invariant 10).
 
 ## Commands
@@ -149,6 +154,53 @@ and `2` are genuinely different.
 Response schemas are asserted in the tests with `Value.Check` rather than handed
 to Fastify's serializer, which silently drops properties a schema omits.
 
+### M1: profile, imports, preferences, providers
+
+**Fact values.** A `profile_facts.value` is validated against the schema its
+own `kind` selects (`FACT_VALUE_SCHEMAS` from the contracts package), plus the
+internal-consistency rules JSON Schema cannot express: `current: true` requires
+a null `end_month`, and an end month may not precede its start month
+(03_DATA_MODEL.md). Both checks run on user input _and_ on model output, and
+again on a user's `edited_value` at confirmation — an edit is not more trusted
+than what it edits.
+
+**Imports are proposals.** `POST /profile/imports` writes the
+`profile_imports` row and enqueues `parse_profile` in one transaction, and
+declares the uploaded document as the task's only reachable input. The worker
+result is applied to the import row inside the _completing_ transaction
+(`applyDomainResult` in `src/tasks/queue.ts`), so the task state and the import
+state can never disagree. Nothing is confirmed automatically: drafts sit on the
+import until `POST /profile/imports/:id/confirm` names them.
+
+**AT04.** `GET /profile/imports/:id` computes conflicts on read by comparing
+each draft with the current _confirmed_ facts — an experience at the same
+employer with overlapping dates, a differing contact block, an authorization
+for the same country, a skill with the same canonical name. A conflict is
+reported, never merged. Confirming an accepted draft adds a fact _alongside_
+the existing confirmed one unless the user set `supersedes_fact_id`; when they
+do, the superseded row is kept and merely un-confirmed, and the new row points
+back at it through `supersedes_id`.
+
+**Provider secrets.** AES-256-GCM (`src/crypto/secrets.ts`) under
+`ENCRYPTION_KEY`, envelope `version | nonce | tag | ciphertext`. `GET` returns
+`api_key_set` and a four-character mask and nothing else. The version byte
+makes rotation a configuration change rather than a migration; the module
+comment spells out the procedure.
+
+**Outbound destinations.** `src/settings/network.ts` is the single destination
+policy: https-only for a cloud provider, every resolved address checked in both
+families, cloud metadata addresses refused unconditionally, redirects followed
+manually and re-validated at every hop (max 3). A local model endpoint is
+reachable only when the _operator_ allowlisted it through `ALLOWED_FETCH_HOSTS`
+or `LOCAL_MODEL_BASE_URL`; a hosted tenant cannot grant it to themselves.
+`POST /settings/providers/test` takes no URL — it probes the stored provider
+and only that one, because ADR07 forbids falling back to a cloud provider when
+a local one fails.
+
+Write-time validation uses `dns: 'best_effort'`: an endpoint that is briefly
+unresolvable must not make the settings page unsaveable, and nothing is
+connected to at save time. The connection path always uses `dns: 'required'`.
+
 ### Queue
 
 Coordination is PostgreSQL only — no Redis, BullMQ, Kafka or Celery, per the
@@ -197,6 +249,26 @@ transaction that caused it is a compile error.
 - **Completing a cancelled task.** If a worker completes work whose cancel flag
   was set, the validated result is accepted as `succeeded`; the flag is
   advisory and the work was genuinely done.
+- **`GET /profile/imports/:id` also accepts the task id.** `POST
+/profile/imports` is declared as returning `AcceptedResponse`
+  (`{task_id, status}`), and the contract declares no route that lists imports,
+  so a client following it literally would hold a task id and no way to reach
+  the import. Rather than adding an undeclared response field or an undeclared
+  list route, the handler resolves the path parameter as an import id or as the
+  id of the task that produced one. Both lookups go through the workspace
+  scope, so nothing becomes reachable that was not already.
+- **Pasted import text is not stored as a file.** `profile_imports.text_file_id`
+  stays null; the text travels in the task payload as the contract's
+  `inline_text`. Writing the same bytes twice would create two retention
+  lifecycles for one piece of user data.
+- **A confirmed `contact` fact is mirrored into `profiles.contact`.**
+  03_DATA_MODEL.md stores contact on the profile and references its revision in
+  packet snapshots, while the fact row keeps the provenance. The two are kept
+  in step rather than allowed to drift.
+- **An import draft whose value does not match its kind is dropped at result
+  time**, with the contract's `FIELD_DROPPED_INVALID` warning, rather than
+  being offered as something the user could accept. Confirmation re-validates
+  anyway.
 - **`tasks.input_file_ids`.** Added beyond the spec's column list. It is the
   declaration of which files a task may download; anything else is unreachable
   to the worker, even within the same workspace.
@@ -221,8 +293,11 @@ src/
   server.ts          listener, scheduler, graceful shutdown
   db/                pool, Kysely types, migrations (+ generated bundle), seed
   auth/              argon2id, sessions, CSRF/origin, worker credential, scope
+  crypto/            authenticated encryption for provider secrets
   tasks/             enqueue, queue, idempotency, scheduler
   files/             storage drivers, upload validation, download headers
+  profile/           fact validation, conflicts, import drafts, patch
+  settings/          preferences, provider config, outbound destination policy
   routes/            manifest-driven registration + handlers
 tests/               vitest against real PostgreSQL via testcontainers
 ```

@@ -54,8 +54,15 @@
       "type": "string"
     },
     "detail": {
-      "maxLength": 500,
-      "type": "string"
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
     }
   }
 }

@@ -59,6 +59,22 @@ export const ErrorEnvelope = Type.Object(
 );
 export type ErrorEnvelope = Static<typeof ErrorEnvelope>;
 
+/**
+ * A field that may be absent or explicitly null, both meaning "not stated".
+ *
+ * `Type.Optional(Type.String())` permits an absent key but *rejects* an
+ * explicit null, which is a trap for any producer that serialises "nothing"
+ * as null rather than by omitting the key. That is not hypothetical: it
+ * silently discarded a work-authorization fact end to end, because the
+ * worker emitted `note: null` and validation then rejected the whole fact.
+ *
+ * Use this for anything a source document may simply not mention. Use a bare
+ * `Type.Optional` only where an absent key and a null are genuinely different
+ * things.
+ */
+export const OptionalNullable = <T extends TSchema>(schema: T) =>
+  Type.Optional(Type.Union([schema, Type.Null()]));
+
 /** Cursor pagination wrapper: { items: [...], next_cursor: string | null }. */
 export const Page = <T extends TSchema>(item: T) =>
   Type.Object(

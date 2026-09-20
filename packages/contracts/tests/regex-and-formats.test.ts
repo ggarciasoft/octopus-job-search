@@ -1,7 +1,10 @@
 import { Value } from '@sinclair/typebox/value';
 import { describe, expect, it } from 'vitest';
 import {
+  AuthorizationValue,
+  ContactValue,
   CONTRACT_FORMATS,
+  FACT_VALUE_SCHEMAS,
   EXPORTED_SCHEMAS,
   ExperienceValue,
   IsoMonth,
@@ -127,5 +130,61 @@ describe('a realistic fact validates end to end', () => {
       bullets: [{ text: 'Did something impressive.' }],
     };
     expect(Value.Check(ExperienceValue, withoutEvidence)).toBe(false);
+  });
+});
+
+describe('"not stated" survives both representations', () => {
+  /**
+   * A producer may serialise "nothing" either by omitting the key or by
+   * sending null. Accepting only one of those silently discarded a work
+   * authorization fact end to end: the worker emitted `note: null`, the API
+   * rejected the value, and the whole fact vanished -- so a CV that said
+   * "requires sponsorship for the United States" produced a profile with no
+   * US entry at all. Unknown must stay unknown, not disappear.
+   */
+  const usAuthorization = {
+    country: 'US',
+    authorized: 'unknown' as const,
+    sponsorship_required: 'yes' as const,
+  };
+
+  it('accepts an authorization note that is absent, null or present', () => {
+    expect(Value.Check(AuthorizationValue, usAuthorization)).toBe(true);
+    expect(Value.Check(AuthorizationValue, { ...usAuthorization, note: null })).toBe(true);
+    expect(Value.Check(AuthorizationValue, { ...usAuthorization, note: 'Stated on the CV.' })).toBe(
+      true,
+    );
+  });
+
+  it('still rejects a note of the wrong type or over length', () => {
+    expect(Value.Check(AuthorizationValue, { ...usAuthorization, note: 42 })).toBe(false);
+    expect(Value.Check(AuthorizationValue, { ...usAuthorization, note: 'x'.repeat(301) })).toBe(
+      false,
+    );
+  });
+
+  it('accepts contact fields that are absent or null', () => {
+    const contact = { full_name: 'Ana Rivera', email: 'ana.rivera@example.invalid' };
+    expect(Value.Check(ContactValue, contact)).toBe(true);
+    expect(Value.Check(ContactValue, { ...contact, phone: null, city: null, country: null })).toBe(
+      true,
+    );
+  });
+
+  it('leaves no optional string in a fact value that rejects null', () => {
+    // The whole class of bug, not just the instance that was found.
+    const offenders: string[] = [];
+    for (const [kind, schema] of Object.entries(FACT_VALUE_SCHEMAS)) {
+      const properties = (schema as { properties?: Record<string, unknown> }).properties ?? {};
+      const required = new Set((schema as { required?: string[] }).required ?? []);
+      for (const [name, property] of Object.entries(properties)) {
+        if (required.has(name)) continue;
+        const json = JSON.stringify(property);
+        if (json.includes('"string"') && !json.includes('"null"') && !json.includes('"array"')) {
+          offenders.push(`${kind}.${name}`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
   });
 });

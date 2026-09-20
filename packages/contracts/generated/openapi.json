@@ -139,8 +139,15 @@
             ]
           },
           "note": {
-            "maxLength": 300,
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },
@@ -505,16 +512,37 @@
             "type": "string"
           },
           "phone": {
-            "maxLength": 40,
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "city": {
-            "maxLength": 120,
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "country": {
-            "maxLength": 120,
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "links": {
             "maxItems": 12,
@@ -926,8 +954,15 @@
             ]
           },
           "location": {
-            "maxLength": 200,
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "bullets": {
             "maxItems": 30,
@@ -2382,8 +2417,15 @@
             "type": "string"
           },
           "detail": {
-            "maxLength": 500,
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },

@@ -1,5 +1,5 @@
 import { Type, type Static } from '@sinclair/typebox';
-import { Locale, Uuid } from '../common.js';
+import { Locale, OptionalNullable, Uuid } from '../common.js';
 import { FactKind } from '../schemas/profile.js';
 
 /** Limits from 09_SECURITY_PRIVACY.md, enforced by the worker and the API. */
@@ -62,7 +62,7 @@ export const ImportWarning = Type.Object(
   {
     code: ImportWarningCode,
     message: Type.String({ maxLength: 500 }),
-    detail: Type.Optional(Type.String({ maxLength: 500 })),
+    detail: OptionalNullable(Type.String({ maxLength: 500 })),
   },
   { additionalProperties: false },
 );

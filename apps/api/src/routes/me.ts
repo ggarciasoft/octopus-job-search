@@ -97,7 +97,11 @@ async function buildCapabilities(
     // it stays false for the `none` provider by definition.
     ai_provider_configured: provider !== undefined && provider.provider !== 'none',
     // Milestone flags. Each becomes true in the milestone that implements it.
-    profile_import: false, // M1
+    // M1 landed: the import routes are registered, the `parse_profile` task
+    // can be created from a session, and the worker's result is applied to the
+    // import row. `implemented_task_types` above reports `parse_profile` for
+    // the same reason, computed rather than asserted.
+    profile_import: true, // M1
     job_discovery: false, // M2
     cv_generation: false, // M3
     applications: false, // M4

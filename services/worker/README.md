@@ -20,7 +20,7 @@ that exists yet, and nothing here pretends otherwise.
 > history, certifications, or achievement numbers.
 > — `docs/spec/00_AI_IMPLEMENTATION_INSTRUCTIONS.md`, invariant 2
 
-A model *proposes* facts. `profile/truthfulness.py` decides which of them
+A model _proposes_ facts. `profile/truthfulness.py` decides which of them
 survive, and it decides by asking one question of every value: **is this in the
 document the user uploaded?** An employer that is not in the text is dropped. A
 bullet containing a number the document does not contain is dropped. A
@@ -28,29 +28,29 @@ bullet containing a number the document does not contain is dropped. A
 is `unknown` unless the document says otherwise, and `unknown` is never promoted
 to `yes`.
 
-Provenance is *recomputed* from the document rather than taken from the model:
+Provenance is _recomputed_ from the document rather than taken from the model:
 a locator the worker cannot reproduce is not provenance.
 
 ---
 
 ## Layout
 
-| Path | What it does |
-|---|---|
-| `settings.py` | Environment contract, capability validation |
-| `logging.py` | Structured JSON logs with mandatory redaction |
-| `errors.py` | Failure codes derived from the generated `FailRequest` |
-| `cancellation.py` | The cooperative cancellation token |
-| `api.py` | Client for `/internal/v1/tasks` |
-| `worker.py` | Claim → lease → heartbeat → complete/fail loop |
-| `handlers/` | Task registry; `noop_echo` (M0), `parse_profile` (M1) |
-| `extraction/` | PDF, DOCX and text extraction with bounds and locators |
-| `profile/` | Injection sanitising, grounding, the fact allowlist |
-| `prompts/` | Versioned prompt constants |
-| `providers/` | `ModelProvider` and the fake / Ollama / OpenAI-compatible adapters |
-| `cli.py` | `job-getter-worker` - the container worker |
-| `runner_cli.py` | `job-getter-runner` - **not implemented until M4** |
-| `contracts/generated/` | Generated from the TypeBox schemas. **Never edit.** |
+| Path                   | What it does                                                       |
+| ---------------------- | ------------------------------------------------------------------ |
+| `settings.py`          | Environment contract, capability validation                        |
+| `logging.py`           | Structured JSON logs with mandatory redaction                      |
+| `errors.py`            | Failure codes derived from the generated `FailRequest`             |
+| `cancellation.py`      | The cooperative cancellation token                                 |
+| `api.py`               | Client for `/internal/v1/tasks`                                    |
+| `worker.py`            | Claim → lease → heartbeat → complete/fail loop                     |
+| `handlers/`            | Task registry; `noop_echo` (M0), `parse_profile` (M1)              |
+| `extraction/`          | PDF, DOCX and text extraction with bounds and locators             |
+| `profile/`             | Injection sanitising, grounding, the fact allowlist                |
+| `prompts/`             | Versioned prompt constants                                         |
+| `providers/`           | `ModelProvider` and the fake / Ollama / OpenAI-compatible adapters |
+| `cli.py`               | `job-getter-worker` - the container worker                         |
+| `runner_cli.py`        | `job-getter-runner` - **not implemented until M4**                 |
+| `contracts/generated/` | Generated from the TypeBox schemas. **Never edit.**                |
 
 Every shared model, enum and constant is imported from
 `job_getter_worker.contracts.generated`. There is no hand-written parallel
@@ -88,7 +88,7 @@ Local browser filling is the paired desktop runner's job — which brings us to:
 ### `job-getter-runner` does not work yet
 
 The command exists because `docs/spec/10_DEPLOYMENT.md` names it. Running it
-prints what it *will* do at M4 and exits non-zero. It does not print a pairing
+prints what it _will_ do at M4 and exits non-zero. It does not print a pairing
 code, open a browser or create a device token, because a stub that looks like it
 worked is worse than no stub (invariant 10).
 
@@ -96,19 +96,19 @@ worked is worse than no stub (invariant 10).
 
 ## Protocol notes
 
-* **204 from claim means "no work"**, not an error. The loop sleeps and backs
+- **204 from claim means "no work"**, not an error. The loop sleeps and backs
   off from the poll interval up to the idle maximum.
-* **Heartbeat every `HEARTBEAT_SECONDS`** (30) while a handler runs, carrying
+- **Heartbeat every `HEARTBEAT_SECONDS`** (30) while a handler runs, carrying
   `{stage, percent}`.
-* **Cancellation is cooperative.** A heartbeat returning `cancel_requested` sets
+- **Cancellation is cooperative.** A heartbeat returning `cancel_requested` sets
   a token; the handler notices at its next safe checkpoint and the task is
   failed with `CANCELLED`. Nothing is left half applied.
-* **A lost lease means abandon.** If the lease expires or a heartbeat returns
-  409, the worker stops and does *not* complete: the API has already handed the
+- **A lost lease means abandon.** If the lease expires or a heartbeat returns
+  409, the worker stops and does _not_ complete: the API has already handed the
   task to another attempt.
-* **409 on complete is terminal.** It is never retried, because a second attempt
+- **409 on complete is terminal.** It is never retried, because a second attempt
   could double-apply the same work.
-* **Retries** cover connect errors and 5xx only, with exponential backoff plus
+- **Retries** cover connect errors and 5xx only, with exponential backoff plus
   jitter, honouring `Retry-After` on 429. A 4xx is never retried.
 
 ### The file-download endpoint takes a header
@@ -116,7 +116,7 @@ worked is worse than no stub (invariant 10).
 `GET /internal/v1/tasks/:id/files/:file_id` is the only request in the protocol
 with no body, so its lease token travels in the `x-lease-token` header (see
 `LEASE_TOKEN_HEADER` in `apps/api/src/routes/internal.ts`). The operator bearer
-credential is not sufficient: it identifies the *worker*, not the *lease*. The
+credential is not sufficient: it identifies the _worker_, not the _lease_. The
 artifact upload keeps the token in the multipart body, which is what the API
 reads first there.
 
@@ -129,7 +129,7 @@ From `docs/spec/09_SECURITY_PRIVACY.md`. Two tiers, and the difference matters:
 **Security bounds are hard.** 10 MiB upload, 100 PDF pages, 200 000 extracted
 characters, 50 MiB DOCX expansion, a wall-clock budget. Crossing one is
 `LIMIT_EXCEEDED` — a document that large is not something to process partially.
-The DOCX expansion check reads the archive's declared uncompressed size *before*
+The DOCX expansion check reads the archive's declared uncompressed size _before_
 extracting anything, so a zip bomb is refused rather than expanded.
 
 **Task bounds may only be stricter.** `ParseProfileInput.limits` arriving below
@@ -151,7 +151,7 @@ AI system, removes that span, and — importantly — removes it from the eviden
 corpus too. So an injected "PhD in Computer Science, Stanford, 2015" is not just
 unrequested: it has nothing to stand on, and the grounding check drops it even
 if a model repeats it. The user gets a `PROMPT_INJECTION_TEXT_IGNORED` warning
-naming *where* it was, never *what* it said.
+naming _where_ it was, never _what_ it said.
 
 A user's `prompt_style_suffix` may change tone but cannot change facts. The
 factual rules bracket it on both sides, its length is capped and block
@@ -168,7 +168,7 @@ chose a local model for privacy must never have their CV silently uploaded
 because Ollama was down. `build_provider()` returns exactly one provider, and
 there is no code path that selects a second.
 
-Structured output is *detected*, not assumed — Ollama by server version,
+Structured output is _detected_, not assumed — Ollama by server version,
 OpenAI-compatible endpoints by downgrading on the first `response_format`
 rejection. Where it is unavailable, output is parsed and validated with **at
 most one correction attempt**, then `PROVIDER_INVALID_OUTPUT`.
@@ -187,7 +187,7 @@ No test needs a key, a network or a model.
 JSON, with `worker_id` / `task_id` / `request_id` bound into context. CV text,
 extracted document text, draft fact values, answers, prompts, provider keys and
 the lease token are never logged. `log_shape()` is the intended call site: it
-accepts counts and codes and *refuses* anything that looks like content, so the
+accepts counts and codes and _refuses_ anything that looks like content, so the
 easy way to describe work done ("extracted 4821 chars, proposed 23 facts")
 carries nothing sensitive. A test feeds a real CV through a parse and asserts
 none of its text reaches captured log output.

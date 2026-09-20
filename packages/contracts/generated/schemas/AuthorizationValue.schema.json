@@ -47,8 +47,15 @@
       ]
     },
     "note": {
-      "maxLength": 300,
-      "type": "string"
+      "anyOf": [
+        {
+          "maxLength": 300,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
     }
   }
 }
