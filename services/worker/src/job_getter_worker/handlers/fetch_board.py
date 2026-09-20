@@ -125,7 +125,14 @@ async def run_discovery(
             # CONTENT_TYPE_REJECTED, BODY_TRUNCATED: all carry a warning code.
             warnings.append(error.to_warning())
             complete = False
-            health_state = "blocked" if error.code == "ROBOTS_DISALLOWED" else "degraded"
+            # Only a robots rule that was actually read is a statement about
+            # the site. A disallow *assumed* because robots.txt could not be
+            # read (5xx, redirect loop) is degraded, not blocked: blocked is
+            # the state the API counts towards stopping scans permanently.
+            real_robots_rule = error.code == "ROBOTS_DISALLOWED" and not getattr(
+                error, "assumed", False
+            )
+            health_state = "blocked" if real_robots_rule else "degraded"
             http_status = error.http_status
             break
 

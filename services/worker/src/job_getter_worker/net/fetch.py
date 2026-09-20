@@ -31,6 +31,7 @@ the project honestly.
 from __future__ import annotations
 
 import asyncio
+import os
 import time
 import types
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -154,7 +155,27 @@ class BodyTooLargeError(FetchError):
 
 
 class RobotsDisallowedError(FetchError):
+    """The fetch was withheld because of robots.txt.
+
+    ``assumed`` distinguishes a rule that was actually read from a disallow
+    that was *assumed* because robots.txt itself could not be read (a 5xx or a
+    redirect loop; RFC 9309 section 2.3.1.4). The two must be reported
+    differently: only a real rule is a statement about the site, and only a
+    real rule may move a source towards the blocked state.
+    """
+
     code = "ROBOTS_DISALLOWED"
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        http_status: int | None = None,
+        detail: str | None = None,
+        assumed: bool = False,
+    ) -> None:
+        super().__init__(message, http_status=http_status, detail=detail)
+        self.assumed = assumed
 
 
 class AccessDeniedError(FetchError):
@@ -346,6 +367,10 @@ class _HostState:
 class _RobotsEntry:
     parser: RobotFileParser | None
     cached_at: float
+    # Set when ``parser`` is a synthetic disallow-everything because
+    # robots.txt could not be read (5xx, redirect loop). None for a real file
+    # or for "no rules" (4xx / unparseable).
+    unavailable: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -357,6 +382,20 @@ def _disallow_everything() -> RobotFileParser:
     parser = RobotFileParser()
     parser.parse(["User-agent: *", "Disallow: /"])
     return parser
+
+
+def _operator_trust_store() -> str | bool:
+    """The ``verify`` value for the HTTP transport.
+
+    ``trust_env=False`` (see :class:`Fetcher`) stops httpx reading the
+    environment, which is wanted for proxies and ``.netrc`` but also silences
+    ``SSL_CERT_FILE`` -- the one variable an operator legitimately needs when
+    the deployment sits behind TLS interception (docs/RUNBOOK.md section 6).
+    Returning that path, when set, lets httpx verify against the operator's
+    bundle. When unset, ``True`` keeps httpx's default bundle. Verification is
+    never turned off: there is no path through here that yields ``False``.
+    """
+    return os.environ.get("SSL_CERT_FILE") or True
 
 
 class Fetcher:
@@ -385,10 +424,20 @@ class Fetcher:
         self._robots: dict[str, _RobotsEntry] = {}
         # trust_env=False on both: no proxy from the environment, no .netrc
         # credentials, nothing the operator's shell could add to a request.
+        #
+        # That flag also makes httpx ignore SSL_CERT_FILE, which is the one
+        # environment variable an operator legitimately needs: a deployment
+        # behind TLS interception (docs/RUNBOOK.md section 6) must be able to
+        # supply the intercepting root, or every outbound fetch fails
+        # certificate verification. Honouring an operator-provided trust
+        # store is not the same as disabling verification, which never
+        # happens here. Proxies and .netrc stay ignored.
         self._client = httpx.AsyncClient(
             transport=transport
             if transport is not None
-            else httpx.AsyncHTTPTransport(verify=True, retries=0, trust_env=False),
+            else httpx.AsyncHTTPTransport(
+                verify=_operator_trust_store(), retries=0, trust_env=False
+            ),
             follow_redirects=False,
             trust_env=False,
             headers={
@@ -482,12 +531,26 @@ class Fetcher:
                     detail=str(error)[:500],
                 ) from error
 
-            if check_robots and not await self._robots_allow(target, policy):
-                raise RobotsDisallowedError(
-                    "The site's robots.txt disallows this path for this fetcher, so it was "
-                    "not fetched. Paste the description instead.",
-                    detail=f"{target.host} disallows {target.path[:200]}",
-                )
+            if check_robots:
+                robots = await self._robots_entry(target, policy)
+                if robots.parser is not None and not robots.parser.can_fetch(
+                    ROBOTS_PRODUCT_NAME, target.url
+                ):
+                    if robots.unavailable is not None:
+                        # No rule was read; the disallow is assumed for this
+                        # attempt only. Say exactly that.
+                        raise RobotsDisallowedError(
+                            f"The site's robots.txt could not be read ({robots.unavailable}), "
+                            "so this attempt was treated as disallowed. Try again later, or "
+                            "paste the description instead.",
+                            detail=f"{target.host}: {robots.unavailable}",
+                            assumed=True,
+                        )
+                    raise RobotsDisallowedError(
+                        "The site's robots.txt disallows this path for this fetcher, so it "
+                        "was not fetched. Paste the description instead.",
+                        detail=f"{target.host} disallows {target.path[:200]}",
+                    )
 
             response = await self._send_polite(
                 target, policy, conditional if redirects == 0 else None
@@ -725,25 +788,39 @@ class Fetcher:
 
     # -- robots.txt --------------------------------------------------------------
 
-    async def _robots_allow(self, target: ResolvedTarget, policy: FetchPolicy) -> bool:
+    async def _robots_entry(self, target: ResolvedTarget, policy: FetchPolicy) -> _RobotsEntry:
         entry = self._robots.get(target.host)
         now = self._monotonic()
         if entry is None or now - entry.cached_at > ROBOTS_CACHE_SECONDS:
-            entry = _RobotsEntry(parser=await self._load_robots(target, policy), cached_at=now)
+            parser, unavailable = await self._load_robots(target, policy)
+            entry = _RobotsEntry(parser=parser, cached_at=now, unavailable=unavailable)
             self._robots[target.host] = entry
+        return entry
+
+    async def _robots_allow(self, target: ResolvedTarget, policy: FetchPolicy) -> bool:
+        entry = await self._robots_entry(target, policy)
         if entry.parser is None:
             return True
         return entry.parser.can_fetch(ROBOTS_PRODUCT_NAME, target.url)
 
     async def _load_robots(
         self, target: ResolvedTarget, policy: FetchPolicy
-    ) -> RobotFileParser | None:
+    ) -> tuple[RobotFileParser | None, str | None]:
         """Fetch and parse ``/robots.txt`` for the target's host.
 
-        RFC 9309 section 2.3.1: a 4xx means no rules (crawling allowed); a 5xx
-        or an unreachable server means the crawler must assume it is
-        disallowed. A blocked destination propagates - it is the same host the
-        real request would go to.
+        Returns ``(parser, unavailable)``. RFC 9309 section 2.3.1: a 4xx means
+        no rules (``(None, None)``); a 5xx or a redirect loop means the crawler
+        assumes it is disallowed for this attempt, returned as a synthetic
+        disallow-everything parser *with the reason*, so the caller can report
+        "robots.txt could not be read" rather than inventing a rule the site
+        never published. A blocked destination propagates - it is the same host
+        the real request would go to.
+
+        A transport failure (connection refused, TLS verification, timeout) is
+        NOT turned into a disallow: nothing was learned about the site, and
+        reporting it as a robots decision would misdiagnose the operator's own
+        network as the site's policy. It propagates as the transport failure it
+        is, which the handlers already map to a retryable task failure.
         """
         robots_url = f"https://{target.host}/robots.txt"
         robots_policy = FetchPolicy(
@@ -770,21 +847,37 @@ class Fetcher:
         except BlockedDestinationError:
             raise
         except FetchUnavailableError as error:
-            if error.kind == "http" and error.http_status is not None and error.http_status < 500:
-                return None
-            return _disallow_everything()
+            if error.kind == "http":
+                if error.http_status is not None and error.http_status < 500:
+                    return None, None
+                return _disallow_everything(), f"robots.txt returned HTTP {error.http_status}"
+            # Transport or timeout: the site was never reached. Re-raise as the
+            # transport failure it is, naming the robots step and, for a TLS
+            # failure, the most likely operator-side cause.
+            cause = str(error.__cause__ or "")
+            hint = ""
+            if "SSL" in cause or "certificate" in cause.lower():
+                hint = (
+                    " Certificate verification failed; if this deployment sits behind TLS "
+                    "interception, see docs/RUNBOOK.md section 6."
+                )
+            raise FetchUnavailableError(
+                f"The site could not be reached while checking robots.txt "
+                f"({error.message.rstrip('.')}).{hint}",
+                kind=error.kind,
+            ) from error
         except (ContentTypeRejectedError, BodyTooLargeError):
             # Not a robots file we can read: RFC 9309 treats an unparseable
             # file as having no rules.
-            return None
+            return None, None
         except (AccessDeniedError, RateLimitedError):
-            return None
+            return None, None
         except RedirectLimitError:
-            return _disallow_everything()
+            return _disallow_everything(), "robots.txt redirected more times than allowed"
 
         parser = RobotFileParser()
         parser.parse(result.text().splitlines())
-        return parser
+        return parser, None
 
     # -- test support ------------------------------------------------------------
 
