@@ -9,23 +9,26 @@
 #
 # PASSING (verified locally):
 #     contracts      `pnpm contracts:check` -> "generated artifacts are up to
-#                    date (62 files)"
+#                    date (62 files)"; 191 contract tests
 #     fixtures       `uv run python fixtures/verify.py` -> 46/46, exit 0
 #     hygiene        `sh -n scripts/*.sh` and the PowerShell parser both clean
-#     node-quality   `pnpm typecheck` and `pnpm lint` both pass across all five
-#                    workspace projects - EXCEPT its `pnpm format:check` step,
-#                    which fails for an unrelated reason (see FORMATTING below)
+#     node-quality   `pnpm typecheck`, `pnpm lint` and `pnpm format:check` all
+#                    pass across the five workspace projects
+#     node-test      311 API tests against real PostgreSQL 17 (testcontainers),
+#                    97 web tests, 7 ui tests
+#     worker         `ruff check`, `ruff format --check`, `mypy --strict` clean;
+#                    136 pytest
+#     compose-build  all three images build and `docker compose up` + the
+#                    smoke test pass locally - BUT only with the `build_ca`
+#                    BuildKit secret, because this development host sits behind
+#                    TLS interception (Norton Web Shield). On a GitHub runner
+#                    there is no interception and every `build_ca` guard is a
+#                    no-op by construction; that path has NOT been observed.
+#                    If this job fails here and the error mentions
+#                    "certificate", see docs/RUNBOOK.md section 6.
 #
-# EXPECTED TO FAIL (verified locally, and owned by other work in flight):
-#     worker         `uv run ruff check .` reports 3 errors; `ruff format
-#                    --check` would reformat 1 file; `uv run mypy` fails with
-#                    "There are no .py[i] files in directory 'tests'". The
-#                    worker's source and tests are still landing.
-#     node-test      not run here - needs a PostgreSQL service container. The
-#                    API's Vitest suites exist; whether they pass is unverified.
-#     compose-build  not run here - `docker compose up --build` was deliberately
-#                    not attempted while sources were landing in parallel. The
-#                    Dockerfiles have NEVER been built.
+# EXPECTED TO FAIL: nothing, as of this measurement. If a job is red, it is a
+# real failure - do not add it to this list without a measured reason.
 #
 # Nothing is marked `continue-on-error`. A job that always passes tells you
 # nothing, and docs/spec/00_AI_IMPLEMENTATION_INSTRUCTIONS.md invariant 10

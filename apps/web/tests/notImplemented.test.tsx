@@ -5,14 +5,13 @@ import { renderApp } from './helpers';
 
 describe('screens for milestones that do not exist yet', () => {
   it('registers every unavailable navigation entry as an explanation', () => {
+    // Profile and Settings became real screens in M1; the rest still wait.
     expect(PLACEHOLDER_SCREENS.map((screenDef) => screenDef.path)).toEqual([
-      '/profile',
       '/discover',
       '/jobs',
       '/cv-studio',
       '/applications',
       '/tracker',
-      '/settings',
     ]);
   });
 

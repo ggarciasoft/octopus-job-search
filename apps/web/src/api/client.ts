@@ -20,6 +20,18 @@ export type JobGetterApi = Pick<
   | 'cancelTask'
   | 'listTasks'
   | 'createDiagnosticTask'
+  // M1: profile, import review, preferences and provider settings.
+  | 'getProfile'
+  | 'patchProfile'
+  | 'uploadFile'
+  | 'createProfileImport'
+  | 'getProfileImport'
+  | 'confirmProfileImport'
+  | 'getPreferences'
+  | 'putPreferences'
+  | 'getProviderSettings'
+  | 'putProviderSettings'
+  | 'testProviderSettings'
 >;
 
 export interface CreateApiClientOptions {

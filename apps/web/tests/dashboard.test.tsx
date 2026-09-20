@@ -86,10 +86,25 @@ describe('dashboard capability panel', () => {
     renderApp({ route: '/' });
     await screen.findByRole('heading', { name: 'Dashboard', level: 1 });
 
-    const profileLink = screen.getByRole('link', { name: /Profile/ });
-    expect(profileLink.textContent).toContain('M1');
-    expect(profileLink.getAttribute('href')).toBe('/profile');
+    const discoverLink = screen.getByRole('link', { name: /Discover/ });
+    expect(discoverLink.textContent).toContain('M2');
+    expect(discoverLink.getAttribute('href')).toBe('/discover');
     // The accessible name says it is unavailable, not only the badge colour.
-    expect(profileLink.textContent).toContain('Not available yet');
+    expect(discoverLink.textContent).toContain('Not available yet');
+
+    // Profile landed in M1: no milestone badge, no "unavailable" in its name.
+    const profileLink = screen.getByRole('link', { name: 'Profile' });
+    expect(profileLink.getAttribute('href')).toBe('/profile');
+    expect(profileLink.textContent).not.toContain('Not available yet');
+  });
+
+  it('shows profile_import as available when the API reports it', async () => {
+    const me = makeMe({ capabilities: makeCapabilities({ profile_import: true }) });
+    renderApp({ client: createFakeApi({ getMe: async () => me }), route: '/' });
+
+    await screen.findByRole('heading', { name: 'Dashboard', level: 1 });
+    const row = screen.getByTestId('capability-profile_import');
+    expect(row.dataset.available).toBe('true');
+    expect(within(row).getByText('Available')).toBeTruthy();
   });
 });

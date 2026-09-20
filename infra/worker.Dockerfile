@@ -71,13 +71,36 @@ COPY services/worker/README.md ./README.md
 # --extra browser: Playwright, needed for CV rendering (see header).
 # --no-install-project: only third-party dependencies at this point; the
 #           project itself is installed after its source is copied.
+# build_ca: an OPTIONAL BuildKit secret (a PEM root) for networks whose TLS is
+# intercepted by a proxy or an antivirus web shield. uv (reqwest) reads
+# SSL_CERT_FILE, and that variable REPLACES the trust store rather than adding
+# to it, so the root is appended to the system bundle in a temp file instead
+# of being used alone. Mounted per RUN, never written to a layer. Without the
+# secret the guard is a no-op. Verification is never disabled instead.
 RUN --mount=type=cache,id=uv-cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --extra browser --no-install-project
+    --mount=type=secret,id=build_ca \
+    if [ -f /run/secrets/build_ca ]; then \
+      cat /etc/ssl/certs/ca-certificates.crt /run/secrets/build_ca > /tmp/build-ca-bundle.pem \
+      && export SSL_CERT_FILE=/tmp/build-ca-bundle.pem; \
+    fi \
+ && uv sync --frozen --no-dev --extra browser --no-install-project \
+ && rm -f /tmp/build-ca-bundle.pem
 
 COPY services/worker/src ./src
 
 RUN --mount=type=cache,id=uv-cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --extra browser
+    --mount=type=secret,id=build_ca \
+    if [ -f /run/secrets/build_ca ]; then \
+      cat /etc/ssl/certs/ca-certificates.crt /run/secrets/build_ca > /tmp/build-ca-bundle.pem \
+      && export SSL_CERT_FILE=/tmp/build-ca-bundle.pem; \
+    fi \
+ && uv sync --frozen --no-dev --extra browser --no-editable \
+ && rm -f /tmp/build-ca-bundle.pem
+# --no-editable: without it uv installs the project as an editable pointer
+# (_editable_impl_job_getter_worker.pth -> /repo/services/worker/src). That
+# path exists only in this build stage; the runtime stage copies /opt/venv
+# alone, so the package would be unimportable there and the container would
+# crash on start. --no-editable copies the package into site-packages.
 
 # -----------------------------------------------------------------------------
 # Stage 2: runtime
@@ -107,18 +130,26 @@ RUN useradd --create-home --uid 10001 --shell /usr/sbin/nologin worker
 # the Debian libraries Chromium needs; it requires root, so it runs before the
 # USER switch. The browser binary is then handed to the worker account.
 #
-# Network note: this step downloads from Playwright's CDN. On a network with a
-# TLS-intercepting proxy the download fails certificate validation unless the
-# proxy's CA is present in the image. If that applies to you, add the CA before
-# this line, e.g.
-#   COPY infra/proxy/corporate-ca.crt /usr/local/share/ca-certificates/
-#   RUN update-ca-certificates
-# and set NODE_EXTRA_CA_CERTS / SSL_CERT_FILE accordingly. We do NOT disable
-# certificate verification to work around it. See docs/RUNBOOK.md.
+# Network note: this step downloads from Playwright's CDN and, via
+# --with-deps, from the Debian archives through apt. On a network whose TLS is
+# intercepted, supply the intercepting root as the `build_ca` BuildKit secret
+# (see the uv sync steps above). It is NOT copied into
+# /usr/local/share/ca-certificates: that would persist a third party's root
+# in the runtime image for every future user of it. Instead a merged bundle
+# and a transient apt configuration are created and deleted within this one
+# RUN, so nothing survives into the layer. Verification is never disabled.
 RUN --mount=type=cache,id=apt-lists,target=/var/lib/apt/lists,sharing=locked \
-    playwright install --with-deps chromium \
+    --mount=type=secret,id=build_ca \
+    if [ -f /run/secrets/build_ca ]; then \
+      cat /etc/ssl/certs/ca-certificates.crt /run/secrets/build_ca > /tmp/build-ca-bundle.pem \
+      && export SSL_CERT_FILE=/tmp/build-ca-bundle.pem \
+      && export NODE_EXTRA_CA_CERTS=/tmp/build-ca-bundle.pem \
+      && printf 'Acquire::https::CAInfo "/tmp/build-ca-bundle.pem";\n' > /etc/apt/apt.conf.d/99-build-ca; \
+    fi \
+ && playwright install --with-deps chromium \
  && chown -R worker:worker "${PLAYWRIGHT_BROWSERS_PATH}" \
- && rm -rf /var/cache/apt/archives/*.deb
+ && rm -rf /var/cache/apt/archives/*.deb \
+ && rm -f /etc/apt/apt.conf.d/99-build-ca /tmp/build-ca-bundle.pem
 
 WORKDIR /app
 

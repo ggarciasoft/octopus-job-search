@@ -20,13 +20,8 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { path: '/', labelKey: 'nav.dashboard', available: true },
   { path: '/diagnostics', labelKey: 'nav.diagnostics', available: true },
   { path: '/tasks', labelKey: 'nav.tasks', available: true },
-  {
-    path: '/profile',
-    labelKey: 'nav.profile',
-    available: false,
-    milestone: 'M1',
-    missingKey: 'notImplemented.profile.missing',
-  },
+  // M1: manual editing, import review and confirmed-versus-draft facts.
+  { path: '/profile', labelKey: 'nav.profile', available: true },
   {
     path: '/discover',
     labelKey: 'nav.discover',
@@ -62,13 +57,9 @@ export const NAV_ITEMS: readonly NavItem[] = [
     milestone: 'M4',
     missingKey: 'notImplemented.tracker.missing',
   },
-  {
-    path: '/settings',
-    labelKey: 'nav.settings',
-    available: false,
-    milestone: 'M3–M5',
-    missingKey: 'notImplemented.settings.missing',
-  },
+  // M1 delivers preferences and the provider; the settings layout lists what
+  // the later milestones still owe (devices, schedules, export and deletion).
+  { path: '/settings', labelKey: 'nav.settings', available: true },
 ];
 
 export interface PlaceholderScreen {

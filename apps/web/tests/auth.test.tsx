@@ -135,8 +135,11 @@ describe('one-time setup', () => {
       screen.getByText(/Hosted: the API, worker, database and files run on a server/),
     ).toBeTruthy();
     expect(screen.getByText('This API reports that it is running in Local mode.')).toBeTruthy();
-    // Provider configuration and profile import are named as absent, not faked.
-    expect(screen.getByText(/Those arrive with M1 and are deliberately absent/)).toBeTruthy();
+    // Provider configuration and profile import are not faked on this screen;
+    // the copy says where they live instead.
+    expect(
+      screen.getByText(/They live under Settings and Profile once you are signed in/),
+    ).toBeTruthy();
 
     await user.type(screen.getByLabelText(/Setup token/), 'token-from-the-terminal');
     await user.type(screen.getByLabelText(/Email/), 'owner@example.test');

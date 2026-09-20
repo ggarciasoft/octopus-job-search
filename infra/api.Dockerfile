@@ -32,26 +32,42 @@ ARG NODE_IMAGE=node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0
 # -----------------------------------------------------------------------------
 # Stage 1: dependencies
 #
-# `argon2` is a native addon. Alpine is musl, and a glibc prebuild will not
-# load there, so the build toolchain is installed in this stage only and never
-# reaches the runtime image.
+# `argon2` is the only native addon and it ships a musl prebuild
+# (prebuilds/linux-x64/argon2.musl.node), which node-gyp-build selects on
+# Alpine without invoking a compiler. No build toolchain is installed:
+# doing so would add python3/make/g++ to the layer for nothing, and on
+# networks with a TLS-intercepting proxy an `apk add` cannot even complete.
+# If a future dependency genuinely needs node-gyp, add the toolchain to THIS
+# stage only, never to the runtime stage.
 # -----------------------------------------------------------------------------
 FROM ${IMAGE_REGISTRY}/${NODE_IMAGE} AS deps
 
-RUN apk add --no-cache python3 make g++ libc6-compat
-
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
-# corepack ships with the image; the exact pnpm version comes from the
-# packageManager field in package.json, so it is pinned by the repository and
-# not by this Dockerfile.
-RUN corepack enable && corepack prepare --activate
 
 WORKDIR /repo
 
 # Copy only the manifests first so a source-only change does not re-resolve the
-# dependency graph.
+# dependency graph. package.json must be present BEFORE corepack runs below:
+# `corepack prepare --activate` with no argument reads the pnpm version from
+# its packageManager field, and with nothing to read it exits with "Couldn't
+# find a project in the local directory".
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
+
+# corepack ships with the image; the exact pnpm version comes from the
+# packageManager field in package.json, so it is pinned by the repository and
+# not by this Dockerfile.
+#
+# build_ca: an OPTIONAL BuildKit secret carrying a PEM root for networks whose
+# TLS is intercepted (a corporate proxy, or an antivirus "web shield" that
+# re-signs HTTPS). It is mounted only for the duration of each network-touching
+# RUN and is never written to a layer, so the CA does not ship in the image.
+# Without the secret the guard is a no-op and the build behaves as before.
+#   docker build --secret id=build_ca,src=/path/to/root.pem ...
+# Certificate verification is never disabled as an alternative.
+RUN --mount=type=secret,id=build_ca \
+    if [ -f /run/secrets/build_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/build_ca; fi \
+ && corepack enable && corepack prepare --activate
 COPY packages/contracts/package.json    packages/contracts/package.json
 COPY packages/api-client/package.json   packages/api-client/package.json
 COPY packages/ui/package.json           packages/ui/package.json
@@ -61,7 +77,9 @@ COPY apps/web/package.json              apps/web/package.json
 # --frozen-lockfile: the build fails if the lockfile does not already satisfy
 # the manifests. CI and images must never silently resolve a new version.
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    pnpm install --frozen-lockfile \
+    --mount=type=secret,id=build_ca \
+    if [ -f /run/secrets/build_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/build_ca; fi \
+ && pnpm install --frozen-lockfile \
       --filter @job-getter/api... \
       --filter @job-getter/contracts...
 
@@ -84,9 +102,16 @@ RUN pnpm --filter @job-getter/contracts build \
 # Re-resolve the dependency tree with dev dependencies removed, so only what
 # the runtime needs is carried into the final stage.
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    pnpm install --frozen-lockfile --prod \
+    --mount=type=secret,id=build_ca \
+    if [ -f /run/secrets/build_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/build_ca; fi \
+ && pnpm install --frozen-lockfile --prod \
+      --config.confirmModulesPurge=false \
       --filter @job-getter/api... \
       --filter @job-getter/contracts...
+# confirmModulesPurge=false: switching from the dev install above to --prod
+# changes the dependency set, so pnpm wants to remove node_modules first and,
+# since pnpm 9, refuses to do that without a TTY unless told not to ask
+# (ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY). A Docker build has no TTY.
 
 # -----------------------------------------------------------------------------
 # Stage 3: runtime

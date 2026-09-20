@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { ApiProvider } from './api/ApiProvider';
 import type { JobGetterApi } from './api/client';
 import { AuthProvider } from './auth/AuthProvider';
@@ -12,10 +12,15 @@ import { I18nProvider } from './i18n/I18nProvider';
 import { PLACEHOLDER_SCREENS } from './navigation';
 import { DashboardPage } from './routes/DashboardPage';
 import { DiagnosticsPage } from './routes/DiagnosticsPage';
+import { ImportPage } from './routes/ImportPage';
 import { LoginPage } from './routes/LoginPage';
 import { NotFoundPage } from './routes/NotFoundPage';
+import { ProfilePage } from './routes/ProfilePage';
 import { SetupPage } from './routes/SetupPage';
 import { TasksPage } from './routes/TasksPage';
+import { PreferencesPage } from './routes/settings/PreferencesPage';
+import { ProviderPage } from './routes/settings/ProviderPage';
+import { SettingsLayout } from './routes/settings/SettingsLayout';
 
 export function createQueryClient(): QueryClient {
   return new QueryClient({
@@ -68,6 +73,13 @@ export function AppRoutes() {
           <Route index element={<DashboardPage />} />
           <Route path="/diagnostics" element={<DiagnosticsPage />} />
           <Route path="/tasks" element={<TasksPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/profile/import" element={<ImportPage />} />
+          <Route path="/settings" element={<SettingsLayout />}>
+            <Route index element={<Navigate to="/settings/preferences" replace />} />
+            <Route path="preferences" element={<PreferencesPage />} />
+            <Route path="provider" element={<ProviderPage />} />
+          </Route>
           {PLACEHOLDER_SCREENS.map((screen) => (
             <Route
               key={screen.path}

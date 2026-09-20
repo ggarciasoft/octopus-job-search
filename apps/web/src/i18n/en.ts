@@ -110,7 +110,7 @@ export const en = {
     'Self-service registration is closed on this installation; the owner account is created here.',
   'setup.nextTitle': 'What is not on this screen yet',
   'setup.nextBody':
-    'The specification also puts AI provider configuration, a connection test and optional profile import on this screen. Those arrive with M1 and are deliberately absent rather than shown as controls that do nothing.',
+    'The specification also puts AI provider configuration, a connection test and optional profile import on this screen. They live under Settings and Profile once you are signed in, rather than being duplicated here.',
 
   'dashboard.title': 'Dashboard',
   'dashboard.intro':
@@ -130,7 +130,7 @@ export const en = {
   'dashboard.usageTitle': 'Usage today',
   'dashboard.workspaceTitle': 'Workspace',
   'dashboard.statusIntro':
-    'Milestones M1 to M7 are not built yet. The implementation status document is the single record of what is done.',
+    'Milestones M2 to M7 are not built yet. The implementation status document is the single record of what is done.',
   'dashboard.statusVocabularyTitle': 'What the status words mean',
   'dashboard.statusVocabularyIntro':
     'These seven states are used across the product and mean different things. They are listed here as a reference; none of them describes anything you have right now.',
@@ -346,4 +346,510 @@ export const en = {
     'The model provider did not respond. No other provider was substituted, and your work was kept.',
   'error.INTERNAL_ERROR':
     'The server hit an internal error. The request ID below identifies it in the logs.',
+
+  // --- M1: profile ---------------------------------------------------------
+  'fact.confirmed': 'Confirmed',
+  'fact.confirmedDescription':
+    'You confirmed this fact. Only confirmed facts can be used in CVs and applications.',
+  'fact.draft': 'Draft — ready for review',
+  'fact.draftDescription':
+    'Proposed by an import or saved without confirmation. It is not a fact until you confirm it, and nothing is generated from it.',
+
+  'factKind.contact': 'Contact',
+  'factKind.contact.plural': 'Contact facts',
+  'factKind.summary': 'Summary',
+  'factKind.summary.plural': 'Summary',
+  'factKind.experience': 'Experience',
+  'factKind.experience.plural': 'Experience',
+  'factKind.education': 'Education',
+  'factKind.education.plural': 'Education',
+  'factKind.skill': 'Skill',
+  'factKind.skill.plural': 'Skills',
+  'factKind.language': 'Language',
+  'factKind.language.plural': 'Languages',
+  'factKind.authorization': 'Work authorization',
+  'factKind.authorization.plural': 'Work authorization and eligibility',
+  'factKind.project': 'Project',
+  'factKind.project.plural': 'Projects',
+  'factKind.certification': 'Certification',
+  'factKind.certification.plural': 'Certifications',
+
+  'factField.full_name': 'Full name',
+  'factField.email': 'Email',
+  'factField.phone': 'Phone',
+  'factField.city': 'City',
+  'factField.country': 'Country',
+  'factField.links': 'Links',
+  'factField.text': 'Summary text',
+  'factField.employer': 'Employer',
+  'factField.title': 'Job title',
+  'factField.start_month': 'Start month',
+  'factField.end_month': 'End month',
+  'factField.period': 'Period',
+  'factField.current': 'This is my current role',
+  'factField.currentStudies': 'I am still studying here',
+  'factField.currentLabel': 'present',
+  'factField.employment_type': 'Employment type',
+  'factField.location': 'Location',
+  'factField.bullets': 'Bullets',
+  'factField.evidence_reference': 'evidence',
+  'factField.skills': 'Skills',
+  'factField.institution': 'Institution',
+  'factField.degree': 'Degree',
+  'factField.subject': 'Subject',
+  'factField.canonical_name': 'Skill name',
+  'factField.aliases': 'Aliases',
+  'factField.user_declared_proficiency': 'Proficiency (declared by you)',
+  'factField.years': 'Years of experience',
+  'factField.code': 'Language code',
+  'factField.declared_level': 'Level (declared by you)',
+  'factField.authorized': 'Authorized to work in this country',
+  'factField.sponsorship_required': 'Sponsorship required',
+  'factField.note': 'Note',
+  'factField.name': 'Name',
+  'factField.role': 'Role',
+  'factField.url': 'URL',
+  'factField.issuer': 'Issuer',
+  'factField.issued_month': 'Issued',
+  'factField.expires_month': 'Expires',
+  'factField.credential_id': 'Credential ID',
+  'factField.notStated': 'Not stated',
+
+  'factForm.required': 'This field is required.',
+  'factForm.monthFormat': 'Use the format YYYY-MM, for example 2023-09.',
+  'factForm.monthDescription': 'Calendar month as YYYY-MM.',
+  'factForm.endMonthDescription': 'Leave empty if this has not ended.',
+  'factForm.endBeforeStart': 'The end month cannot be earlier than the start month.',
+  'factForm.currentHasEnd':
+    'A current role cannot also have an end month. Clear the end month or untick "current".',
+  'factForm.currentDescription':
+    'When ticked, the end month must be empty. The server rejects a current role with an end date.',
+  'factForm.yearsRange': 'Years must be between 0 and 70.',
+  'factForm.languageCode': 'Use a two-letter code such as en, or en-US.',
+  'factForm.languageCodeDescription': 'ISO 639-1 code, optionally with a region: en, es, pt-BR.',
+  'factForm.countryCode': 'Use a two-letter ISO country code such as US or ES.',
+  'factForm.countryCodeDescription': 'ISO 3166-1 alpha-2 code, for example US, DE or MX.',
+  'factForm.listDescription': 'One entry per line.',
+  'factForm.summaryDescription':
+    'Your own words. This is stored exactly as typed and is never rewritten without your review.',
+  'factForm.proficiencyDescription':
+    'Only you declare this. Nothing infers a level from a CV mention, so "Not declared" is a valid answer.',
+  'factForm.authorizedDescription':
+    'Whether you may legally work in this country today. "Unknown" is a real answer and is never treated as yes.',
+  'factForm.sponsorshipDescription':
+    'Whether an employer would need to sponsor you. Independent of the answer above; "Unknown" stays unknown.',
+  'factForm.bulletsDescription':
+    'Achievements or responsibilities. Each bullet carries a reference to where it comes from.',
+  'factForm.bulletText': 'Bullet {n}',
+  'factForm.bulletEvidence': 'Evidence reference for bullet {n}',
+  'factForm.bulletEvidenceDescription':
+    'Where this comes from: a page or paragraph of your document, or a note that you typed it yourself.',
+  'factForm.addBullet': 'Add bullet',
+  'factForm.removeBullet': 'Remove bullet {n}',
+  'factForm.linkLabel': 'Link {n} label',
+  'factForm.linkUrl': 'Link {n} URL',
+  'factForm.addLink': 'Add link',
+  'factForm.removeLink': 'Remove link {n}',
+  'factForm.confirmedLabel': 'Mark this fact as confirmed',
+  'factForm.confirmedDescription':
+    'Tick only if this is accurate. Confirmed facts are the only ones a CV or an application may use. Leaving it unticked keeps it as a draft.',
+
+  'employmentType.full_time': 'Full time',
+  'employmentType.part_time': 'Part time',
+  'employmentType.contract': 'Contract',
+  'employmentType.internship': 'Internship',
+  'employmentType.temporary': 'Temporary',
+  'employmentType.freelance': 'Freelance',
+  'employmentType.unknown': 'Unknown',
+
+  'proficiency.notDeclared': 'Not declared',
+  'proficiency.beginner': 'Beginner',
+  'proficiency.intermediate': 'Intermediate',
+  'proficiency.advanced': 'Advanced',
+  'proficiency.expert': 'Expert',
+
+  'languageLevel.basic': 'Basic',
+  'languageLevel.conversational': 'Conversational',
+  'languageLevel.professional': 'Professional',
+  'languageLevel.native': 'Native',
+
+  'triState.yes': 'Yes',
+  'triState.no': 'No',
+  'triState.unknown': 'Unknown',
+  'triState.unknownDescription':
+    'Not established. Unknown never counts as yes; it blocks application readiness until you resolve it.',
+
+  'profile.title': 'Profile',
+  'profile.intro':
+    'Your facts, grouped by kind. Every fact is either confirmed by you or a draft waiting for your review; the two are never mixed. Only confirmed facts can appear in a CV or an application.',
+  'profile.importLink': 'Import from a PDF, DOCX or pasted text',
+  'profile.stateTitle': 'Draft versus confirmed',
+  'profile.revisionInfo': 'Profile revision {revision}. Last confirmed revision: {confirmed}.',
+  'profile.noConfirmedRevision': 'none — no confirmed fact exists yet',
+  'profile.loading': 'Loading your profile…',
+  'profile.loadFailed': 'The profile could not be loaded.',
+  'profile.saved': 'Saved. The profile is now at revision {revision}.',
+  'profile.saving': 'Saving',
+  'profile.reload': 'Reload the profile (your typed values stay)',
+  'profile.contactTitle': 'Contact',
+  'profile.contactDescription':
+    'The contact block used on CVs and applications. Saving it here counts as your confirmation.',
+  'profile.contactEmpty': 'No contact details are recorded yet.',
+  'profile.addContact': 'Add contact details',
+  'profile.editContact': 'Edit contact details',
+  'profile.saveContact': 'Save contact details',
+  'profile.addFact': 'Add {kind}',
+  'profile.saveFact': 'Save fact',
+  'profile.editFact': 'Edit',
+  'profile.confirmFact': 'Confirm as accurate',
+  'profile.deleteFact': 'Delete',
+  'profile.deleteTitle': 'Delete this fact?',
+  'profile.deleteBody':
+    'The fact is removed from your profile. This cannot be undone from the app; nothing else is changed.',
+  'profile.deleteConfirm': 'Delete fact',
+  'profile.sectionEmpty': 'No {kind} recorded yet. This is an empty list, not a failed query.',
+  'profile.sourceExcerpt': 'Source excerpt',
+  'profile.sourceFile': 'Source document',
+  'profile.supersedes': 'Replaces fact',
+  'profile.factRevision': 'Revision {revision} · updated {updated}',
+  'profile.valueUnreadable':
+    'This value does not have the shape its kind requires and is shown as unreadable rather than guessed at.',
+
+  // --- M1: import review ---------------------------------------------------
+  'import.title': 'Import review',
+  'import.intro':
+    'Extract facts from a document or pasted text, then review each proposal. Nothing reaches your profile until you accept it explicitly; existing confirmed facts are never overwritten silently.',
+  'import.backToProfile': 'Back to the profile',
+  'import.unavailableTitle': 'Profile import is not available on this installation',
+  'import.unavailableBody':
+    'The API reports that profile import is not implemented here, so nothing can be queued from this screen.',
+  'import.workerOfflineWarning':
+    'The API reports no worker online. An import queued now will stay queued until a worker starts; it will not fail, and it will not run.',
+  'import.step1Title': '1. Choose a source',
+  'import.sourceLegend': 'Source',
+  'import.sourceFile': 'Upload a document',
+  'import.sourceFileDescription': 'PDF or DOCX, up to 10 MiB. Encrypted documents are rejected.',
+  'import.sourceText': 'Paste text',
+  'import.sourceTextDescription':
+    'A LinkedIn export or any plain text you own. Nothing is scraped from LinkedIn; only text you paste is used.',
+  'import.fileLabel': 'Document',
+  'import.fileDescription': 'Checked in the browser before upload: type and size only.',
+  'import.fileRequired': 'Choose a PDF or DOCX file first.',
+  'import.fileTooLarge': 'That file is larger than 10 MiB and was not uploaded.',
+  'import.fileWrongType': 'Only PDF and DOCX files are accepted. That file was not uploaded.',
+  'import.uploadFirst': 'Upload the document before queueing extraction.',
+  'import.selectedFile': 'Selected: {name} ({size} KiB)',
+  'import.upload': 'Upload document',
+  'import.uploading': 'Uploading',
+  'import.formatHintLabel': 'Format hint',
+  'import.formatHintDescription':
+    'Tells the worker what to expect. "Detect" lets the worker decide from the content.',
+  'import.validationTitle': 'What the server found in the upload',
+  'import.validationFile': 'Stored file',
+  'import.validationSignature': 'File signature recognised',
+  'import.validationExtension': 'Extension matches signature',
+  'import.validationEncrypted': 'Encrypted',
+  'import.validationScan': 'Malware scan',
+  'import.encryptedBlocked':
+    'The server reports this document is encrypted, so text extraction cannot succeed. Choose an unencrypted copy.',
+  'import.textLabel': 'Pasted text',
+  'import.textDescription':
+    'Sent to the worker as-is. Instructions hidden in the text are ignored and reported as a warning, not obeyed.',
+  'import.textRequired': 'Paste some text first.',
+  'import.step2Title': '2. Queue extraction',
+  'import.step2Body':
+    'The worker extracts the text and asks the configured model for draft facts. With no provider configured, the extraction still runs and returns what it can, with a warning.',
+  'import.queue': 'Queue extraction',
+  'import.queueing': 'Queueing',
+  'import.taskTitle': 'Extraction task {taskId}',
+  'import.failedTitle': 'Extraction failed',
+  'import.startOver': 'Start another import',
+  'import.loadingReview': 'Loading the drafts…',
+  'import.reviewLoadFailed': 'The extraction result could not be loaded.',
+  'import.alreadyConfirmedTitle': 'This import was already confirmed',
+  'import.alreadyConfirmedBody':
+    'Its accepted drafts are in the profile and the rest were discarded. It cannot be confirmed twice.',
+  'import.notReady': 'This import is "{status}" and has nothing to review yet.',
+  'import.reviewTitle': '3. Review each draft',
+  'import.reviewIntro':
+    'Every draft starts unaccepted. Compare the source excerpt with the proposed value, edit it if needed, and accept only what is true. Unaccepted drafts are discarded when you confirm.',
+  'import.reviewCounts': '{drafts} drafts · {conflicts} conflicts · {warnings} warnings',
+  'import.warningsTitle': 'Warnings from the extraction',
+  'import.noDraftsTitle': 'No drafts were extracted',
+  'import.noDraftsBody':
+    'The worker returned no usable facts. Check the warnings above; confirming this import changes nothing.',
+  'import.sourceTitle': 'Source',
+  'import.noExcerpt': 'No excerpt was reported for this draft.',
+  'import.locator': 'Location',
+  'import.confidence': 'Parsing confidence {value}% — a parsing aid only, never a confirmation.',
+  'import.proposedTitle': 'Proposed value',
+  'import.editValue': 'Edit value',
+  'import.applyEdit': 'Apply edit',
+  'import.revertEdit': 'Revert to the extracted value',
+  'import.editedBadge': 'Edited by you',
+  'import.conflictBadge': 'Conflicts with a confirmed fact',
+  'import.acceptedBadge': 'Will be added',
+  'import.acceptLabel': 'Accept this draft into my profile',
+  'import.acceptDescription':
+    'Unticked by default. Accepting makes it a confirmed fact with this excerpt as its provenance.',
+  'import.conflictTitle': 'An existing confirmed fact collides with this draft',
+  'import.existingMissing': 'The existing fact is not in the current profile; reload the profile.',
+  'import.conflictLegend': 'What should happen?',
+  'import.conflictDescription':
+    'Nothing merges automatically. Both values are shown above; choose explicitly.',
+  'import.conflictKeep': 'Keep the existing fact and discard this draft',
+  'import.conflictKeepDescription': 'The draft is not added and the existing fact is untouched.',
+  'import.conflictReplace': 'Replace the existing fact with this draft',
+  'import.conflictReplaceOne': 'Replace existing fact {id} with this draft',
+  'import.conflictReplaceDescription':
+    'The existing fact stops being confirmed and stays in the history; the draft becomes the confirmed fact and points back to it.',
+  'import.conflictBoth': 'Keep both',
+  'import.conflictBothDescription': 'The draft is added alongside the existing fact.',
+  'import.acceptedCount': '{accepted} of {total} drafts will be added',
+  'import.confirm': 'Confirm selection',
+  'import.confirming': 'Confirming',
+  'import.confirmNote':
+    'Applied against profile revision {revision}. If the profile changed meanwhile, the server refuses and you can reload.',
+  'import.confirmEmptyTitle': 'Confirm with nothing accepted?',
+  'import.confirmEmptyBody':
+    'No draft is accepted. Confirming closes this import and discards every draft; the profile does not change.',
+  'import.confirmEmptyAction': 'Discard all drafts',
+
+  'formatHint.auto': 'Detect from content',
+  'formatHint.pdf': 'PDF',
+  'formatHint.docx': 'DOCX',
+  'formatHint.linkedin_export_text': 'LinkedIn export text',
+  'formatHint.plain_text': 'Plain text',
+
+  'malwareScan.clean': 'Scanned: clean',
+  'malwareScan.skipped_not_configured':
+    'Not scanned — no scanner is configured (this is not "clean")',
+  'malwareScan.quarantined': 'Quarantined',
+  'malwareScan.pending': 'Scan pending',
+
+  'importWarning.EXTRACTION_SHORT':
+    'Very little text was extracted. The document may be scanned, mostly images, or nearly empty; drafts may be incomplete.',
+  'importWarning.PAGES_TRUNCATED':
+    'The document exceeded the page limit; later pages were not read.',
+  'importWarning.CHARS_TRUNCATED': 'The text exceeded the character limit; the end was not read.',
+  'importWarning.TABLE_LAYOUT_UNCERTAIN':
+    'A table layout could not be read reliably; check values that came from tables.',
+  'importWarning.DATE_AMBIGUOUS': 'A date could not be read unambiguously; check the months.',
+  'importWarning.FIELD_DROPPED_INVALID':
+    'A draft was discarded because its value did not match its kind. It is not offered for acceptance.',
+  'importWarning.MODEL_CORRECTED_ONCE':
+    'The model output was invalid once and a single correction attempt was made.',
+  'importWarning.NO_PROVIDER_CONFIGURED':
+    'No AI provider is configured, so no draft facts were inferred from the text. Configure one under Settings › Provider, or add facts by hand.',
+  'importWarning.PROMPT_INJECTION_TEXT_IGNORED':
+    'The text contained instructions aimed at the model. They were removed and ignored; the document was treated as data only.',
+
+  // --- M1: settings --------------------------------------------------------
+  'settings.title': 'Settings',
+  'settings.intro':
+    'Search preferences and the model provider. Every change is saved against a revision; if something else changed first, the save is refused and you can reload.',
+  'settings.tabsLabel': 'Settings sections',
+  'settings.preferencesTab': 'Preferences',
+  'settings.providerTab': 'AI provider',
+  'settings.missingTitle': 'Not on this screen yet',
+  'settings.missingBody':
+    'Scan schedules, paired devices, prompt and template choices beyond the ones here, and data export and deletion arrive with later milestones. They are absent rather than shown as controls that do nothing.',
+
+  'preferences.loading': 'Loading preferences…',
+  'preferences.loadFailed': 'Preferences could not be loaded.',
+  'preferences.revision': 'Revision {revision} · settings schema version {version}',
+  'preferences.saved': 'Saved. Preferences are now at revision {revision}.',
+  'preferences.saving': 'Saving',
+  'preferences.save': 'Save preferences',
+  'preferences.saveBlocked': 'Saving is blocked until the weights sum to exactly 100.',
+  'preferences.reload': 'Reload preferences from the server (discards your edits)',
+  'preferences.integerRequired': 'Enter a whole number.',
+  'preferences.listHint': 'One entry per line.',
+  'preferences.searchTitle': 'Search',
+  'preferences.target_titles': 'Target job titles',
+  'preferences.excluded_titles': 'Excluded job titles',
+  'preferences.required_skills': 'Required skills',
+  'preferences.requiredSkillsHint':
+    'One per line. Weighted twice as much as preferred skills in the skills component.',
+  'preferences.preferred_skills': 'Preferred skills',
+  'preferences.excluded_companies': 'Excluded companies',
+  'preferences.excludedCompaniesHint':
+    'One per line. Jobs from these employers are hidden by default.',
+  'preferences.countries': 'Countries',
+  'preferences.countriesHint':
+    'Two-letter ISO codes, one per line (US, ES, MX). Remote does not imply worldwide; eligibility is checked per country.',
+  'preferences.countryCodesInvalid': 'Every entry must be a two-letter ISO country code.',
+  'preferences.languages': 'Working languages',
+  'preferences.languagesHint': 'Codes such as en, es or pt-BR, one per line.',
+  'preferences.languageCodesInvalid': 'Every entry must be a language code such as en or pt-BR.',
+  'preferences.remote_modes': 'Work arrangements',
+  'preferences.remoteModesHint': 'Which arrangements you will consider.',
+  'preferences.employment_types': 'Employment types',
+  'preferences.salaryTitle': 'Salary',
+  'preferences.salaryNoConversion':
+    'No currency or period conversion happens. A job is compared only when it states the same currency and period; otherwise its salary stays unknown.',
+  'preferences.salaryEnabled': 'Set a minimum salary',
+  'preferences.salaryMinimum': 'Minimum',
+  'preferences.salaryMinimumInvalid': 'Enter a number of zero or more.',
+  'preferences.salaryCurrency': 'Currency',
+  'preferences.salaryCurrencyHint': 'ISO 4217 code, for example USD or EUR.',
+  'preferences.currencyInvalid': 'Use a three-letter ISO currency code.',
+  'preferences.salaryPeriod': 'Period',
+  'preferences.eligibilityTitle': 'Eligibility',
+  'preferences.sponsorship_policy': 'Sponsorship policy',
+  'preferences.sponsorshipHint':
+    'How jobs that need visa sponsorship are treated. Unknown sponsorship never counts as a match.',
+  'preferences.unknown_eligibility_policy': 'When eligibility is unknown',
+  'preferences.eligibilityHint':
+    'Unknown eligibility blocks application readiness either way; this only decides whether the job stays visible.',
+  'preferences.weightsTitle': 'Match weights',
+  'preferences.weightsIntro':
+    'Nonnegative whole numbers that must sum to exactly 100. The score they produce is a heuristic ranking, not a probability of being hired.',
+  'preferences.weightDefault': 'Default {value}.',
+  'preferences.weightsSum': 'Current sum: {sum}.',
+  'preferences.weightsNotNumeric': 'Every weight must be a whole number.',
+  'preferences.weightsMustSum': 'The weights must sum to exactly 100.',
+  'preferences.weightsStaleNote':
+    'Changing weights makes any computed match stale; scores are recalculated on the next scan.',
+  'preferences.cvTitle': 'CV',
+  'preferences.cv_language': 'Language for new CVs',
+  'preferences.cv_template': 'CV template',
+  'preferences.resume_mode': 'CV mode',
+  'preferences.limitsTitle': 'Operational limits',
+  'preferences.limitsIntro':
+    'Pilot defaults are shown under each field. A hosted operator may enforce stricter maxima; you can always choose stricter values.',
+  'preferences.scan_interval_hours': 'Scan interval (hours)',
+  'preferences.pilotDefault': 'Pilot default: {value}.',
+  'preferences.promptTitle': 'Prompt style',
+  'preferences.prompt_style_suffix': 'Style suffix (style only)',
+  'preferences.promptStyleHint':
+    'Optional. May change tone or emphasis of generated text. It cannot override factual constraints: no invented qualifications, employers, dates or numbers, whatever it says.',
+
+  'remoteMode.remote': 'Remote',
+  'remoteMode.hybrid': 'Hybrid',
+  'remoteMode.onsite': 'On site',
+
+  'salaryPeriod.year': 'per year',
+  'salaryPeriod.month': 'per month',
+  'salaryPeriod.week': 'per week',
+  'salaryPeriod.day': 'per day',
+  'salaryPeriod.hour': 'per hour',
+
+  'sponsorshipPolicy.allow': 'Allow',
+  'sponsorshipPolicy.allow.description': 'Jobs that require sponsorship remain eligible.',
+  'sponsorshipPolicy.avoid': 'Avoid',
+  'sponsorshipPolicy.avoid.description':
+    'Jobs that state sponsorship is required are marked ineligible.',
+  'sponsorshipPolicy.unknown': 'Unknown',
+  'sponsorshipPolicy.unknown.description':
+    'You have not decided. Sponsorship stays an unknown for every job until you do.',
+
+  'eligibilityPolicy.review': 'Show for review',
+  'eligibilityPolicy.review.description':
+    'Jobs with unknown eligibility stay visible and are marked unknown.',
+  'eligibilityPolicy.hide': 'Hide',
+  'eligibilityPolicy.hide.description':
+    'Jobs with unknown eligibility are hidden by default; you can still inspect them.',
+
+  'matchWeight.skills': 'Skills',
+  'matchWeight.role_title': 'Role / title',
+  'matchWeight.seniority': 'Seniority',
+  'matchWeight.work_arrangement': 'Arrangement / location',
+  'matchWeight.industry': 'Industry',
+
+  'cvTemplate.simple': 'Simple (single column)',
+
+  'resumeMode.original': 'Original file',
+  'resumeMode.original.description':
+    'Your uploaded CV is used byte for byte; nothing is converted or tailored.',
+  'resumeMode.tailored': 'Tailored',
+  'resumeMode.tailored.description':
+    'A CV generated from confirmed facts only, reviewed by you before use.',
+
+  'limit.scan_max_jobs': 'Maximum jobs per scan',
+  'limit.request_concurrency_per_host': 'Concurrent requests per host',
+  'limit.ai_requests_per_day': 'AI requests per day',
+  'limit.fill_attempts_per_day': 'Form-fill attempts per day',
+  'limit.approval_ttl_hours': 'Approval validity (hours)',
+  'limit.consented_evidence_capture': 'Capture submission evidence (screenshots) with my consent',
+  'limit.raw_logs': 'Keep raw logs',
+
+  'provider.loading': 'Loading provider settings…',
+  'provider.loadFailed': 'Provider settings could not be loaded.',
+  'provider.saved': 'Provider settings saved.',
+  'provider.saving': 'Saving',
+  'provider.save': 'Save provider settings',
+  'provider.externalTitle': 'Task input leaves this machine',
+  'provider.externalBody':
+    'The saved provider sends the text of each task — profile text, job descriptions, prompts — to an external service. Nothing is sent until a task runs, and no other provider is substituted if it fails.',
+  'provider.connectionTitle': 'Provider',
+  'provider.provider': 'Provider',
+  'provider.providerHint':
+    'Explicit choice. There is no automatic fallback from a local provider to a cloud one.',
+  'provider.model': 'Model',
+  'provider.modelHint': 'The exact model identifier the provider expects.',
+  'provider.modelRequired': 'Enter a model identifier.',
+  'provider.baseUrl': 'Base URL',
+  'provider.baseUrlHint':
+    'Endpoint of the provider. Local endpoints must be on the operator allowlist; the server checks this when saving.',
+  'provider.baseUrlRequired': 'Enter the endpoint URL for this provider.',
+  'provider.noBaseUrl': 'This provider does not use an endpoint URL.',
+  'provider.apiKeyStatus': 'Stored API key',
+  'provider.apiKeySet': 'Set (ends in {masked})',
+  'provider.apiKeyNotSet': 'Not set',
+  'provider.apiKey': 'New API key',
+  'provider.apiKeyHint':
+    'Write-only. The stored key is never shown here and this field is never prefilled. Leave it empty to keep the stored key.',
+  'provider.clearKey': 'Remove the stored API key',
+  'provider.clearKeyHint': 'Saving with this ticked deletes the stored key.',
+  'provider.limitsTitle': 'Limits',
+  'provider.numberRequired': 'Enter a number.',
+  'provider.optionalLimit': 'Optional. Empty means no cap.',
+  'provider.costBudgetHint':
+    'Optional. Only enforceable with a rate card; without one, cost is unknown and this cap does nothing.',
+  'provider.costBudgetUnenforceable':
+    'A daily cost budget is set but no rate card is configured. Cost cannot be measured, so this budget cannot be enforced; only the token and request caps apply.',
+  'provider.rateCardTitle': 'Rate card',
+  'provider.rateCardIntro':
+    'Prices per million tokens, used to estimate and settle cost. Without a rate card cost is reported as unknown — not as zero — and a cost budget cannot be enforced.',
+  'provider.rateCardEnabled': 'Provide a rate card',
+  'provider.noRateCard':
+    'No rate card: cost is unknown, not zero. Token and request caps still apply.',
+  'provider.rateCurrency': 'Currency',
+  'provider.rateInput': 'Input cost per million tokens',
+  'provider.rateOutput': 'Output cost per million tokens',
+  'provider.testTitle': 'Test connection',
+  'provider.testIntro':
+    'Probes the saved provider only; it is not a general URL fetcher. It reports what was observed and nothing more.',
+  'provider.testUnsaved':
+    'You have unsaved edits. The test uses the saved settings, not what is in the form.',
+  'provider.test': 'Test connection',
+  'provider.testing': 'Testing',
+  'provider.reachable': 'Reachable',
+  'provider.modelAvailable': 'Model available',
+  'provider.structuredOutput': 'Structured output supported',
+  'provider.notDetermined': 'Not determined',
+  'provider.latency': 'Latency',
+  'provider.latencyValue': '{ms} ms',
+  'provider.detail': 'Detail',
+
+  'providerId.none': 'None',
+  'providerId.none.description':
+    'No model. Manual profile editing, job import and tracking still work; extraction and generation report that no provider is configured.',
+  'providerId.fake': 'Fake (deterministic, for testing)',
+  'providerId.fake.description':
+    'Returns fixture output. Useful to exercise the pipeline; never use its output as real facts.',
+  'providerId.ollama': 'Ollama (local)',
+  'providerId.ollama.description':
+    'A model running on your machine or network. Task input stays local. Internet is still needed for live job search.',
+  'providerId.openai_compatible': 'OpenAI-compatible endpoint (sends task input externally)',
+  'providerId.openai_compatible.description':
+    'A hosted API. Task input leaves this machine and goes to the endpoint you configure; its use may be billed by that provider.',
+
+  'providerLimit.context_limit': 'Context limit (tokens)',
+  'providerLimit.output_token_limit': 'Output token limit',
+  'providerLimit.temperature': 'Temperature',
+  'providerLimit.timeout_seconds': 'Timeout (seconds)',
+  'providerLimit.daily_token_budget': 'Daily token budget',
+  'providerLimit.daily_cost_budget': 'Daily cost budget',
 } as const;

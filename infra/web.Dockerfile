@@ -33,11 +33,19 @@ FROM ${IMAGE_REGISTRY}/${NODE_IMAGE} AS build
 
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
-RUN corepack enable && corepack prepare --activate
 
 WORKDIR /repo
 
+# package.json must be present BEFORE corepack runs: `corepack prepare
+# --activate` reads the pnpm version from its packageManager field and exits
+# with "Couldn't find a project in the local directory" otherwise.
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
+
+# build_ca is an optional BuildKit secret for networks whose TLS is
+# intercepted; see the explanation in infra/api.Dockerfile. Never persisted.
+RUN --mount=type=secret,id=build_ca \
+    if [ -f /run/secrets/build_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/build_ca; fi \
+ && corepack enable && corepack prepare --activate
 COPY packages/contracts/package.json  packages/contracts/package.json
 COPY packages/api-client/package.json packages/api-client/package.json
 COPY packages/ui/package.json         packages/ui/package.json
@@ -45,7 +53,9 @@ COPY apps/api/package.json            apps/api/package.json
 COPY apps/web/package.json            apps/web/package.json
 
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    pnpm install --frozen-lockfile --filter @job-getter/web...
+    --mount=type=secret,id=build_ca \
+    if [ -f /run/secrets/build_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/build_ca; fi \
+ && pnpm install --frozen-lockfile --filter @job-getter/web...
 
 COPY tsconfig.base.json ./
 COPY packages/contracts  packages/contracts

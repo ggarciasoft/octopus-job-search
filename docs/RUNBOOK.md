@@ -8,20 +8,21 @@ Every procedure is labelled:
 - ⚠️ **Unverified** — written from the specification and the code, but **never
   run end to end**, because the application does not exist yet.
 
-> **As of 2026-09-20 almost everything here is ⚠️ Unverified.** The API, web and
-> worker source trees are still being written; there is no working installation
-> to rehearse against. See [`IMPLEMENTATION_STATUS.md`](../IMPLEMENTATION_STATUS.md).
+> **As of 2026-09-20, §1 (first run), §2 (migration) and §6 (registry and TLS)
+> are ✅ Verified on the real Compose stack**; the rest is ⚠️ Unverified. See
+> [`IMPLEMENTATION_STATUS.md`](../IMPLEMENTATION_STATUS.md) for exactly what
+> each verification rests on.
 >
 > Unverified does not mean wrong — it means nobody has run it. Treat the first
-> execution of any procedure below as a rehearsal, and update this file with
+> execution of any such procedure as a rehearsal, and update this file with
 > what actually happened.
 
 ---
 
 ## Contents
 
-1. [First run](#1-first-run) ⚠️
-2. [Migration](#2-migration) ⚠️
+1. [First run](#1-first-run) ✅
+2. [Migration](#2-migration) ✅
 3. [Backup and restore](#3-backup-and-restore) ⚠️
 4. [Stalled queue](#4-stalled-queue) ⚠️
 5. [Upgrade](#5-upgrade) ⚠️
@@ -32,8 +33,9 @@ Every procedure is labelled:
 
 ## 1. First run
 
-**Status: ⚠️ Unverified.** The individual steps that _have_ been verified are
-marked inline.
+**Status: ✅ Verified 2026-09-20** on Windows 11 with Docker Desktop, from a
+fresh `.env`, through to a passing smoke test on the Compose stack. Steps
+verified only in a weaker form are marked inline.
 
 ### Procedure
 
@@ -42,13 +44,19 @@ git clone <repository> && cd job-getter
 
 cp .env.example .env                 # ✅ verified
 
-sh scripts/setup.sh                  # ✅ verified (against a throwaway env file)
-# pwsh -File scripts/setup.ps1       # ✅ verified
+sh scripts/setup.sh                  # ✅ verified (produced the .env used below; zero carriage returns)
+# pwsh -File scripts/setup.ps1       # ✅ verified against a throwaway env file only
 
-docker compose up --build -d         # ⚠️ never run
-# open http://localhost:3000 and enter the token setup printed
-sh scripts/smoke.sh                  # ⚠️ never passed
+docker compose up --build -d         # ✅ verified (with IMAGE_REGISTRY and the build_ca secret, see §6)
+# open http://localhost:3000 and enter the setup token that was printed
+sh scripts/smoke.sh                  # ✅ passed through the nginx proxy on 127.0.0.1:3000
 ```
+
+> On a network with TLS interception (see §6, Symptom B) `docker compose up
+--build` fails inside the image builds. Build the images first with the
+> `build_ca` secret, then `docker compose up -d --no-build`. That is how the
+> verification above was performed; a build on a host **without**
+> interception has not been observed and is verified only by construction.
 
 ### What to expect at each step
 
@@ -91,8 +99,11 @@ and prints the actual response body on failure.
 
 ## 2. Migration
 
-**Status: ⚠️ Unverified.** The migration runner exists in `apps/api` but this
-procedure has not been executed.
+**Status: ✅ Verified 2026-09-20** for the Compose path: the one-shot `migrate`
+service applied `0001_foundation` to an empty database and exited 0 before
+the API started, and on a later `docker compose down`/`up` it reported
+"Schema is up to date (1 migration(s))" and exited 0 again. The
+`--local` path and the pre-migration backup step are ⚠️ Unverified.
 
 > ### Back up first
 >
@@ -384,23 +395,54 @@ Alternatives: `docker login` (authenticated pulls get a higher limit), or wait.
 certificate verify failed: unable to get local issuer certificate
 ```
 
-A proxy is terminating and re-signing TLS with its own CA. Downloads from
-GitHub, PyPI and npm fail certificate validation.
+Something is terminating and re-signing TLS with its own root. It is not
+always a corporate proxy: on the machine this project was first built on it
+was **Norton Web Shield's SSL/TLS scanning**, which re-signs every HTTPS
+connection with a root named `Norton Web/Mail Shield Root`. The host trusts
+that root (the antivirus installed it), so `pnpm`, `uv` and `docker pull`
+work from the host — but nothing _inside_ a container build trusts it, so
+every `apk add`, `corepack prepare`, `pnpm install`, `uv sync` and Playwright
+download fails inside `docker build`.
+
+Identify the root that is doing the re-signing:
+
+```sh
+echo | openssl s_client -connect registry.npmjs.org:443 -servername registry.npmjs.org 2>/dev/null \
+  | grep -E '^ *i:'
+```
 
 **Workarounds — none of which disable verification:**
 
-- **uv**: already handled. `services/worker/pyproject.toml` sets
-  `[tool.uv] system-certs = true`, so uv uses the OS trust store, which already
-  contains the proxy's CA.
-- **Node/npm/pnpm**: `export NODE_EXTRA_CA_CERTS=/path/to/corporate-ca.crt`
-- **Python/httpx**: `export SSL_CERT_FILE=/path/to/corporate-ca.crt`
-- **Inside the worker image** (the Playwright Chromium download is the step that
-  hits this): add the CA before the install step —
-  ```dockerfile
-  COPY infra/proxy/corporate-ca.crt /usr/local/share/ca-certificates/
-  RUN update-ca-certificates
+- **On the host**
+  - **uv**: already handled. `services/worker/pyproject.toml` sets
+    `[tool.uv] system-certs = true`, so uv uses the OS trust store.
+  - **Node/npm/pnpm**: `export NODE_EXTRA_CA_CERTS=/path/to/root.pem`
+  - **Python/httpx**: `export SSL_CERT_FILE=/path/to/root.pem`
+- **Inside image builds — supply the root as a BuildKit secret.** Export the
+  root as PEM (on Windows, from the certificate store; `.local/` is gitignored
+  and is the intended place for it) and pass it to every build:
+
+  ```sh
+  docker build --secret id=build_ca,src=.local/build-ca.pem -f infra/api.Dockerfile .
+  IMAGE_REGISTRY=public.ecr.aws/docker/library \
+    docker compose build --secret id=build_ca,src=.local/build-ca.pem   # if your Compose supports it
   ```
-  `infra/worker.Dockerfile` has this documented in place.
+
+  Every network-touching `RUN` in `infra/api.Dockerfile`,
+  `infra/web.Dockerfile` and `infra/worker.Dockerfile` mounts
+  `--mount=type=secret,id=build_ca` and, **only if the file is present**,
+  exports `NODE_EXTRA_CA_CERTS` (Node tooling) or a merged
+  `SSL_CERT_FILE` bundle (uv, which _replaces_ rather than extends the trust
+  store) and, for the `apt` calls made by `playwright install --with-deps`, a
+  transient `/etc/apt/apt.conf.d/99-build-ca` that is deleted in the same
+  `RUN`. Without the secret each guard is a no-op and the build is unchanged.
+
+  Do **not** `COPY` the root into `/usr/local/share/ca-certificates` and run
+  `update-ca-certificates`: that persists a third party's root in the runtime
+  image for every future user of it. The secret mount is never written to a
+  layer. Verified 2026-09-20: after a build with the secret, `grep -rl Norton
+/etc/ssl /usr/local/share/ca-certificates` inside both the API and worker
+  images finds nothing, and the transient apt config and bundle are absent.
 
 > ❌ **Never** `NODE_TLS_REJECT_UNAUTHORIZED=0`, `--insecure`, `verify=False` or
 > `--trusted-host`. Disabling verification to get past an interception proxy

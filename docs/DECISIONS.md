@@ -524,3 +524,74 @@ is not worthless while the rest is red.
 
 **Revisit:** delete this ADR's premise as each milestone lands. If the list at
 the top of `ci.yml` is empty and jobs still fail, they are real failures.
+
+_Update 2026-09-20:_ the premise is gone. Every job passes locally; the header
+now says so and lists nothing as expected to fail.
+
+### ADR21 — An intercepting TLS root enters image builds as a BuildKit secret, never as a layer
+
+**Status:** Accepted · 2026-09-20
+
+The development host re-signs every HTTPS connection: not a corporate proxy
+but Norton Web Shield's SSL scanning, whose root the host trusts and no
+container does. Every `apk add`, `corepack prepare`, `pnpm install`, `uv sync`
+and Playwright download therefore failed inside `docker build`, and the
+Dockerfiles could not be verified at all until this was addressed.
+
+Three options were considered:
+
+1. **Disable verification** (`NODE_TLS_REJECT_UNAUTHORIZED=0`, `--insecure`,
+   `verify=False`). Rejected without discussion: it removes the ability to
+   tell an interception proxy from an attacker. The RUNBOOK already forbade
+   it.
+2. **Copy the root into the image** (`COPY root.crt
+/usr/local/share/ca-certificates/ && update-ca-certificates`). This is what
+   the RUNBOOK and `worker.Dockerfile` originally recommended. Rejected: it
+   persists a third party's root in the runtime image for every future user
+   of that image, which is a supply-chain liability unrelated to the
+   application.
+3. **A BuildKit secret** (`--mount=type=secret,id=build_ca`) mounted only for
+   the duration of each network-touching `RUN`, with a guard (`if [ -f
+/run/secrets/build_ca ]`) that makes it a no-op when absent. Chosen.
+
+Per tool: Node tooling reads `NODE_EXTRA_CA_CERTS` (additive). uv reads
+`SSL_CERT_FILE`, which _replaces_ the trust store, so the root is appended to
+the system bundle in a temp file rather than used alone. `apt`, invoked by
+`playwright install --with-deps`, reads a transient
+`/etc/apt/apt.conf.d/99-build-ca` that is created and deleted inside the same
+`RUN`. After building with the secret, `grep -rl Norton /etc/ssl
+/usr/local/share/ca-certificates` inside the API and worker images finds
+nothing, and neither the apt file nor the bundle survives.
+
+**What building for the first time exposed.** None of these were visible to
+any unit test, and each meant the documented `docker compose up --build`
+could never have worked:
+
+- `corepack prepare --activate` ran before `package.json` was copied, in both
+  the api and web Dockerfiles; it reads the pnpm version from that file.
+- `pnpm install --prod` after a dev install triggers a `node_modules` purge
+  that pnpm ≥ 9 refuses without a TTY (`ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`).
+  Fixed with `--config.confirmModulesPurge=false`.
+- The worker image could not import its own package: `uv sync` installs the
+  project as an editable `.pth` pointer to `/repo/services/worker/src`, a path
+  that exists only in the build stage. `--no-editable` copies it into
+  site-packages.
+- `infra/migrate.Dockerfile` was unreferenced, named the image wrongly and
+  hard-coded a stale entrypoint path. Removed; Compose's `migrate` service
+  reuses the API image.
+- The `python3 make g++` toolchain in the API build stage was unnecessary:
+  argon2 ships `argon2.musl.node`, which node-gyp-build selects on Alpine.
+  Removing it is a smaller image and one fewer network step, not a
+  workaround.
+
+**Consequences.** On an intercepted host, build with
+`--secret id=build_ca,src=.local/build-ca.pem` (the `.local/` directory is
+gitignored) and then `docker compose up -d --no-build`. On a host without
+interception nothing changes — but that path is verified only by
+construction, because no such host was available. `docs/RUNBOOK.md` §6
+documents the procedure and how to identify the intercepting root.
+
+**Revisit:** if Docker Compose gains first-class secret support for `build`
+in the versions this project targets, fold the secret into
+`docker-compose.yml` so `docker compose up --build` works in one step on
+intercepted hosts too.

@@ -180,6 +180,11 @@ fixtures/private/
 **/personal-cv.*
 **/my-cv.*
 
+# Local-only working files: the exported TLS-interception root used as the
+# build_ca secret, captured setup output (which contains the SETUP_TOKEN),
+# captured container logs, and throwaway helper scripts. Never committed.
+.local/
+
 # Secrets and generated credentials
 *.pem
 *.key

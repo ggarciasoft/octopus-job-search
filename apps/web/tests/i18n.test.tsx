@@ -57,6 +57,26 @@ describe('message catalogues', () => {
     expect(leaked).toEqual([]);
   });
 
+  for (const [route, heading, control] of [
+    ['/profile', 'Perfil', /^Añadir/],
+    ['/profile/import', 'Revisión de importación', /^Encolar extracción/],
+    ['/settings/preferences', 'Ajustes', /^Guardar preferencias/],
+    ['/settings/provider', 'Ajustes', /^Guardar ajustes del proveedor/],
+  ] as const) {
+    it(`renders ${route} in Spanish without leaking a raw catalogue key`, async () => {
+      globalThis.localStorage.setItem('job-getter.locale', 'es');
+      renderApp({ route });
+
+      await screen.findByRole('heading', { name: heading, level: 1 });
+      // Wait for the data-driven form below the heading, not just the shell.
+      await screen.findAllByRole('button', { name: control });
+
+      const rendered = document.body.textContent ?? '';
+      const leaked = (Object.keys(en) as MessageKey[]).filter((key) => rendered.includes(key));
+      expect(leaked).toEqual([]);
+    });
+  }
+
   it('renders the diagnostics screen in English without leaking a raw catalogue key', async () => {
     renderApp({ route: '/diagnostics' });
 
