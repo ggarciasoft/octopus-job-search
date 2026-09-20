@@ -11,7 +11,9 @@
  *  * reclaim expired leases, so a crashed worker's task converges (AT18);
  *  * sweep staging artifacts older than ARTIFACT_STAGING_TTL_HOURS, since
  *    "unreferenced artifacts expire after 24 hours";
- *  * prune expired idempotency records and revoked/expired sessions.
+ *  * prune expired idempotency records and revoked/expired sessions;
+ *  * queue a `fetch_board` for every source that is due (M2), bounded by the
+ *    source's interval plus jitter and by one in-flight scan per source.
  */
 import { sql } from 'kysely';
 import { ARTIFACT_STAGING_TTL_HOURS } from '@job-getter/contracts';
@@ -20,6 +22,7 @@ import type { Logger } from '../logging.js';
 import type { StorageDriver } from '../files/storage.js';
 import { pruneIdempotencyRecords } from './idempotency.js';
 import { reclaimExpiredLeases } from './queue.js';
+import { scheduleDueScans } from '../discovery/scan-scheduler.js';
 
 export const ARTIFACT_STAGING_TTL_MS = ARTIFACT_STAGING_TTL_HOURS * 60 * 60 * 1000;
 
@@ -30,6 +33,9 @@ export interface SchedulerOptions {
   readonly reclaimIntervalMs?: number;
   readonly sweepIntervalMs?: number;
   readonly pruneIntervalMs?: number;
+  readonly scanIntervalMs?: number;
+  /** Injectable for tests that assert the jitter window. */
+  readonly random?: () => number;
 }
 
 /**
@@ -99,6 +105,7 @@ export function createScheduler(options: SchedulerOptions): Scheduler {
   const reclaimIntervalMs = options.reclaimIntervalMs ?? 15_000;
   const sweepIntervalMs = options.sweepIntervalMs ?? 5 * 60_000;
   const pruneIntervalMs = options.pruneIntervalMs ?? 10 * 60_000;
+  const scanIntervalMs = options.scanIntervalMs ?? 60_000;
 
   const timers: NodeJS.Timeout[] = [];
   let stopped = false;
@@ -129,6 +136,8 @@ export function createScheduler(options: SchedulerOptions): Scheduler {
       idempotency: await pruneIdempotencyRecords(db),
       sessions: await pruneSessions(db),
     }));
+  const scans = () =>
+    guard('schedule_scans', () => scheduleDueScans(db, { random: options.random }));
 
   return {
     start() {
@@ -143,8 +152,9 @@ export function createScheduler(options: SchedulerOptions): Scheduler {
       schedule(() => void reclaim(), reclaimIntervalMs);
       schedule(() => void sweep(), sweepIntervalMs);
       schedule(() => void prune(), pruneIntervalMs);
+      schedule(() => void scans(), scanIntervalMs);
       logger.info(
-        { reclaimIntervalMs, sweepIntervalMs, pruneIntervalMs },
+        { reclaimIntervalMs, sweepIntervalMs, pruneIntervalMs, scanIntervalMs },
         'task scheduler started',
       );
     },
@@ -161,6 +171,7 @@ export function createScheduler(options: SchedulerOptions): Scheduler {
       await reclaim();
       await sweep();
       await prune();
+      await scans();
     },
   };
 }

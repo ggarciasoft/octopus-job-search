@@ -1,6 +1,6 @@
 /**
  * Hand-written Kysely database interface mirroring
- * `src/db/migrations/0001_foundation.sql`.
+ * `src/db/migrations/0001_foundation.sql` and `0002_discovery.sql`.
  *
  * kysely-codegen is deliberately not used (it is not a dependency); the price
  * is that this file must be updated alongside every migration. The integration
@@ -13,7 +13,16 @@
  * stops an object being sent as a Postgres record literal by accident.
  */
 import type { ColumnType, Generated, Insertable, Selectable, Updateable } from 'kysely';
-import type { TaskState, TaskType } from '@job-getter/contracts';
+import type {
+  ConnectorId,
+  JobEmploymentType,
+  JobStatus,
+  RemoteType,
+  ScanStatus,
+  SourceHealthState,
+  TaskState,
+  TaskType,
+} from '@job-getter/contracts';
 
 /** jsonb: select as parsed value, insert/update as a JSON string. */
 export type JsonColumn<Read = unknown> = ColumnType<Read, string, string>;
@@ -254,6 +263,115 @@ export interface UsageLedgerTable {
   updated_at: TimestampColumn;
 }
 
+// ---------------------------------------------------------------------------
+// Milestone M2 (0002_discovery.sql)
+// ---------------------------------------------------------------------------
+
+export interface SourcesTable {
+  id: Generated<string>;
+  workspace_id: string;
+  connector: Extract<ConnectorId, 'greenhouse' | 'lever'>;
+  connector_version: string;
+  board_key: string;
+  base_url: string | null;
+  enabled: Generated<boolean>;
+  last_success_at: NullableTimestampColumn;
+  last_scan_id: string | null;
+  next_scan_after: NullableTimestampColumn;
+  health_state: Generated<SourceHealthState>;
+  consecutive_failures: Generated<number>;
+  consecutive_denials: Generated<number>;
+  last_error_code: string | null;
+  last_error_at: NullableTimestampColumn;
+  health_detail: string | null;
+  etag: string | null;
+  last_modified: string | null;
+  created_at: TimestampColumn;
+  updated_at: TimestampColumn;
+}
+
+export interface ScansTable {
+  id: Generated<string>;
+  workspace_id: string;
+  source_id: string;
+  task_id: string | null;
+  status: Generated<ScanStatus>;
+  complete_snapshot: Generated<boolean>;
+  counts: DefaultedJsonColumn;
+  error_code: string | null;
+  error_message: string | null;
+  started_at: NullableTimestampColumn;
+  completed_at: NullableTimestampColumn;
+  created_at: TimestampColumn;
+  updated_at: TimestampColumn;
+}
+
+export type JobClosedReason = 'user' | 'snapshot' | 'source';
+
+export interface JobsTable {
+  id: Generated<string>;
+  workspace_id: string;
+  canonical_key: string;
+  company: string;
+  title: string;
+  description_text: string;
+  locations: DefaultedJsonColumn;
+  salary: NullableJsonColumn;
+  requirements: DefaultedJsonColumn;
+  inferred: DefaultedJsonColumn;
+  remote_type: Generated<RemoteType>;
+  eligible_countries: NullableJsonColumn;
+  employment_type: JobEmploymentType | null;
+  language: string | null;
+  status: Generated<JobStatus>;
+  content_hash: string;
+  revision: Generated<number>;
+  published_at: NullableTimestampColumn;
+  source_updated_at: NullableTimestampColumn;
+  first_seen_at: TimestampColumn;
+  last_seen_at: TimestampColumn;
+  last_fetched_at: NullableTimestampColumn;
+  saved: Generated<boolean>;
+  excluded_reason: string | null;
+  closed_at: NullableTimestampColumn;
+  closed_reason: JobClosedReason | null;
+  created_at: TimestampColumn;
+  updated_at: TimestampColumn;
+}
+
+export interface JobSourcesTable {
+  id: Generated<string>;
+  workspace_id: string;
+  job_id: string;
+  source_id: string | null;
+  connector: ConnectorId;
+  external_id: string;
+  source_key: string;
+  canonical_url: string;
+  apply_url: string | null;
+  retrieved_at: TimestampColumn;
+  missing_snapshots: Generated<number>;
+  missing_since: NullableTimestampColumn;
+  last_missing_at: NullableTimestampColumn;
+  created_at: TimestampColumn;
+  updated_at: TimestampColumn;
+}
+
+export interface JobImportsTable {
+  id: Generated<string>;
+  workspace_id: string;
+  task_id: string | null;
+  status: Generated<'queued' | 'resolved' | 'needs_choice' | 'failed'>;
+  input: DefaultedJsonColumn;
+  job_id: string | null;
+  candidates: DefaultedJsonColumn;
+  warnings: DefaultedJsonColumn;
+  error_code: string | null;
+  error_message: string | null;
+  created_at: TimestampColumn;
+  updated_at: TimestampColumn;
+}
+
 export interface SchemaMigrationsTable {
   name: string;
   checksum: string;
@@ -278,6 +396,11 @@ export interface Database {
   profile_imports: ProfileImportsTable;
   provider_settings: ProviderSettingsTable;
   usage_ledger: UsageLedgerTable;
+  sources: SourcesTable;
+  scans: ScansTable;
+  jobs: JobsTable;
+  job_sources: JobSourcesTable;
+  job_imports: JobImportsTable;
   schema_migrations: SchemaMigrationsTable;
 }
 
@@ -304,6 +427,11 @@ export const WORKSPACE_SCOPED_TABLES = [
   'profile_imports',
   'provider_settings',
   'usage_ledger',
+  'sources',
+  'scans',
+  'jobs',
+  'job_sources',
+  'job_imports',
 ] as const;
 
 export type WorkspaceScopedTable = (typeof WORKSPACE_SCOPED_TABLES)[number];
@@ -338,3 +466,8 @@ export type FileRow = Selectable<FilesTable>;
 export type UserRow = Selectable<UsersTable>;
 export type WorkspaceRow = Selectable<WorkspacesTable>;
 export type SessionRow = Selectable<SessionsTable>;
+export type SourceRow = Selectable<SourcesTable>;
+export type ScanRow = Selectable<ScansTable>;
+export type JobRow = Selectable<JobsTable>;
+export type JobSourceRow = Selectable<JobSourcesTable>;
+export type JobImportRow = Selectable<JobImportsTable>;

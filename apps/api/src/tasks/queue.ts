@@ -30,6 +30,8 @@ import {
   type TaskProgress,
   type TaskType,
   type TaskView,
+  type FetchBoardResult,
+  type FetchJobResult,
   type ParseProfileResult,
 } from '@job-getter/contracts';
 import type { Db, DbExecutor, DbTransaction } from '../db/pool.js';
@@ -40,6 +42,8 @@ import { checkSchema } from '../validation.js';
 import { assertCapabilitiesAllowed } from '../auth/worker.js';
 import type { Principal } from '../auth/scope.js';
 import { applyParseProfileFailure, applyParseProfileResult } from '../profile/imports.js';
+import { applyFetchBoardFailure, applyFetchBoardResult } from '../discovery/apply-board.js';
+import { applyFetchJobFailure, applyFetchJobResult } from '../discovery/imports.js';
 
 /**
  * Applies a validated task result to the domain rows it owns.
@@ -59,6 +63,10 @@ async function applyDomainResult(
 ): Promise<void> {
   if (task.type === 'parse_profile') {
     await applyParseProfileResult(trx, task, result as ParseProfileResult);
+  } else if (task.type === 'fetch_board') {
+    await applyFetchBoardResult(trx, task, result as FetchBoardResult);
+  } else if (task.type === 'fetch_job') {
+    await applyFetchJobResult(trx, task, result as FetchJobResult);
   }
 }
 
@@ -71,6 +79,10 @@ async function applyDomainFailure(
 ): Promise<void> {
   if (task.type === 'parse_profile') {
     await applyParseProfileFailure(trx, task, code, message);
+  } else if (task.type === 'fetch_board') {
+    await applyFetchBoardFailure(trx, task, code, message);
+  } else if (task.type === 'fetch_job') {
+    await applyFetchJobFailure(trx, task, code, message);
   }
 }
 

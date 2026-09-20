@@ -102,7 +102,10 @@ async function buildCapabilities(
     // import row. `implemented_task_types` above reports `parse_profile` for
     // the same reason, computed rather than asserted.
     profile_import: true, // M1
-    job_discovery: false, // M2
+    // M2 landed: sources, scans, jobs and imports are registered, the
+    // `fetch_board`/`fetch_job` tasks can be created from a session, and
+    // their results are applied to scans, sources, jobs and imports.
+    job_discovery: true, // M2
     cv_generation: false, // M3
     applications: false, // M4
     browser_filling: false, // M4 (local runner) / M5 (extension)

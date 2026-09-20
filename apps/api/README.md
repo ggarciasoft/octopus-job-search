@@ -4,8 +4,11 @@ Node 24 + Fastify + TypeBox + Kysely/pg. This service owns **persistence and
 workflow**; the Python worker owns processing and automation and never writes to
 the database (invariant 1).
 
-This package currently implements **milestone M0 — Foundation** and
-**milestone M1 — Profile, imports, preferences and provider settings**.
+This package currently implements **milestone M0 — Foundation**,
+**milestone M1 — Profile, imports, preferences and provider settings** and
+the API side of **milestone M2 — Job discovery** (source registry, scans and
+the scan scheduler, job import, jobs list/detail with dedup, provenance,
+freshness and closure).
 
 ## What is implemented
 
@@ -26,15 +29,22 @@ This package currently implements **milestone M0 — Foundation** and
 | Profile import (`parse_profile`), review and confirmation    | complete                 |
 | Preferences (closed schema, weights sum to 100)              | complete                 |
 | Provider settings, encrypted write-only secret, probe        | complete                 |
+| Source registry (`/sources`), health, ETag/Last-Modified     | complete                 |
+| Scans (`POST /sources/:id/scan`, `GET /scans/:id`)           | complete                 |
+| Bounded scan scheduler (interval + jitter, Retry-After)      | complete                 |
+| `fetch_board` result: dedup, provenance, closure, counts     | complete                 |
+| Manual job import (`POST /jobs/import`, `fetch_job`)         | complete                 |
+| Jobs list/detail/patch (`/jobs`), possible duplicates        | complete                 |
+| Match scoring, `min_score`/`eligible` filters                | **not implemented — M3** |
 | Hosted signup, email verification, password reset            | **not implemented — M6** |
 | S3 storage driver                                            | **not implemented — M6** |
 
 Unimplemented routes are **absent**, not stubbed. `src/routes/index.ts` holds
 `DEFERRED_OPERATIONS`, a documented list asserted by
 `tests/routes/manifest.test.ts`; an agent implementing a milestone must delete
-the corresponding entries for the suite to pass. M1 has done so, and only the
-three routes that need an email service remain deferred. Nothing returns a success it did not
-achieve (invariant 10).
+the corresponding entries for the suite to pass. M1 and M2 have done so, and
+only the three routes that need an email service remain deferred. Nothing
+returns a success it did not achieve (invariant 10).
 
 ## Commands
 
@@ -201,6 +211,85 @@ Write-time validation uses `dns: 'best_effort'`: an endpoint that is briefly
 unresolvable must not make the settings page unsaveable, and nothing is
 connected to at save time. The connection path always uses `dns: 'required'`.
 
+### M2: discovery
+
+**Sources.** `POST /sources` registers a Greenhouse board token or a Lever site
+slug; `connector_version` comes from `CONNECTOR_VERSIONS` in the contracts. A
+`base_url` is accepted only for a connector with a documented regional endpoint
+(`src/discovery/connectors.ts`: Lever `api.lever.co` / `api.eu.lever.co`,
+https only, origin only), so a source cannot point the worker anywhere else.
+Deleting a source keeps every job and every provenance row; only
+`job_sources.source_id` is nulled (foreign key `ON DELETE SET NULL`), and
+re-registering the same board reattaches the surviving provenance.
+
+**Scans.** `POST /sources/:id/scan` and the scheduler share one path,
+`startScan` (`src/discovery/scans.ts`): the `scans` row, the `fetch_board`
+task (input built from `DISCOVERY_LIMITS`, the user's `scan_max_jobs`, and the
+source's stored `etag`/`last_modified`) and the source's `next_scan_after`
+are written in one transaction. A disabled or blocked source answers `422`; a
+source with a scan already in flight answers `409`, and the partial unique
+index `scans_one_in_flight_idx` enforces that across replicas.
+
+**Scheduler.** `scheduleDueScans` (`src/discovery/scan-scheduler.ts`) runs
+every minute from the housekeeping scheduler. A source is due when it is
+enabled, not blocked, has no scan in flight and its `next_scan_after` is null
+or past. Each due source is taken under `FOR UPDATE SKIP LOCKED` in its own
+transaction, so replicas divide the work and one failure rolls back one
+source. `next_scan_after` becomes `now + scan_interval_hours + jitter`, with
+jitter drawn from `[0, scanIntervalJitterMinutes)` — added, never subtracted,
+so the configured interval is a floor.
+
+**Applying a `fetch_board` result** (`src/discovery/apply-board.ts`, inside
+the completing transaction):
+
+- _Dedup._ `upsertNormalizedJob` is the single write path for a
+  `NormalizedJob`. Canonical key = `connector:board:external_id` for a board,
+  else the normalised employer URL (`url:` prefix), else `manual:<hash>` for a
+  pasted description with no URL. Lookup order: same `source_key` → same
+  canonical key → identical `apply_url` → same requisition (same board
+  connector + same `external_id`, e.g. a parent and a child board) → new job.
+  Similar title + location is **never** merged; it is reported as
+  `possible_duplicates` (`similar_title_and_location`), computed on read for
+  the whole page in one query, and only for the same employer.
+- _Content._ A changed `content_hash` updates the fields and bumps
+  `revision`; an unchanged one only touches `last_seen_at`/`last_fetched_at`.
+  Nothing is defaulted: a null `published_at`, `salary.currency` or
+  `eligible_countries` is stored as null (AT07/AT08).
+- _Closure._ Bookkeeping lives on the provenance row, per source. A
+  **complete** snapshot that does not list an identity increments its
+  `missing_snapshots` and records the first and last absence; a job closes
+  (`closed_reason = 'snapshot'`) only when every provenance row through an
+  _enabled_ source has `missing_snapshots >= 2` with the first and last absence
+  at least 24 h apart (`CLOSURE_RULES`). A partial result, a refusal or a
+  failed task touches none of these counters. Reappearance resets them and
+  reopens a snapshot closure; a user's explicit closure (`PATCH
+/jobs/:id {status: 'closed'}`) is never reopened by a board.
+- _Health._ Success → `ok`, counters reset, ETag/Last-Modified stored (a fetch
+  that returned none keeps the previous value). A 403/429 — read from the
+  warnings, the observed HTTP status or an observed `blocked` state —
+  increments `consecutive_denials`, and at `blockAfterConsecutiveDenials`
+  the source becomes `blocked` and is not scheduled again until
+  `PATCH /sources/:id {enabled: true}`, which clears the block. A
+  `Retry-After` pushes `next_scan_after` out by at least that long. Jobs a
+  partially refused fetch _did_ return are still applied; the scan is
+  `partial` and can close nothing.
+
+**Manual import.** `POST /jobs/import` takes `url` xor `description_text`
+(422 otherwise), `https` only, and enqueues `fetch_job` with the hard
+`URL_FETCH_POLICY` bounds. A resolved job is upserted with connector `url` or
+`manual` and null `source_id`; the user's `apply_url` hint fills a gap the page
+left and never overrides the page. When the page held several postings the
+candidates are stored on the import (`needs_choice`) and no job is created.
+
+**Jobs list.** `query` is a case-insensitive substring match on title and
+company (LIKE metacharacters escaped); full-text search comes with the index
+the data model reserves for it. `min_score` and `eligible` are accepted and
+yield an empty page: no match exists before M3, and a null match satisfies
+neither. Excluded employers (`preferences.excluded_companies`) are hidden
+unless `include_excluded=true` and carry `excluded_reason`; the check runs
+against the current preferences on every read, so nothing is rewritten on the
+job rows when the list changes. `match` is always `null` in M2.
+
 ### Queue
 
 Coordination is PostgreSQL only — no Redis, BullMQ, Kafka or Celery, per the
@@ -257,6 +346,41 @@ transaction that caused it is a compile error.
   list route, the handler resolves the path parameter as an import id or as the
   id of the task that produced one. Both lookups go through the workspace
   scope, so nothing becomes reachable that was not already.
+- **`GET /scans/:id` and `GET /jobs/:id` also accept a task id.** Same
+  reasoning as the profile import: `POST /sources/:id/scan` and
+  `POST /jobs/import` answer with `{task_id}` and the contract declares no
+  list to find the scan or the import from. `GET /jobs/:id` with a `fetch_job`
+  task id answers 404 until the import has produced a job.
+- **No `GET /jobs/imports/:id`; the `fetch_job` task result is extended.**
+  The contract declares no route that reads an import, and an undeclared
+  route is an endpoint nobody reviews. Instead `applyFetchJobResult` stores
+  the worker's contract-valid result unchanged and appends one block,
+  `job_import: {id, status, job_id}`, readable through `GET /tasks/:id` next
+  to the contract's own `job`, `candidates` and `warnings`. `status` is one
+  of `queued | resolved | needs_choice | failed` (`JOB_IMPORT_STATUSES`,
+  asserted against the SQL CHECK). Choosing among candidates is a second
+  `POST /jobs/import` with the chosen candidate's `canonical_url`.
+- **Cross-source linking on requisition identity is board-connector only.**
+  A Greenhouse or Lever `external_id` is the ATS's own requisition id, so the
+  same id on the same connector through another board is the same posting.
+  `url` and `manual` imports carry no such identity and link only on an
+  identical `apply_url`.
+- **`possible_duplicates` requires the same employer.** "Similar
+  title/location" across different companies would flag every "Software
+  Engineer, Madrid" against every other; the warning is scoped to one
+  employer so it stays actionable.
+- **A job seen through several sources closes only when all of them agree.**
+  The closure counters are per provenance row, and only rows through an
+  enabled source vote. A disabled board cannot testify that a posting is
+  gone; a deleted one has no opinion.
+- **`PATCH /jobs/:id` bumps `revision` on every change**, including a save.
+  `revision` is the row's optimistic-concurrency counter; M3 should detect
+  content staleness through `content_hash`, which only changes with content.
+- **`scans.started_at` is the worker's `fetched_at`.** There is no claim-time
+  hook on the domain row; the observation time is what the scan reports.
+- **`sources.consecutive_denials` beyond the spec's columns.** Only 403/429
+  count towards blocking; a timeout is degraded health, not a refusal, so the
+  two counters are kept apart.
 - **Pasted import text is not stored as a file.** `profile_imports.text_file_id`
   stays null; the text travels in the task payload as the contract's
   `inline_text`. Writing the same bytes twice would create two retention
@@ -298,6 +422,7 @@ src/
   files/             storage drivers, upload validation, download headers
   profile/           fact validation, conflicts, import drafts, patch
   settings/          preferences, provider config, outbound destination policy
+  discovery/         connectors policy, sources, scans, scheduler, dedup, closure, imports
   routes/            manifest-driven registration + handlers
 tests/               vitest against real PostgreSQL via testcontainers
 ```

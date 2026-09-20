@@ -88,29 +88,33 @@ describe('route manifest', () => {
     }
   });
 
-  it('defers exactly the M2 and M6 surfaces and nothing else', () => {
-    // M1 landed: profile, imports, preferences and provider settings are all
-    // registered. M2's contracts exist ahead of its routes, so its ten
-    // operations are deferred; the three M6 routes need an email service.
-    // This list is pinned on purpose: registering a route must delete its
-    // entry here, and deferring a new one must add it, explicitly.
+  it('defers exactly the M6 surface and nothing else', () => {
+    // M1 and M2 landed: profile, imports, preferences, provider settings,
+    // sources, scans and jobs are all registered. Only the three M6 routes
+    // that need an email service remain. This list is pinned on purpose:
+    // registering a route must delete its entry here, and deferring a new
+    // one must add it, explicitly.
     expect(Object.keys(DEFERRED_OPERATIONS).sort()).toEqual(
-      [
-        'listSources',
-        'createSource',
-        'patchSource',
-        'deleteSource',
-        'scanSource',
-        'getScan',
-        'importJob',
-        'listJobs',
-        'getJob',
-        'patchJob',
-        'confirmPasswordReset',
-        'register',
-        'requestPasswordReset',
-      ].sort(),
+      ['confirmPasswordReset', 'register', 'requestPasswordReset'].sort(),
     );
+  });
+
+  it('registers the whole M2 surface', () => {
+    const registered = new Set(registeredOperations());
+    for (const operationId of [
+      'listSources',
+      'createSource',
+      'patchSource',
+      'deleteSource',
+      'scanSource',
+      'getScan',
+      'importJob',
+      'listJobs',
+      'getJob',
+      'patchJob',
+    ]) {
+      expect(registered.has(operationId), operationId).toBe(true);
+    }
   });
 
   it('registers the whole M1 surface', () => {

@@ -386,18 +386,18 @@ describe('GET /me reports capabilities honestly (invariant 10)', () => {
 
     // The advertised list is the contract's IMPLEMENTED_TASK_TYPES intersected
     // with the task types a *registered* route can create. A worker handler
-    // alone is not a capability the user can reach. M2's contracts landed
-    // before its routes, so fetch_board/fetch_job exist in the contract but
-    // must not be advertised until scanSource/importJob stop being deferred.
+    // alone is not a capability the user can reach. M2 registered
+    // scanSource/importJob, so fetch_board/fetch_job now appear — computed
+    // from the route table, not added by hand.
     const advertised: string[] = body.capabilities.implemented_task_types;
     for (const type of advertised) expect(IMPLEMENTED_TASK_TYPES).toContain(type);
-    expect(advertised).toEqual(expect.arrayContaining(['noop_echo', 'parse_profile']));
-    expect(advertised).not.toContain('fetch_board');
-    expect(advertised).not.toContain('fetch_job');
-    // M1 landed: the profile import routes exist, so this flag is now true and
-    // `parse_profile` appears above. Everything beyond M1 must still be false.
+    expect([...advertised].sort()).toEqual(
+      ['noop_echo', 'parse_profile', 'fetch_board', 'fetch_job'].sort(),
+    );
+    // M1 and M2 landed: their routes exist, so these flags are true and the
+    // task types appear above. Everything beyond M2 must still be false.
     expect(body.capabilities.profile_import).toBe(true);
-    expect(body.capabilities.job_discovery).toBe(false);
+    expect(body.capabilities.job_discovery).toBe(true);
     expect(body.capabilities.cv_generation).toBe(false);
     expect(body.capabilities.applications).toBe(false);
     expect(body.capabilities.browser_filling).toBe(false);

@@ -27,6 +27,9 @@ import { getProfile, patchProfile } from './profile.js';
 import { confirmProfileImport, createProfileImport, getProfileImport } from './imports.js';
 import { getPreferences, putPreferences } from './preferences.js';
 import { getProviderSettings, putProviderSettings, testProviderSettings } from './providers.js';
+import { createSource, deleteSource, listSources, patchSource, scanSource } from './sources.js';
+import { getScan } from './scans.js';
+import { getJob, importJob, listJobs, patchJob } from './jobs.js';
 import type { RouteContext, RouteHandler } from './context.js';
 
 /**
@@ -38,22 +41,12 @@ import type { RouteContext, RouteHandler } from './context.js';
  * state. It is not a 200 with an empty object, and not a 501 pretending to be
  * a feature flag.
  *
- * `tests/routes/manifest.test.ts` asserts this list exactly, so an M1 agent
- * that implements `getProfile` must delete its entry here for the suite to
- * pass — the list cannot rot silently.
+ * `tests/routes/manifest.test.ts` asserts this list exactly, so an agent
+ * that implements a deferred route must delete its entry here for the suite
+ * to pass — the list cannot rot silently. M1 and M2 have done so; only the
+ * three routes that need an email service remain.
  */
 export const DEFERRED_OPERATIONS: Readonly<Record<string, string>> = {
-  // --- Milestone M2: discovery (contracts landed; routes not yet built) ----
-  listSources: 'M2 — source registry',
-  createSource: 'M2 — source registry',
-  patchSource: 'M2 — source registry',
-  deleteSource: 'M2 — source registry',
-  scanSource: 'M2 — board scanning',
-  getScan: 'M2 — board scanning',
-  importJob: 'M2 — manual job import',
-  listJobs: 'M2 — job listing',
-  getJob: 'M2 — job detail',
-  patchJob: 'M2 — save/close a job',
   // --- Milestone M6: hosted authentication (needs email delivery) --------
   register: 'M6 — hosted invitation signup requires the email service',
   requestPasswordReset: 'M6 — password reset requires the email service',
@@ -101,6 +94,16 @@ function handlers(): Readonly<Record<string, RouteHandler>> {
     getProviderSettings,
     putProviderSettings,
     testProviderSettings,
+    listSources,
+    createSource,
+    patchSource,
+    deleteSource,
+    scanSource,
+    getScan,
+    importJob,
+    listJobs,
+    getJob,
+    patchJob,
   };
 }
 
