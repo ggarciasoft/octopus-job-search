@@ -148,7 +148,8 @@ def log_shape(event: str, **measurements: int | float | bool | str | None) -> No
 
     Only counts, sizes, codes and flags belong here. The helper exists so the
     natural way to describe work done - ``log_shape("extracted", chars=4821,
-    draft_facts=23)`` - carries no content at all.
+    proposed_facts=23)`` - carries no content at all. Names that carry values
+    rather than counts, such as ``draft_facts``, are refused outright.
 
     Raises:
         ValueError: if a measurement looks like free text rather than a

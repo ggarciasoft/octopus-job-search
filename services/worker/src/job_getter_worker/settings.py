@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Annotated, Final
 
-from pydantic import Field, SecretStr, field_validator, model_validator
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .contracts.generated import (
@@ -76,6 +76,10 @@ class WorkerSettings(BaseSettings):
         str | None, Field(max_length=500, validation_alias="LOCAL_MODEL_BASE_URL")
     ] = None
     provider_api_key: SecretStr | None = None
+    #: Where the deterministic fake provider reads its recorded responses.
+    #: Only meaningful when PROVIDER_DEFAULT=fake; it exists so CI can point
+    #: at the repository's fixture corpus from any working directory.
+    fake_fixture_dir: str | None = None
 
     provider_context_limit: Annotated[int, Field(ge=512, le=2_000_000)] = 8192
     provider_output_token_limit: Annotated[int, Field(ge=64, le=200_000)] = 4096
@@ -104,13 +108,6 @@ class WorkerSettings(BaseSettings):
     @classmethod
     def _strip_trailing_slash(cls, value: str) -> str:
         return value.rstrip("/")
-
-    @model_validator(mode="after")
-    def _check_capabilities(self) -> WorkerSettings:
-        # Parsing happens here rather than in a field validator so the error
-        # message can name the variable the operator actually has to fix.
-        _ = self.declared_capabilities  # the property raises on bad input
-        return self
 
     @property
     def declared_capabilities(self) -> tuple[TaskType, ...]:
@@ -169,5 +166,14 @@ class WorkerSettings(BaseSettings):
 
 
 def load_settings() -> WorkerSettings:
-    """Load settings, turning a configuration mistake into a readable failure."""
-    return WorkerSettings()  # type: ignore[call-arg]  # values come from the environment
+    """Load settings and check the capability rules before anything starts.
+
+    The capability check lives here rather than in a model validator so it
+    surfaces as :class:`CapabilityConfigurationError` with its own message,
+    instead of being wrapped in a generic validation error an operator has to
+    decode.
+    """
+    # mypy cannot see that every field is supplied by an environment source.
+    settings = WorkerSettings()  # type: ignore[call-arg]
+    _ = settings.declared_capabilities  # raises CapabilityConfigurationError
+    return settings

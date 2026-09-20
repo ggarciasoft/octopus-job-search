@@ -30,30 +30,29 @@ _WHITESPACE = re.compile(r"\s+")
 _TOKEN = re.compile(r"[a-z0-9]+")
 _NUMBER = re.compile(r"\d+")
 
-_DASHES: Final = str.maketrans(
-    {
-        "‐": "-",
-        "‑": "-",
-        "‒": "-",
-        "–": "-",
-        "—": "-",
-        "―": "-",
-        "‘": "'",
-        "’": "'",
-        "“": '"',
-        "”": '"',
-        " ": " ",
-    }
-)
+#: Phrase boundaries inside a line of a CV.
+_SEPARATORS: Final[tuple[str, ...]] = (",", ";", ".", "|", "\n", "(", ")", "-")
+
+# Typographic punctuation, written as code points rather than as characters so
+# the source stays unambiguous: U+2010..U+2015 dashes, curly quotes, NBSP.
+_PUNCTUATION_FOLD: Final[dict[int, str]] = {
+    **dict.fromkeys(range(8208, 8214), "-"),
+    0x2018: "'",
+    0x2019: "'",
+    0x201C: '"',
+    0x201D: '"',
+    0x00A0: " ",
+}
 
 
 def normalise(text: str) -> str:
     """Lower-case, fold accents and unify punctuation and whitespace.
 
     Accents are folded because a PDF may encode ``Republica`` and a model may
-    return ``República``; that is an encoding difference, not a different fact.
+    return the accented spelling; that is an encoding difference, not a
+    different fact.
     """
-    folded = unicodedata.normalize("NFKD", text.translate(_DASHES))
+    folded = unicodedata.normalize("NFKD", text.translate(_PUNCTUATION_FOLD))
     stripped = "".join(char for char in folded if not unicodedata.combining(char))
     return _WHITESPACE.sub(" ", stripped.lower()).strip()
 
@@ -104,11 +103,15 @@ class Haystack:
         """Every number in ``needle`` appears in the document."""
         return all(value in self.numbers for value in _NUMBER.findall(needle))
 
-    def windows_around(self, needle: str, radius: int = 60) -> list[str]:
-        """Text surrounding each word-boundary occurrence of ``needle``.
+    def segments_around(self, needle: str) -> list[str]:
+        """The phrase containing each word-boundary occurrence of ``needle``.
 
         Used to ask context questions - "is this skill mentioned as something
-        the person wants to learn?" - without a parser.
+        the person wants to learn?" - without a parser. The phrase is bounded
+        by ordinary separators rather than a fixed character radius, because a
+        CV skills line is a comma-separated list: a window wide enough to be
+        useful on prose would let "wants to learn Go" at the end of the line
+        contaminate every skill on it.
         """
         candidate = normalise(needle)
         if not candidate:
@@ -116,7 +119,15 @@ class Haystack:
         pattern = rf"(?<![a-z0-9]){re.escape(candidate)}(?![a-z0-9])"
         found: list[str] = []
         for match in re.finditer(pattern, self.normalised):
-            start = max(0, match.start() - radius)
-            end = min(len(self.normalised), match.end() + radius)
-            found.append(self.normalised[start:end])
+            start = max(
+                (self.normalised.rfind(sep, 0, match.start()) + 1 for sep in _SEPARATORS),
+                default=0,
+            )
+            ends = [
+                position
+                for position in (self.normalised.find(sep, match.end()) for sep in _SEPARATORS)
+                if position != -1
+            ]
+            end = min(ends) if ends else len(self.normalised)
+            found.append(self.normalised[start:end].strip())
         return found

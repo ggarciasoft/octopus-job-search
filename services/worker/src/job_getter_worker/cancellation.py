@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import asyncio
 
-from .errors import TaskCancelled
+from .errors import TaskCancelledError
 
 
 class CancellationToken:
@@ -46,7 +46,7 @@ class CancellationToken:
         Handlers call this between steps, never in the middle of one.
         """
         if self._event.is_set():
-            raise TaskCancelled(self._reason)
+            raise TaskCancelledError(self._reason)
 
     async def sleep(self, seconds: float) -> None:
         """Sleep, returning early and raising if cancellation is requested.
@@ -61,7 +61,7 @@ class CancellationToken:
             await asyncio.wait_for(self._event.wait(), timeout=seconds)
         except TimeoutError:
             return
-        raise TaskCancelled(self._reason)
+        raise TaskCancelledError(self._reason)
 
     async def wait_or_timeout(self, seconds: float) -> bool:
         """Wait up to ``seconds``; return True if cancellation was requested.

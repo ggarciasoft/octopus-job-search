@@ -23,7 +23,7 @@ class WorkerError(Exception):
     """Base class for worker failures that map onto a contract failure code."""
 
 
-class TaskFailure(WorkerError):
+class TaskFailureError(WorkerError):
     """A handler failure that should be reported to the API with a code.
 
     Attributes:
@@ -61,7 +61,7 @@ class TaskFailure(WorkerError):
         return FailRequest.model_validate(payload)
 
 
-class TaskCancelled(WorkerError):
+class TaskCancelledError(WorkerError):
     """Raised at a safe checkpoint after the API requested cancellation.
 
     ``docs/spec/08_UX_AND_CUSTOMIZATION.md`` and the queue semantics in
@@ -70,7 +70,7 @@ class TaskCancelled(WorkerError):
     """
 
 
-class LeaseLost(WorkerError):
+class LeaseLostError(WorkerError):
     """The lease is no longer ours.
 
     The API has already handed the task to another attempt, so the only correct

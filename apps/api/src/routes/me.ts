@@ -6,8 +6,12 @@
  * silently does nothing. Every flag below therefore reports what this build
  * actually does:
  *
- *  * `implemented_task_types` comes from the contract's IMPLEMENTED_TASK_TYPES
- *    rather than from a hand-written list here.
+ *  * `implemented_task_types` is the intersection of the contract's
+ *    IMPLEMENTED_TASK_TYPES and the task types this build can actually
+ *    enqueue. A worker handler alone is not enough: if no route can create
+ *    the task, advertising it would offer the user a capability with no way
+ *    to reach it. The intersection is computed rather than listed, so a task
+ *    type becomes visible exactly when its route stops being deferred.
  *  * `worker_online` is derived from an observed worker poll inside the last
  *    90 seconds, not assumed from configuration.
  *  * Every milestone not yet built reports `false`. They become true in the
@@ -15,7 +19,6 @@
  */
 import {
   DEFAULT_OPERATIONAL_LIMITS,
-  IMPLEMENTED_TASK_TYPES,
   type Capabilities,
   type Locale,
   type MeResponse,
@@ -25,6 +28,7 @@ import {
 import { notFound } from '../errors.js';
 import type { WorkspaceScope } from '../auth/scope.js';
 import { isWorkerOnline } from '../tasks/queue.js';
+import { enqueueableTaskTypes } from './capabilities.js';
 import { requireScope, requireSession, type RouteContext, type RouteHandler } from './context.js';
 
 export interface MeSubject {
@@ -88,7 +92,7 @@ async function buildCapabilities(
     .executeTakeFirst();
 
   return {
-    implemented_task_types: [...IMPLEMENTED_TASK_TYPES],
+    implemented_task_types: [...enqueueableTaskTypes()],
     // A row can only exist once M1 writes one; until then this is false, and
     // it stays false for the `none` provider by definition.
     ai_provider_configured: provider !== undefined && provider.provider !== 'none',
