@@ -1,0 +1,16 @@
+{
+  "attempts": [
+    {
+      "raw": "I cannot help with that.",
+      "valid": false
+    },
+    {
+      "raw": "I cannot help with that.",
+      "valid": false
+    },
+    {
+      "raw": "I cannot help with that.",
+      "valid": false
+    }
+  ]
+}

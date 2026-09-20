@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ProviderSettingsPutRequest.schema.json",
+  "title": "ProviderSettingsPutRequest",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "provider",
+    "model",
+    "base_url",
+    "limits",
+    "rate_card"
+  ],
+  "properties": {
+    "provider": {
+      "anyOf": [
+        {
+          "const": "none",
+          "type": "string"
+        },
+        {
+          "const": "fake",
+          "type": "string"
+        },
+        {
+          "const": "ollama",
+          "type": "string"
+        },
+        {
+          "const": "openai_compatible",
+          "type": "string"
+        }
+      ]
+    },
+    "model": {
+      "minLength": 1,
+      "maxLength": 128,
+      "type": "string"
+    },
+    "base_url": {
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "api_key": {
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "limits": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "context_limit",
+        "output_token_limit",
+        "temperature",
+        "timeout_seconds",
+        "daily_token_budget",
+        "daily_cost_budget"
+      ],
+      "properties": {
+        "context_limit": {
+          "minimum": 512,
+          "maximum": 2000000,
+          "type": "integer"
+        },
+        "output_token_limit": {
+          "minimum": 64,
+          "maximum": 200000,
+          "type": "integer"
+        },
+        "temperature": {
+          "minimum": 0,
+          "maximum": 2,
+          "type": "number"
+        },
+        "timeout_seconds": {
+          "minimum": 5,
+          "maximum": 600,
+          "type": "integer"
+        },
+        "daily_token_budget": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "daily_cost_budget": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "rate_card": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "currency",
+            "input_cost_per_million",
+            "output_cost_per_million"
+          ],
+          "properties": {
+            "currency": {
+              "pattern": "^[A-Z]{3}$",
+              "type": "string"
+            },
+            "input_cost_per_million": {
+              "minimum": 0,
+              "type": "number"
+            },
+            "output_cost_per_million": {
+              "minimum": 0,
+              "type": "number"
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

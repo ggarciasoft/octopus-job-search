@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/NoopEchoInput.schema.json",
+  "title": "NoopEchoInput",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "message"
+  ],
+  "properties": {
+    "message": {
+      "minLength": 1,
+      "maxLength": 500,
+      "type": "string"
+    },
+    "delay_ms": {
+      "minimum": 0,
+      "maximum": 60000,
+      "default": 0,
+      "type": "integer"
+    },
+    "fail_with": {
+      "maxLength": 64,
+      "type": "string"
+    }
+  }
+}

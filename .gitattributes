@@ -1,0 +1,53 @@
+# Normalise line endings to LF in the repository and on checkout.
+#
+# Two things here depend on exact bytes and would break under Windows CRLF
+# conversion:
+#
+#   1. The contracts drift gate (`pnpm contracts:check`) compares regenerated
+#      artifacts byte-for-byte against what is on disk. The generator emits LF
+#      only, so a CRLF checkout would report drift on every file in CI.
+#   2. fixtures/MANIFEST.sha256 pins the SHA-256 of every fixture. A text
+#      fixture rewritten with CRLF would no longer match its digest, and the
+#      AT11 byte-identity guarantee would be meaningless.
+*               text=auto eol=lf
+
+# Binary fixtures. These must never be line-ending converted or diffed as
+# text: a PDF or DOCX rewritten with CRLF is a corrupt document.
+*.pdf           binary
+*.docx          binary
+*.doc           binary
+*.xlsx          binary
+*.png           binary
+*.jpg           binary
+*.jpeg          binary
+*.gif           binary
+*.ico           binary
+*.webp          binary
+*.woff          binary
+*.woff2         binary
+*.ttf           binary
+*.otf           binary
+*.zip           binary
+*.gz            binary
+*.dump          binary
+
+# Lockfiles are generated. Keep them in the repository, but do not let a diff
+# of them drown a review.
+pnpm-lock.yaml  -diff linguist-generated=true
+uv.lock         -diff linguist-generated=true
+
+# Generated contract artifacts. Reviewed through their source schemas, not by
+# reading the emitted files.
+packages/contracts/generated/**                                   linguist-generated=true
+packages/api-client/src/generated/**                              linguist-generated=true
+services/worker/src/job_getter_worker/contracts/generated/**      linguist-generated=true
+
+# Shell scripts must keep LF even on Windows checkouts, or they will not run
+# inside the Linux containers.
+*.sh            text eol=lf
+# PowerShell scripts are run by Windows hosts and are conventionally CRLF.
+*.ps1           text eol=crlf
+
+# The specification is the immutable input to this build. Flag it in diffs so
+# an accidental edit is obvious in review.
+docs/spec/**    text eol=lf

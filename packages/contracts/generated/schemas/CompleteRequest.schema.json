@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/CompleteRequest.schema.json",
+  "title": "CompleteRequest",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "lease_token",
+    "result_schema_version",
+    "result"
+  ],
+  "properties": {
+    "lease_token": {
+      "minLength": 32,
+      "type": "string"
+    },
+    "result_schema_version": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "result": {}
+  }
+}

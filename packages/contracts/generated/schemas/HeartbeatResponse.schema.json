@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/HeartbeatResponse.schema.json",
+  "title": "HeartbeatResponse",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "cancel_requested",
+    "lease_expires_at"
+  ],
+  "properties": {
+    "cancel_requested": {
+      "type": "boolean"
+    },
+    "lease_expires_at": {
+      "format": "date-time",
+      "type": "string"
+    }
+  }
+}

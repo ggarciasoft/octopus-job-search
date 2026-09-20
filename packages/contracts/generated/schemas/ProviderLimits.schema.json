@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ProviderLimits.schema.json",
+  "title": "ProviderLimits",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "context_limit",
+    "output_token_limit",
+    "temperature",
+    "timeout_seconds",
+    "daily_token_budget",
+    "daily_cost_budget"
+  ],
+  "properties": {
+    "context_limit": {
+      "minimum": 512,
+      "maximum": 2000000,
+      "type": "integer"
+    },
+    "output_token_limit": {
+      "minimum": 64,
+      "maximum": 200000,
+      "type": "integer"
+    },
+    "temperature": {
+      "minimum": 0,
+      "maximum": 2,
+      "type": "number"
+    },
+    "timeout_seconds": {
+      "minimum": 5,
+      "maximum": 600,
+      "type": "integer"
+    },
+    "daily_token_budget": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "daily_cost_budget": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

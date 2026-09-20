@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ArtifactUploadResponse.schema.json",
+  "title": "ArtifactUploadResponse",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "file_id",
+    "committed"
+  ],
+  "properties": {
+    "file_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "committed": {
+      "const": false,
+      "type": "boolean"
+    }
+  }
+}

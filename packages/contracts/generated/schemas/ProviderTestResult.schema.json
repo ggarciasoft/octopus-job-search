@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ProviderTestResult.schema.json",
+  "title": "ProviderTestResult",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "reachable",
+    "structured_output_supported",
+    "model_available",
+    "latency_ms",
+    "detail"
+  ],
+  "properties": {
+    "reachable": {
+      "type": "boolean"
+    },
+    "structured_output_supported": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "model_available": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "latency_ms": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "detail": {
+      "maxLength": 1000,
+      "type": "string"
+    }
+  }
+}

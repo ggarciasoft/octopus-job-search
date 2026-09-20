@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/AcceptedResponse.schema.json",
+  "title": "AcceptedResponse",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "task_id",
+    "status"
+  ],
+  "properties": {
+    "task_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "status": {
+      "const": "queued",
+      "type": "string"
+    }
+  }
+}

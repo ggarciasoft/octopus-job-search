@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/DraftFact.schema.json",
+  "title": "DraftFact",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "draft_id",
+    "kind",
+    "value",
+    "source_excerpt",
+    "source_locator",
+    "confidence"
+  ],
+  "properties": {
+    "draft_id": {
+      "minLength": 1,
+      "maxLength": 64,
+      "type": "string"
+    },
+    "kind": {
+      "anyOf": [
+        {
+          "const": "contact",
+          "type": "string"
+        },
+        {
+          "const": "summary",
+          "type": "string"
+        },
+        {
+          "const": "experience",
+          "type": "string"
+        },
+        {
+          "const": "education",
+          "type": "string"
+        },
+        {
+          "const": "skill",
+          "type": "string"
+        },
+        {
+          "const": "language",
+          "type": "string"
+        },
+        {
+          "const": "authorization",
+          "type": "string"
+        },
+        {
+          "const": "project",
+          "type": "string"
+        },
+        {
+          "const": "certification",
+          "type": "string"
+        }
+      ]
+    },
+    "value": {},
+    "source_excerpt": {
+      "anyOf": [
+        {
+          "maxLength": 2000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "source_locator": {
+      "anyOf": [
+        {
+          "maxLength": 120,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "confidence": {
+      "minimum": 0,
+      "maximum": 1,
+      "type": "number"
+    }
+  }
+}

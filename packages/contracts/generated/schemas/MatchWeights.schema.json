@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/MatchWeights.schema.json",
+  "title": "MatchWeights",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "skills",
+    "role_title",
+    "seniority",
+    "work_arrangement",
+    "industry"
+  ],
+  "properties": {
+    "skills": {
+      "minimum": 0,
+      "maximum": 100,
+      "type": "integer"
+    },
+    "role_title": {
+      "minimum": 0,
+      "maximum": 100,
+      "type": "integer"
+    },
+    "seniority": {
+      "minimum": 0,
+      "maximum": 100,
+      "type": "integer"
+    },
+    "work_arrangement": {
+      "minimum": 0,
+      "maximum": 100,
+      "type": "integer"
+    },
+    "industry": {
+      "minimum": 0,
+      "maximum": 100,
+      "type": "integer"
+    }
+  }
+}

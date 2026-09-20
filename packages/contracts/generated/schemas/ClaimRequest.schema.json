@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ClaimRequest.schema.json",
+  "title": "ClaimRequest",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "worker_id",
+    "capabilities",
+    "protocol_version"
+  ],
+  "properties": {
+    "worker_id": {
+      "minLength": 1,
+      "maxLength": 128,
+      "type": "string"
+    },
+    "capabilities": {
+      "minItems": 1,
+      "maxItems": 32,
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "const": "noop_echo",
+            "type": "string"
+          },
+          {
+            "const": "parse_profile",
+            "type": "string"
+          },
+          {
+            "const": "fetch_board",
+            "type": "string"
+          },
+          {
+            "const": "fetch_job",
+            "type": "string"
+          },
+          {
+            "const": "match_job",
+            "type": "string"
+          },
+          {
+            "const": "render_cv",
+            "type": "string"
+          },
+          {
+            "const": "build_packet",
+            "type": "string"
+          },
+          {
+            "const": "fill_local",
+            "type": "string"
+          },
+          {
+            "const": "export_workspace",
+            "type": "string"
+          },
+          {
+            "const": "delete_workspace",
+            "type": "string"
+          },
+          {
+            "const": "discover_boards",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    "protocol_version": {
+      "minimum": 1,
+      "type": "integer"
+    }
+  }
+}

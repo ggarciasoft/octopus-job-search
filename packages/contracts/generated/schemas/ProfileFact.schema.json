@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ProfileFact.schema.json",
+  "title": "ProfileFact",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "id",
+    "kind",
+    "value",
+    "source_file_id",
+    "source_excerpt",
+    "confirmed",
+    "revision",
+    "supersedes_id",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "kind": {
+      "anyOf": [
+        {
+          "const": "contact",
+          "type": "string"
+        },
+        {
+          "const": "summary",
+          "type": "string"
+        },
+        {
+          "const": "experience",
+          "type": "string"
+        },
+        {
+          "const": "education",
+          "type": "string"
+        },
+        {
+          "const": "skill",
+          "type": "string"
+        },
+        {
+          "const": "language",
+          "type": "string"
+        },
+        {
+          "const": "authorization",
+          "type": "string"
+        },
+        {
+          "const": "project",
+          "type": "string"
+        },
+        {
+          "const": "certification",
+          "type": "string"
+        }
+      ]
+    },
+    "value": {},
+    "source_file_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "source_excerpt": {
+      "anyOf": [
+        {
+          "maxLength": 2000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "confirmed": {
+      "type": "boolean"
+    },
+    "revision": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "supersedes_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "created_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "type": "string"
+    }
+  }
+}

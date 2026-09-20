@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/TaskAck.schema.json",
+  "title": "TaskAck",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "task_id",
+    "state"
+  ],
+  "properties": {
+    "task_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "state": {
+      "anyOf": [
+        {
+          "const": "queued",
+          "type": "string"
+        },
+        {
+          "const": "leased",
+          "type": "string"
+        },
+        {
+          "const": "succeeded",
+          "type": "string"
+        },
+        {
+          "const": "failed",
+          "type": "string"
+        },
+        {
+          "const": "cancelled",
+          "type": "string"
+        }
+      ]
+    }
+  }
+}

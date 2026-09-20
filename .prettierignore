@@ -1,0 +1,8 @@
+pnpm-lock.yaml
+uv.lock
+dist/
+build/
+node_modules/
+packages/contracts/generated/
+packages/api-client/src/generated/
+services/worker/src/job_getter_worker/contracts/generated/

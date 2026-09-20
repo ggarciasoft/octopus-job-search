@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/FileView.schema.json",
+  "title": "FileView",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "id",
+    "original_name",
+    "mime",
+    "bytes",
+    "sha256",
+    "purpose",
+    "state",
+    "created_at"
+  ],
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "original_name": {
+      "maxLength": 255,
+      "type": "string"
+    },
+    "mime": {
+      "maxLength": 128,
+      "type": "string"
+    },
+    "bytes": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "purpose": {
+      "anyOf": [
+        {
+          "const": "cv_original",
+          "type": "string"
+        },
+        {
+          "const": "profile_text",
+          "type": "string"
+        },
+        {
+          "const": "generated_cv",
+          "type": "string"
+        },
+        {
+          "const": "export",
+          "type": "string"
+        },
+        {
+          "const": "evidence",
+          "type": "string"
+        }
+      ]
+    },
+    "state": {
+      "anyOf": [
+        {
+          "const": "staging",
+          "type": "string"
+        },
+        {
+          "const": "ready",
+          "type": "string"
+        },
+        {
+          "const": "deleting",
+          "type": "string"
+        }
+      ]
+    },
+    "created_at": {
+      "format": "date-time",
+      "type": "string"
+    }
+  }
+}

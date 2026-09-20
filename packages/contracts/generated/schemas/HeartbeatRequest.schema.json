@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/HeartbeatRequest.schema.json",
+  "title": "HeartbeatRequest",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "lease_token"
+  ],
+  "properties": {
+    "lease_token": {
+      "minLength": 32,
+      "type": "string"
+    },
+    "progress": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "stage",
+        "percent"
+      ],
+      "properties": {
+        "stage": {
+          "maxLength": 120,
+          "type": "string"
+        },
+        "percent": {
+          "minimum": 0,
+          "maximum": 100,
+          "type": "integer"
+        }
+      }
+    }
+  }
+}

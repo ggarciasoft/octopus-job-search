@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/Capabilities.schema.json",
+  "title": "Capabilities",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "implemented_task_types",
+    "ai_provider_configured",
+    "profile_import",
+    "job_discovery",
+    "cv_generation",
+    "applications",
+    "browser_filling",
+    "extension",
+    "worker_online"
+  ],
+  "properties": {
+    "implemented_task_types": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "ai_provider_configured": {
+      "type": "boolean"
+    },
+    "profile_import": {
+      "type": "boolean"
+    },
+    "job_discovery": {
+      "type": "boolean"
+    },
+    "cv_generation": {
+      "type": "boolean"
+    },
+    "applications": {
+      "type": "boolean"
+    },
+    "browser_filling": {
+      "type": "boolean"
+    },
+    "extension": {
+      "type": "boolean"
+    },
+    "worker_online": {
+      "type": "boolean"
+    }
+  }
+}

@@ -1,0 +1,214 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/MeResponse.schema.json",
+  "title": "MeResponse",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "user",
+    "workspace",
+    "mode",
+    "capabilities",
+    "usage"
+  ],
+  "properties": {
+    "user": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "id",
+        "email",
+        "verified_at"
+      ],
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "email": {
+          "minLength": 3,
+          "maxLength": 320,
+          "type": "string"
+        },
+        "verified_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "workspace": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "id",
+        "mode",
+        "locale",
+        "role"
+      ],
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "mode": {
+          "anyOf": [
+            {
+              "const": "local",
+              "type": "string"
+            },
+            {
+              "const": "hosted",
+              "type": "string"
+            }
+          ]
+        },
+        "locale": {
+          "anyOf": [
+            {
+              "const": "en",
+              "type": "string"
+            },
+            {
+              "const": "es",
+              "type": "string"
+            }
+          ]
+        },
+        "role": {
+          "const": "owner",
+          "type": "string"
+        }
+      }
+    },
+    "mode": {
+      "anyOf": [
+        {
+          "const": "local",
+          "type": "string"
+        },
+        {
+          "const": "hosted",
+          "type": "string"
+        }
+      ]
+    },
+    "capabilities": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "implemented_task_types",
+        "ai_provider_configured",
+        "profile_import",
+        "job_discovery",
+        "cv_generation",
+        "applications",
+        "browser_filling",
+        "extension",
+        "worker_online"
+      ],
+      "properties": {
+        "implemented_task_types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ai_provider_configured": {
+          "type": "boolean"
+        },
+        "profile_import": {
+          "type": "boolean"
+        },
+        "job_discovery": {
+          "type": "boolean"
+        },
+        "cv_generation": {
+          "type": "boolean"
+        },
+        "applications": {
+          "type": "boolean"
+        },
+        "browser_filling": {
+          "type": "boolean"
+        },
+        "extension": {
+          "type": "boolean"
+        },
+        "worker_online": {
+          "type": "boolean"
+        }
+      }
+    },
+    "usage": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "ai_requests_today",
+        "ai_requests_per_day_limit",
+        "input_tokens_today",
+        "output_tokens_today",
+        "measured_cost_today",
+        "currency",
+        "daily_cost_budget"
+      ],
+      "properties": {
+        "ai_requests_today": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "ai_requests_per_day_limit": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "input_tokens_today": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "output_tokens_today": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "measured_cost_today": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "currency": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Z]{3}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "daily_cost_budget": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

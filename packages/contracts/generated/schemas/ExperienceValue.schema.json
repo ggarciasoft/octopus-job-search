@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ExperienceValue.schema.json",
+  "title": "ExperienceValue",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "employer",
+    "title",
+    "start_month",
+    "end_month",
+    "current",
+    "employment_type",
+    "bullets",
+    "skills"
+  ],
+  "properties": {
+    "employer": {
+      "minLength": 1,
+      "maxLength": 200,
+      "type": "string"
+    },
+    "title": {
+      "minLength": 1,
+      "maxLength": 200,
+      "type": "string"
+    },
+    "start_month": {
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
+      "type": "string"
+    },
+    "end_month": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "current": {
+      "type": "boolean"
+    },
+    "employment_type": {
+      "anyOf": [
+        {
+          "const": "full_time",
+          "type": "string"
+        },
+        {
+          "const": "part_time",
+          "type": "string"
+        },
+        {
+          "const": "contract",
+          "type": "string"
+        },
+        {
+          "const": "internship",
+          "type": "string"
+        },
+        {
+          "const": "temporary",
+          "type": "string"
+        },
+        {
+          "const": "freelance",
+          "type": "string"
+        },
+        {
+          "const": "unknown",
+          "type": "string"
+        }
+      ]
+    },
+    "location": {
+      "maxLength": 200,
+      "type": "string"
+    },
+    "bullets": {
+      "maxItems": 30,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "text",
+          "evidence_reference"
+        ],
+        "properties": {
+          "text": {
+            "minLength": 1,
+            "maxLength": 600,
+            "type": "string"
+          },
+          "evidence_reference": {
+            "maxLength": 300,
+            "type": "string"
+          }
+        }
+      }
+    },
+    "skills": {
+      "maxItems": 60,
+      "type": "array",
+      "items": {
+        "maxLength": 80,
+        "type": "string"
+      }
+    }
+  }
+}

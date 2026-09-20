@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ExperienceBullet.schema.json",
+  "title": "ExperienceBullet",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "text",
+    "evidence_reference"
+  ],
+  "properties": {
+    "text": {
+      "minLength": 1,
+      "maxLength": 600,
+      "type": "string"
+    },
+    "evidence_reference": {
+      "maxLength": 300,
+      "type": "string"
+    }
+  }
+}

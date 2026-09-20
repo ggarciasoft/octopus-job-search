@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/RateCard.schema.json",
+  "title": "RateCard",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "currency",
+    "input_cost_per_million",
+    "output_cost_per_million"
+  ],
+  "properties": {
+    "currency": {
+      "pattern": "^[A-Z]{3}$",
+      "type": "string"
+    },
+    "input_cost_per_million": {
+      "minimum": 0,
+      "type": "number"
+    },
+    "output_cost_per_million": {
+      "minimum": 0,
+      "type": "number"
+    }
+  }
+}

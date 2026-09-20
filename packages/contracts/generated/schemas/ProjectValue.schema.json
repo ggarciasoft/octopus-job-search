@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ProjectValue.schema.json",
+  "title": "ProjectValue",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "name",
+    "role",
+    "url",
+    "start_month",
+    "end_month",
+    "bullets",
+    "skills"
+  ],
+  "properties": {
+    "name": {
+      "minLength": 1,
+      "maxLength": 200,
+      "type": "string"
+    },
+    "role": {
+      "anyOf": [
+        {
+          "maxLength": 200,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "url": {
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "start_month": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "end_month": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "bullets": {
+      "maxItems": 20,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "text",
+          "evidence_reference"
+        ],
+        "properties": {
+          "text": {
+            "minLength": 1,
+            "maxLength": 600,
+            "type": "string"
+          },
+          "evidence_reference": {
+            "maxLength": 300,
+            "type": "string"
+          }
+        }
+      }
+    },
+    "skills": {
+      "maxItems": 40,
+      "type": "array",
+      "items": {
+        "maxLength": 80,
+        "type": "string"
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+# Native/postinstall builds are opt-in. argon2 and esbuild genuinely need to
+# compile or fetch a platform binary; the testcontainers transitives do not.
+allowBuilds:
+  argon2: true
+  esbuild: true
+  cpu-features: false
+  protobufjs: false
+  ssh2: false
+minimumReleaseAgeExclude:
+  - tsx@4.23.15

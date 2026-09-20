@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/SummaryValue.schema.json",
+  "title": "SummaryValue",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "text"
+  ],
+  "properties": {
+    "text": {
+      "minLength": 1,
+      "maxLength": 2000,
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/AuthorizationValue.schema.json",
+  "title": "AuthorizationValue",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "country",
+    "authorized",
+    "sponsorship_required"
+  ],
+  "properties": {
+    "country": {
+      "pattern": "^[A-Z]{2}$",
+      "type": "string"
+    },
+    "authorized": {
+      "anyOf": [
+        {
+          "const": "yes",
+          "type": "string"
+        },
+        {
+          "const": "no",
+          "type": "string"
+        },
+        {
+          "const": "unknown",
+          "type": "string"
+        }
+      ]
+    },
+    "sponsorship_required": {
+      "anyOf": [
+        {
+          "const": "yes",
+          "type": "string"
+        },
+        {
+          "const": "no",
+          "type": "string"
+        },
+        {
+          "const": "unknown",
+          "type": "string"
+        }
+      ]
+    },
+    "note": {
+      "maxLength": 300,
+      "type": "string"
+    }
+  }
+}

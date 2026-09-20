@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/UsageLedgerEntry.schema.json",
+  "title": "UsageLedgerEntry",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "id",
+    "task_id",
+    "provider",
+    "input_tokens",
+    "output_tokens",
+    "measured_cost",
+    "reserved_cost",
+    "currency",
+    "status",
+    "created_at"
+  ],
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "task_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "provider": {
+      "anyOf": [
+        {
+          "const": "none",
+          "type": "string"
+        },
+        {
+          "const": "fake",
+          "type": "string"
+        },
+        {
+          "const": "ollama",
+          "type": "string"
+        },
+        {
+          "const": "openai_compatible",
+          "type": "string"
+        }
+      ]
+    },
+    "input_tokens": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "output_tokens": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "measured_cost": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "reserved_cost": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "currency": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Z]{3}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "status": {
+      "anyOf": [
+        {
+          "const": "reserved",
+          "type": "string"
+        },
+        {
+          "const": "settled",
+          "type": "string"
+        },
+        {
+          "const": "released",
+          "type": "string"
+        }
+      ]
+    },
+    "created_at": {
+      "format": "date-time",
+      "type": "string"
+    }
+  }
+}

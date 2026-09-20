@@ -1,0 +1,301 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ProfileImportView.schema.json",
+  "title": "ProfileImportView",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "id",
+    "status",
+    "task_id",
+    "format_hint",
+    "source_file_id",
+    "draft_facts",
+    "warnings",
+    "conflicts",
+    "error",
+    "created_at"
+  ],
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "status": {
+      "anyOf": [
+        {
+          "const": "queued",
+          "type": "string"
+        },
+        {
+          "const": "parsing",
+          "type": "string"
+        },
+        {
+          "const": "ready_for_review",
+          "type": "string"
+        },
+        {
+          "const": "confirmed",
+          "type": "string"
+        },
+        {
+          "const": "failed",
+          "type": "string"
+        }
+      ]
+    },
+    "task_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "format_hint": {
+      "anyOf": [
+        {
+          "const": "pdf",
+          "type": "string"
+        },
+        {
+          "const": "docx",
+          "type": "string"
+        },
+        {
+          "const": "linkedin_export_text",
+          "type": "string"
+        },
+        {
+          "const": "plain_text",
+          "type": "string"
+        },
+        {
+          "const": "auto",
+          "type": "string"
+        }
+      ]
+    },
+    "source_file_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "draft_facts": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "draft_id",
+          "kind",
+          "value",
+          "source_excerpt",
+          "source_locator",
+          "confidence"
+        ],
+        "properties": {
+          "draft_id": {
+            "minLength": 1,
+            "maxLength": 64,
+            "type": "string"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "const": "contact",
+                "type": "string"
+              },
+              {
+                "const": "summary",
+                "type": "string"
+              },
+              {
+                "const": "experience",
+                "type": "string"
+              },
+              {
+                "const": "education",
+                "type": "string"
+              },
+              {
+                "const": "skill",
+                "type": "string"
+              },
+              {
+                "const": "language",
+                "type": "string"
+              },
+              {
+                "const": "authorization",
+                "type": "string"
+              },
+              {
+                "const": "project",
+                "type": "string"
+              },
+              {
+                "const": "certification",
+                "type": "string"
+              }
+            ]
+          },
+          "value": {},
+          "source_excerpt": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_locator": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "confidence": {
+            "minimum": 0,
+            "maximum": 1,
+            "type": "number"
+          }
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "const": "EXTRACTION_SHORT",
+                "type": "string"
+              },
+              {
+                "const": "PAGES_TRUNCATED",
+                "type": "string"
+              },
+              {
+                "const": "CHARS_TRUNCATED",
+                "type": "string"
+              },
+              {
+                "const": "TABLE_LAYOUT_UNCERTAIN",
+                "type": "string"
+              },
+              {
+                "const": "DATE_AMBIGUOUS",
+                "type": "string"
+              },
+              {
+                "const": "FIELD_DROPPED_INVALID",
+                "type": "string"
+              },
+              {
+                "const": "MODEL_CORRECTED_ONCE",
+                "type": "string"
+              },
+              {
+                "const": "NO_PROVIDER_CONFIGURED",
+                "type": "string"
+              },
+              {
+                "const": "PROMPT_INJECTION_TEXT_IGNORED",
+                "type": "string"
+              }
+            ]
+          },
+          "message": {
+            "maxLength": 500,
+            "type": "string"
+          },
+          "detail": {
+            "maxLength": 500,
+            "type": "string"
+          }
+        }
+      }
+    },
+    "conflicts": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "draft_id",
+          "existing_fact_id",
+          "reason"
+        ],
+        "properties": {
+          "draft_id": {
+            "maxLength": 64,
+            "type": "string"
+          },
+          "existing_fact_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 200,
+            "type": "string"
+          }
+        }
+      }
+    },
+    "error": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "message": {
+              "maxLength": 500,
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "created_at": {
+      "format": "date-time",
+      "type": "string"
+    }
+  }
+}

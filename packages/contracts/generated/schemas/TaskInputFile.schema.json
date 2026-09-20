@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/TaskInputFile.schema.json",
+  "title": "TaskInputFile",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "file_id",
+    "purpose",
+    "original_name",
+    "mime",
+    "bytes",
+    "sha256"
+  ],
+  "properties": {
+    "file_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "purpose": {
+      "maxLength": 64,
+      "type": "string"
+    },
+    "original_name": {
+      "maxLength": 255,
+      "type": "string"
+    },
+    "mime": {
+      "maxLength": 128,
+      "type": "string"
+    },
+    "bytes": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/FailRequest.schema.json",
+  "title": "FailRequest",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "lease_token",
+    "code",
+    "retryable",
+    "redacted_message"
+  ],
+  "properties": {
+    "lease_token": {
+      "minLength": 32,
+      "type": "string"
+    },
+    "code": {
+      "anyOf": [
+        {
+          "const": "PROVIDER_UNAVAILABLE",
+          "type": "string"
+        },
+        {
+          "const": "PROVIDER_INVALID_OUTPUT",
+          "type": "string"
+        },
+        {
+          "const": "BUDGET_EXHAUSTED",
+          "type": "string"
+        },
+        {
+          "const": "INPUT_INVALID",
+          "type": "string"
+        },
+        {
+          "const": "FILE_UNREADABLE",
+          "type": "string"
+        },
+        {
+          "const": "ENCRYPTED_DOCUMENT",
+          "type": "string"
+        },
+        {
+          "const": "OCR_REQUIRED",
+          "type": "string"
+        },
+        {
+          "const": "EXTRACTION_EMPTY",
+          "type": "string"
+        },
+        {
+          "const": "LIMIT_EXCEEDED",
+          "type": "string"
+        },
+        {
+          "const": "FETCH_BLOCKED",
+          "type": "string"
+        },
+        {
+          "const": "RATE_LIMITED",
+          "type": "string"
+        },
+        {
+          "const": "TIMEOUT",
+          "type": "string"
+        },
+        {
+          "const": "CANCELLED",
+          "type": "string"
+        },
+        {
+          "const": "UNSUPPORTED_TASK_TYPE",
+          "type": "string"
+        },
+        {
+          "const": "INTERNAL_ERROR",
+          "type": "string"
+        }
+      ]
+    },
+    "retryable": {
+      "type": "boolean"
+    },
+    "redacted_message": {
+      "maxLength": 2000,
+      "type": "string"
+    }
+  }
+}

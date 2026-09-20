@@ -1,0 +1,31 @@
+{
+  "draft_facts": [
+    {
+      "draft_id": "experience-1",
+      "kind": "experience",
+      "value": {
+        "employer": "Northwind Logistics International",
+        "title": "Staff Backend Engineer",
+        "start_month": "2022-03",
+        "end_month": null,
+        "current": true,
+        "employment_type": "full_time",
+        "location": "Remote",
+        "bullets": [
+          {
+            "text": "Led the migration of the shipment tracking service to PostgreSQL.",
+            "evidence_reference": "revised CV, Northwind bullet 1"
+          }
+        ],
+        "skills": [
+          "Python",
+          "PostgreSQL"
+        ]
+      },
+      "source_excerpt": "Staff Backend Engineer, Northwind Logistics International, 2022-03 - Present",
+      "source_locator": "page 1",
+      "confidence": 0.8
+    }
+  ],
+  "warnings": []
+}

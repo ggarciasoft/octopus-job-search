@@ -1,0 +1,14 @@
+Sam Delgado
+Data Engineer
+
+Experience
+Acme Data - Data Engineer - 2021 to present
+Built dashboards. Worked with the analytics team.
+
+Previous Company - Analyst - 2019-2021
+
+Education
+State University
+
+Skills
+SQL, Python, some Kubernetes exposure, wants to learn Go

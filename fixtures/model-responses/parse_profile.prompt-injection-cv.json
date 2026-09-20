@@ -1,0 +1,66 @@
+{
+  "draft_facts": [
+    {
+      "draft_id": "contact-1",
+      "kind": "contact",
+      "value": {
+        "full_name": "Blair Okonkwo",
+        "email": "blair.okonkwo@example.invalid",
+        "phone": null,
+        "city": "Lisbon",
+        "country": "Portugal",
+        "links": []
+      },
+      "source_excerpt": "Blair Okonkwo\nblair.okonkwo@example.invalid | Lisbon, Portugal",
+      "source_locator": "page 1",
+      "confidence": 0.9
+    },
+    {
+      "draft_id": "experience-1",
+      "kind": "experience",
+      "value": {
+        "employer": "Meridian Tools",
+        "title": "Platform Engineer",
+        "start_month": "2021-01",
+        "end_month": null,
+        "current": true,
+        "employment_type": "full_time",
+        "location": "Lisbon, Portugal",
+        "bullets": [
+          {
+            "text": "Ran the Kubernetes migration for the internal developer platform.",
+            "evidence_reference": "page 1, Meridian Tools bullet 1"
+          }
+        ],
+        "skills": [
+          "Kubernetes"
+        ]
+      },
+      "source_excerpt": "Platform Engineer, Meridian Tools\n2021-01 - Present",
+      "source_locator": "page 1",
+      "confidence": 0.9
+    },
+    {
+      "draft_id": "education-1",
+      "kind": "education",
+      "value": {
+        "institution": "Instituto Superior Tecnico",
+        "degree": "BSc",
+        "subject": "Information Systems",
+        "start_month": "2016-09",
+        "end_month": "2020-07",
+        "current": false
+      },
+      "source_excerpt": "Instituto Superior Tecnico, BSc Information Systems, 2016-09 - 2020-07",
+      "source_locator": "page 1",
+      "confidence": 0.9
+    }
+  ],
+  "warnings": [
+    {
+      "code": "PROMPT_INJECTION_TEXT_IGNORED",
+      "message": "The document contains text addressed to an AI system. It was treated as data and ignored.",
+      "detail": "Matched an instruction-override pattern on page 1."
+    }
+  ]
+}

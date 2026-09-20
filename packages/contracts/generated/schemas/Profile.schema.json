@@ -1,0 +1,235 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/Profile.schema.json",
+  "title": "Profile",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "id",
+    "revision",
+    "confirmed_revision",
+    "contact",
+    "locale",
+    "facts",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "revision": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "confirmed_revision": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "contact": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "full_name",
+            "email"
+          ],
+          "properties": {
+            "full_name": {
+              "minLength": 1,
+              "maxLength": 200,
+              "type": "string"
+            },
+            "email": {
+              "minLength": 3,
+              "maxLength": 320,
+              "type": "string"
+            },
+            "phone": {
+              "maxLength": 40,
+              "type": "string"
+            },
+            "city": {
+              "maxLength": 120,
+              "type": "string"
+            },
+            "country": {
+              "maxLength": 120,
+              "type": "string"
+            },
+            "links": {
+              "maxItems": 12,
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "label",
+                  "url"
+                ],
+                "properties": {
+                  "label": {
+                    "minLength": 1,
+                    "maxLength": 60,
+                    "type": "string"
+                  },
+                  "url": {
+                    "minLength": 1,
+                    "maxLength": 500,
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "locale": {
+      "anyOf": [
+        {
+          "const": "en",
+          "type": "string"
+        },
+        {
+          "const": "es",
+          "type": "string"
+        }
+      ]
+    },
+    "facts": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "value",
+          "source_file_id",
+          "source_excerpt",
+          "confirmed",
+          "revision",
+          "supersedes_id",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "const": "contact",
+                "type": "string"
+              },
+              {
+                "const": "summary",
+                "type": "string"
+              },
+              {
+                "const": "experience",
+                "type": "string"
+              },
+              {
+                "const": "education",
+                "type": "string"
+              },
+              {
+                "const": "skill",
+                "type": "string"
+              },
+              {
+                "const": "language",
+                "type": "string"
+              },
+              {
+                "const": "authorization",
+                "type": "string"
+              },
+              {
+                "const": "project",
+                "type": "string"
+              },
+              {
+                "const": "certification",
+                "type": "string"
+              }
+            ]
+          },
+          "value": {},
+          "source_file_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_excerpt": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "confirmed": {
+            "type": "boolean"
+          },
+          "revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "supersedes_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          }
+        }
+      }
+    },
+    "created_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "type": "string"
+    }
+  }
+}

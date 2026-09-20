@@ -1,0 +1,214 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ParseProfileResult.schema.json",
+  "title": "ParseProfileResult",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "draft_facts",
+    "warnings",
+    "extracted_chars",
+    "provider"
+  ],
+  "properties": {
+    "draft_facts": {
+      "maxItems": 500,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "draft_id",
+          "kind",
+          "value",
+          "source_excerpt",
+          "source_locator",
+          "confidence"
+        ],
+        "properties": {
+          "draft_id": {
+            "minLength": 1,
+            "maxLength": 64,
+            "type": "string"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "const": "contact",
+                "type": "string"
+              },
+              {
+                "const": "summary",
+                "type": "string"
+              },
+              {
+                "const": "experience",
+                "type": "string"
+              },
+              {
+                "const": "education",
+                "type": "string"
+              },
+              {
+                "const": "skill",
+                "type": "string"
+              },
+              {
+                "const": "language",
+                "type": "string"
+              },
+              {
+                "const": "authorization",
+                "type": "string"
+              },
+              {
+                "const": "project",
+                "type": "string"
+              },
+              {
+                "const": "certification",
+                "type": "string"
+              }
+            ]
+          },
+          "value": {},
+          "source_excerpt": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_locator": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "confidence": {
+            "minimum": 0,
+            "maximum": 1,
+            "type": "number"
+          }
+        }
+      }
+    },
+    "warnings": {
+      "maxItems": 100,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "const": "EXTRACTION_SHORT",
+                "type": "string"
+              },
+              {
+                "const": "PAGES_TRUNCATED",
+                "type": "string"
+              },
+              {
+                "const": "CHARS_TRUNCATED",
+                "type": "string"
+              },
+              {
+                "const": "TABLE_LAYOUT_UNCERTAIN",
+                "type": "string"
+              },
+              {
+                "const": "DATE_AMBIGUOUS",
+                "type": "string"
+              },
+              {
+                "const": "FIELD_DROPPED_INVALID",
+                "type": "string"
+              },
+              {
+                "const": "MODEL_CORRECTED_ONCE",
+                "type": "string"
+              },
+              {
+                "const": "NO_PROVIDER_CONFIGURED",
+                "type": "string"
+              },
+              {
+                "const": "PROMPT_INJECTION_TEXT_IGNORED",
+                "type": "string"
+              }
+            ]
+          },
+          "message": {
+            "maxLength": 500,
+            "type": "string"
+          },
+          "detail": {
+            "maxLength": 500,
+            "type": "string"
+          }
+        }
+      }
+    },
+    "extracted_chars": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "provider": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "id",
+        "model",
+        "input_tokens",
+        "output_tokens"
+      ],
+      "properties": {
+        "id": {
+          "maxLength": 64,
+          "type": "string"
+        },
+        "model": {
+          "maxLength": 128,
+          "type": "string"
+        },
+        "input_tokens": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "output_tokens": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

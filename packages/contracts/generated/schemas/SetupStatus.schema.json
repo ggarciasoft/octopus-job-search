@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/SetupStatus.schema.json",
+  "title": "SetupStatus",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "mode",
+    "setup_required",
+    "registration_open"
+  ],
+  "properties": {
+    "mode": {
+      "anyOf": [
+        {
+          "const": "local",
+          "type": "string"
+        },
+        {
+          "const": "hosted",
+          "type": "string"
+        }
+      ]
+    },
+    "setup_required": {
+      "type": "boolean"
+    },
+    "registration_open": {
+      "type": "boolean"
+    }
+  }
+}

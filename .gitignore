@@ -141,3 +141,59 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# ---------------------------------------------------------------------------
+# Job Getter additions
+# ---------------------------------------------------------------------------
+
+# Python / uv
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+.coverage.*
+
+# Local runner browser profile. docs/spec/07_APPLICATION_AUTOMATION.md requires
+# the paired desktop runner's Chromium profile to live in a restricted local
+# directory, outside the workspace export and outside git: it holds live
+# job-site sessions.
+services/worker/.browser-profile/
+.browser-profile/
+browser-profile/
+
+# Private file storage for local installations (uploaded CVs, generated
+# documents, exports). Never commit a real CV.
+files/
+data/
+storage/
+*.local.sqlite
+
+# Personal data. docs/spec/11_TESTING_ACCEPTANCE.md forbids personal data in CI
+# fixtures; only the synthetic corpus under fixtures/ belongs in git.
+fixtures/personal/
+fixtures/private/
+**/personal-cv.*
+**/my-cv.*
+
+# Secrets and generated credentials
+*.pem
+*.key
+!infra/**/*.key.example
+secrets/
+.setup-token
+
+# Backups produced by scripts/backup.*
+backups/
+*.dump
+*.sql.gz
+
+# Test and tooling output
+test-results/
+playwright-report/
+.playwright/
+*.tsbuildinfo

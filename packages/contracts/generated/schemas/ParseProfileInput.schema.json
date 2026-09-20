@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ParseProfileInput.schema.json",
+  "title": "ParseProfileInput",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "profile_import_id",
+    "profile_revision",
+    "format_hint",
+    "locale",
+    "inline_text",
+    "source_file_id",
+    "limits"
+  ],
+  "properties": {
+    "profile_import_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "profile_revision": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "format_hint": {
+      "anyOf": [
+        {
+          "const": "pdf",
+          "type": "string"
+        },
+        {
+          "const": "docx",
+          "type": "string"
+        },
+        {
+          "const": "linkedin_export_text",
+          "type": "string"
+        },
+        {
+          "const": "plain_text",
+          "type": "string"
+        },
+        {
+          "const": "auto",
+          "type": "string"
+        }
+      ]
+    },
+    "locale": {
+      "anyOf": [
+        {
+          "const": "en",
+          "type": "string"
+        },
+        {
+          "const": "es",
+          "type": "string"
+        }
+      ]
+    },
+    "inline_text": {
+      "anyOf": [
+        {
+          "maxLength": 200000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "source_file_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "limits": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "max_pdf_pages",
+        "max_extracted_chars"
+      ],
+      "properties": {
+        "max_pdf_pages": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "max_extracted_chars": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      }
+    }
+  }
+}

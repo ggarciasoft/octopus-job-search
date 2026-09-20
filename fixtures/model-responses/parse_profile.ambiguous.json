@@ -1,0 +1,59 @@
+{
+  "draft_facts": [
+    {
+      "draft_id": "contact-1",
+      "kind": "contact",
+      "value": {
+        "full_name": "Sam Delgado",
+        "email": "",
+        "phone": null,
+        "city": null,
+        "country": null,
+        "links": []
+      },
+      "source_excerpt": "Sam Delgado\nData Engineer",
+      "source_locator": "line 1",
+      "confidence": 0.5
+    },
+    {
+      "draft_id": "experience-1",
+      "kind": "experience",
+      "value": {
+        "employer": "Acme Data",
+        "title": "Data Engineer",
+        "start_month": "2021-01",
+        "end_month": null,
+        "current": true,
+        "employment_type": "unknown",
+        "location": null,
+        "bullets": [
+          {
+            "text": "Built dashboards. Worked with the analytics team.",
+            "evidence_reference": "Acme Data entry"
+          }
+        ],
+        "skills": []
+      },
+      "source_excerpt": "Acme Data - Data Engineer - 2021 to present",
+      "source_locator": "Experience",
+      "confidence": 0.45
+    }
+  ],
+  "warnings": [
+    {
+      "code": "DATE_AMBIGUOUS",
+      "message": "The CV gives years without months. The start month was left at the year boundary and needs your confirmation.",
+      "detail": "2021 to present"
+    },
+    {
+      "code": "FIELD_DROPPED_INVALID",
+      "message": "An employment entry named only 'Previous Company', which is not a usable employer name. It was not proposed as a fact.",
+      "detail": "Previous Company - Analyst - 2019-2021"
+    },
+    {
+      "code": "FIELD_DROPPED_INVALID",
+      "message": "'some Kubernetes exposure' and 'wants to learn Go' describe interest, not experience, so they were not proposed as skills.",
+      "detail": "Skills line"
+    }
+  ]
+}

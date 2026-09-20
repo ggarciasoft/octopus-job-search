@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/UsageSummary.schema.json",
+  "title": "UsageSummary",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "ai_requests_today",
+    "ai_requests_per_day_limit",
+    "input_tokens_today",
+    "output_tokens_today",
+    "measured_cost_today",
+    "currency",
+    "daily_cost_budget"
+  ],
+  "properties": {
+    "ai_requests_today": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "ai_requests_per_day_limit": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "input_tokens_today": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "output_tokens_today": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "measured_cost_today": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "currency": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Z]{3}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "daily_cost_budget": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

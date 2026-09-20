@@ -1,0 +1,738 @@
+{
+  "$comment": "Shared validation corpus. Both runtimes must reach the same verdict on every case: TypeBox Value.Check in packages/contracts/tests/fidelity.test.ts, and the generated Pydantic models in services/worker. Payloads are complete documents so a reader in either language needs no assembly. Each invalid case differs from a valid control in exactly one way, and names the constraint it exercises. Scope: this proves the two runtimes agree on schema CONSTRAINTS. It deliberately contains no type-coercion cases, because Pydantic lax mode converts '5' to 5 where TypeBox rejects it; see the documented coercion divergence in fidelity.test.ts.",
+  "cases": [
+    {
+      "id": "noop-echo-input/valid",
+      "schema": "NoopEchoInput",
+      "valid": true,
+      "constraint": "control",
+      "payload": { "message": "ping" }
+    },
+    {
+      "id": "noop-echo-input/message-empty",
+      "schema": "NoopEchoInput",
+      "valid": false,
+      "constraint": "minLength",
+      "payload": { "message": "" }
+    },
+    {
+      "id": "noop-echo-input/delay-negative",
+      "schema": "NoopEchoInput",
+      "valid": false,
+      "constraint": "minimum",
+      "payload": { "message": "ping", "delay_ms": -1 }
+    },
+    {
+      "id": "noop-echo-input/delay-over-maximum",
+      "schema": "NoopEchoInput",
+      "valid": false,
+      "constraint": "maximum",
+      "payload": { "message": "ping", "delay_ms": 60001 }
+    },
+    {
+      "id": "noop-echo-input/unknown-key",
+      "schema": "NoopEchoInput",
+      "valid": false,
+      "constraint": "additionalProperties",
+      "payload": { "message": "ping", "retries": 3 }
+    },
+
+    {
+      "id": "draft-fact/valid",
+      "schema": "DraftFact",
+      "valid": true,
+      "constraint": "control",
+      "payload": {
+        "draft_id": "d1",
+        "kind": "skill",
+        "value": {},
+        "source_excerpt": null,
+        "source_locator": null,
+        "confidence": 0.4
+      }
+    },
+    {
+      "id": "draft-fact/confidence-above-one",
+      "schema": "DraftFact",
+      "valid": false,
+      "constraint": "maximum",
+      "payload": {
+        "draft_id": "d1",
+        "kind": "skill",
+        "value": {},
+        "source_excerpt": null,
+        "source_locator": null,
+        "confidence": 99.0
+      }
+    },
+    {
+      "id": "draft-fact/confidence-below-zero",
+      "schema": "DraftFact",
+      "valid": false,
+      "constraint": "minimum",
+      "payload": {
+        "draft_id": "d1",
+        "kind": "skill",
+        "value": {},
+        "source_excerpt": null,
+        "source_locator": null,
+        "confidence": -0.1
+      }
+    },
+    {
+      "id": "draft-fact/draft-id-empty",
+      "schema": "DraftFact",
+      "valid": false,
+      "constraint": "minLength",
+      "payload": {
+        "draft_id": "",
+        "kind": "skill",
+        "value": {},
+        "source_excerpt": null,
+        "source_locator": null,
+        "confidence": 0.4
+      }
+    },
+    {
+      "id": "draft-fact/kind-not-in-enum",
+      "schema": "DraftFact",
+      "valid": false,
+      "constraint": "enum",
+      "payload": {
+        "draft_id": "d1",
+        "kind": "salary_history",
+        "value": {},
+        "source_excerpt": null,
+        "source_locator": null,
+        "confidence": 0.4
+      }
+    },
+
+    {
+      "id": "experience-value/valid",
+      "schema": "ExperienceValue",
+      "valid": true,
+      "constraint": "control",
+      "payload": {
+        "employer": "Acme",
+        "title": "Engineer",
+        "start_month": "2022-01",
+        "end_month": null,
+        "current": true,
+        "employment_type": "full_time",
+        "bullets": [{ "text": "Shipped the billing service", "evidence_reference": "cv p1" }],
+        "skills": ["python"]
+      }
+    },
+    {
+      "id": "experience-value/start-month-thirteen",
+      "schema": "ExperienceValue",
+      "valid": false,
+      "constraint": "pattern",
+      "payload": {
+        "employer": "Acme",
+        "title": "Engineer",
+        "start_month": "2022-13",
+        "end_month": null,
+        "current": true,
+        "employment_type": "full_time",
+        "bullets": [{ "text": "Shipped the billing service", "evidence_reference": "cv p1" }],
+        "skills": ["python"]
+      }
+    },
+    {
+      "id": "experience-value/end-month-pattern-inside-nullable-union",
+      "schema": "ExperienceValue",
+      "valid": false,
+      "constraint": "pattern",
+      "payload": {
+        "employer": "Acme",
+        "title": "Engineer",
+        "start_month": "2022-01",
+        "end_month": "not-a-month",
+        "current": true,
+        "employment_type": "full_time",
+        "bullets": [{ "text": "Shipped the billing service", "evidence_reference": "cv p1" }],
+        "skills": ["python"]
+      }
+    },
+    {
+      "id": "experience-value/employer-empty",
+      "schema": "ExperienceValue",
+      "valid": false,
+      "constraint": "minLength",
+      "payload": {
+        "employer": "",
+        "title": "Engineer",
+        "start_month": "2022-01",
+        "end_month": null,
+        "current": true,
+        "employment_type": "full_time",
+        "bullets": [{ "text": "Shipped the billing service", "evidence_reference": "cv p1" }],
+        "skills": ["python"]
+      }
+    },
+    {
+      "id": "experience-value/nested-bullet-text-empty",
+      "schema": "ExperienceValue",
+      "valid": false,
+      "constraint": "minLength (nested model)",
+      "payload": {
+        "employer": "Acme",
+        "title": "Engineer",
+        "start_month": "2022-01",
+        "end_month": null,
+        "current": true,
+        "employment_type": "full_time",
+        "bullets": [{ "text": "", "evidence_reference": "cv p1" }],
+        "skills": ["python"]
+      }
+    },
+
+    {
+      "id": "authorization-value/valid-unknown",
+      "schema": "AuthorizationValue",
+      "valid": true,
+      "constraint": "control",
+      "payload": { "country": "US", "authorized": "unknown", "sponsorship_required": "unknown" }
+    },
+    {
+      "id": "authorization-value/country-lowercase",
+      "schema": "AuthorizationValue",
+      "valid": false,
+      "constraint": "pattern",
+      "payload": { "country": "us", "authorized": "unknown", "sponsorship_required": "unknown" }
+    },
+    {
+      "id": "authorization-value/authorized-boolean",
+      "schema": "AuthorizationValue",
+      "valid": false,
+      "constraint": "enum",
+      "payload": { "country": "US", "authorized": true, "sponsorship_required": "unknown" }
+    },
+
+    {
+      "id": "task-progress/valid",
+      "schema": "TaskProgress",
+      "valid": true,
+      "constraint": "control",
+      "payload": { "stage": "parsing", "percent": 50 }
+    },
+    {
+      "id": "task-progress/percent-over-hundred",
+      "schema": "TaskProgress",
+      "valid": false,
+      "constraint": "maximum",
+      "payload": { "stage": "parsing", "percent": 101 }
+    },
+
+    {
+      "id": "claim-request/valid",
+      "schema": "ClaimRequest",
+      "valid": true,
+      "constraint": "control",
+      "payload": { "worker_id": "worker-1", "capabilities": ["noop_echo"], "protocol_version": 1 }
+    },
+    {
+      "id": "claim-request/no-capabilities",
+      "schema": "ClaimRequest",
+      "valid": false,
+      "constraint": "minItems",
+      "payload": { "worker_id": "worker-1", "capabilities": [], "protocol_version": 1 }
+    },
+    {
+      "id": "claim-request/protocol-version-zero",
+      "schema": "ClaimRequest",
+      "valid": false,
+      "constraint": "minimum",
+      "payload": { "worker_id": "worker-1", "capabilities": ["noop_echo"], "protocol_version": 0 }
+    },
+
+    {
+      "id": "claim-response/valid",
+      "schema": "ClaimResponse",
+      "valid": true,
+      "constraint": "control",
+      "payload": {
+        "task_id": "3f1d4b5e-9a2c-4f1e-8c3a-7b6d5e4f3a2b",
+        "type": "noop_echo",
+        "lease_token": "0123456789abcdef0123456789abcdef0123456789abcdef",
+        "lease_expires_at": "2026-02-03T04:05:06.000Z",
+        "attempt": 1,
+        "max_attempts": 3,
+        "input_schema_version": 1,
+        "input": {},
+        "files": []
+      }
+    },
+    {
+      "id": "claim-response/task-id-not-a-uuid",
+      "schema": "ClaimResponse",
+      "valid": false,
+      "constraint": "format uuid",
+      "payload": {
+        "task_id": "not-a-uuid",
+        "type": "noop_echo",
+        "lease_token": "0123456789abcdef0123456789abcdef0123456789abcdef",
+        "lease_expires_at": "2026-02-03T04:05:06.000Z",
+        "attempt": 1,
+        "max_attempts": 3,
+        "input_schema_version": 1,
+        "input": {},
+        "files": []
+      }
+    },
+    {
+      "id": "claim-response/task-id-uppercase-uuid",
+      "schema": "ClaimResponse",
+      "valid": true,
+      "constraint": "format uuid is case-insensitive",
+      "payload": {
+        "task_id": "3F1D4B5E-9A2C-4F1E-8C3A-7B6D5E4F3A2B",
+        "type": "noop_echo",
+        "lease_token": "0123456789abcdef0123456789abcdef0123456789abcdef",
+        "lease_expires_at": "2026-02-03T04:05:06.000Z",
+        "attempt": 1,
+        "max_attempts": 3,
+        "input_schema_version": 1,
+        "input": {},
+        "files": []
+      }
+    },
+    {
+      "id": "claim-response/lease-expires-at-non-utc-offset",
+      "schema": "ClaimResponse",
+      "valid": false,
+      "constraint": "format date-time is UTC only",
+      "payload": {
+        "task_id": "3f1d4b5e-9a2c-4f1e-8c3a-7b6d5e4f3a2b",
+        "type": "noop_echo",
+        "lease_token": "0123456789abcdef0123456789abcdef0123456789abcdef",
+        "lease_expires_at": "2026-02-03T04:05:06+02:00",
+        "attempt": 1,
+        "max_attempts": 3,
+        "input_schema_version": 1,
+        "input": {},
+        "files": []
+      }
+    },
+    {
+      "id": "claim-response/lease-expires-at-zero-offset",
+      "schema": "ClaimResponse",
+      "valid": true,
+      "constraint": "format date-time accepts +00:00",
+      "payload": {
+        "task_id": "3f1d4b5e-9a2c-4f1e-8c3a-7b6d5e4f3a2b",
+        "type": "noop_echo",
+        "lease_token": "0123456789abcdef0123456789abcdef0123456789abcdef",
+        "lease_expires_at": "2026-02-03T04:05:06+00:00",
+        "attempt": 1,
+        "max_attempts": 3,
+        "input_schema_version": 1,
+        "input": {},
+        "files": []
+      }
+    },
+    {
+      "id": "claim-response/lease-expires-at-impossible-date",
+      "schema": "ClaimResponse",
+      "valid": false,
+      "constraint": "format date-time rejects a non-existent instant",
+      "payload": {
+        "task_id": "3f1d4b5e-9a2c-4f1e-8c3a-7b6d5e4f3a2b",
+        "type": "noop_echo",
+        "lease_token": "0123456789abcdef0123456789abcdef0123456789abcdef",
+        "lease_expires_at": "2026-02-30T00:00:00Z",
+        "attempt": 1,
+        "max_attempts": 3,
+        "input_schema_version": 1,
+        "input": {},
+        "files": []
+      }
+    },
+    {
+      "id": "claim-response/lease-token-too-short",
+      "schema": "ClaimResponse",
+      "valid": false,
+      "constraint": "minLength",
+      "payload": {
+        "task_id": "3f1d4b5e-9a2c-4f1e-8c3a-7b6d5e4f3a2b",
+        "type": "noop_echo",
+        "lease_token": "0123456789abcdef0123456789abcde",
+        "lease_expires_at": "2026-02-03T04:05:06.000Z",
+        "attempt": 1,
+        "max_attempts": 3,
+        "input_schema_version": 1,
+        "input": {},
+        "files": []
+      }
+    },
+
+    {
+      "id": "provider-limits/valid",
+      "schema": "ProviderLimits",
+      "valid": true,
+      "constraint": "control",
+      "payload": {
+        "context_limit": 32768,
+        "output_token_limit": 4096,
+        "temperature": 0,
+        "timeout_seconds": 120,
+        "daily_token_budget": null,
+        "daily_cost_budget": null
+      }
+    },
+    {
+      "id": "provider-limits/temperature-over-two",
+      "schema": "ProviderLimits",
+      "valid": false,
+      "constraint": "maximum",
+      "payload": {
+        "context_limit": 32768,
+        "output_token_limit": 4096,
+        "temperature": 2.5,
+        "timeout_seconds": 120,
+        "daily_token_budget": null,
+        "daily_cost_budget": null
+      }
+    },
+    {
+      "id": "provider-limits/context-limit-below-minimum",
+      "schema": "ProviderLimits",
+      "valid": false,
+      "constraint": "minimum",
+      "payload": {
+        "context_limit": 100,
+        "output_token_limit": 4096,
+        "temperature": 0,
+        "timeout_seconds": 120,
+        "daily_token_budget": null,
+        "daily_cost_budget": null
+      }
+    },
+    {
+      "id": "provider-limits/negative-budget-inside-nullable-union",
+      "schema": "ProviderLimits",
+      "valid": false,
+      "constraint": "minimum",
+      "payload": {
+        "context_limit": 32768,
+        "output_token_limit": 4096,
+        "temperature": 0,
+        "timeout_seconds": 120,
+        "daily_token_budget": -1,
+        "daily_cost_budget": null
+      }
+    },
+
+    {
+      "id": "file-view/valid",
+      "schema": "FileView",
+      "valid": true,
+      "constraint": "control",
+      "payload": {
+        "id": "3f1d4b5e-9a2c-4f1e-8c3a-7b6d5e4f3a2b",
+        "original_name": "cv.pdf",
+        "mime": "application/pdf",
+        "bytes": 1024,
+        "sha256": "a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4",
+        "purpose": "cv_original",
+        "state": "ready",
+        "created_at": "2026-02-03T04:05:06.000Z"
+      }
+    },
+    {
+      "id": "file-view/sha256-uppercase",
+      "schema": "FileView",
+      "valid": false,
+      "constraint": "pattern is lowercase hex only",
+      "payload": {
+        "id": "3f1d4b5e-9a2c-4f1e-8c3a-7b6d5e4f3a2b",
+        "original_name": "cv.pdf",
+        "mime": "application/pdf",
+        "bytes": 1024,
+        "sha256": "A1B2C3D4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4",
+        "purpose": "cv_original",
+        "state": "ready",
+        "created_at": "2026-02-03T04:05:06.000Z"
+      }
+    },
+    {
+      "id": "file-view/negative-bytes",
+      "schema": "FileView",
+      "valid": false,
+      "constraint": "minimum",
+      "payload": {
+        "id": "3f1d4b5e-9a2c-4f1e-8c3a-7b6d5e4f3a2b",
+        "original_name": "cv.pdf",
+        "mime": "application/pdf",
+        "bytes": -1,
+        "sha256": "a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4a1b2c3d4",
+        "purpose": "cv_original",
+        "state": "ready",
+        "created_at": "2026-02-03T04:05:06.000Z"
+      }
+    },
+
+    {
+      "id": "provider-settings-view/valid",
+      "schema": "ProviderSettingsView",
+      "valid": true,
+      "constraint": "control",
+      "payload": {
+        "provider": "openai_compatible",
+        "model": "local-model",
+        "base_url": "http://127.0.0.1:11434/v1",
+        "api_key_set": true,
+        "api_key_masked": "sk-...abcd",
+        "limits": {
+          "context_limit": 32768,
+          "output_token_limit": 4096,
+          "temperature": 0,
+          "timeout_seconds": 120,
+          "daily_token_budget": null,
+          "daily_cost_budget": null
+        },
+        "rate_card": null,
+        "sends_data_externally": true,
+        "updated_at": "2026-02-03T04:05:06.000Z"
+      }
+    },
+    {
+      "id": "provider-settings-view/masked-key-too-long",
+      "schema": "ProviderSettingsView",
+      "valid": false,
+      "constraint": "maxLength",
+      "payload": {
+        "provider": "openai_compatible",
+        "model": "local-model",
+        "base_url": "http://127.0.0.1:11434/v1",
+        "api_key_set": true,
+        "api_key_masked": "0123456789012345678901234567890123",
+        "limits": {
+          "context_limit": 32768,
+          "output_token_limit": 4096,
+          "temperature": 0,
+          "timeout_seconds": 120,
+          "daily_token_budget": null,
+          "daily_cost_budget": null
+        },
+        "rate_card": null,
+        "sends_data_externally": true,
+        "updated_at": "2026-02-03T04:05:06.000Z"
+      }
+    },
+
+    {
+      "id": "preferences/valid-defaults",
+      "schema": "Preferences",
+      "valid": true,
+      "constraint": "control",
+      "payload": {
+        "settings_version": 1,
+        "target_titles": [],
+        "excluded_titles": [],
+        "required_skills": [],
+        "preferred_skills": [],
+        "excluded_companies": [],
+        "countries": [],
+        "remote_modes": ["remote"],
+        "employment_types": ["full_time"],
+        "languages": ["en"],
+        "salary": null,
+        "sponsorship_policy": "unknown",
+        "unknown_eligibility_policy": "review",
+        "scan_interval_hours": 24,
+        "match_weights": {
+          "skills": 40,
+          "role_title": 20,
+          "seniority": 15,
+          "work_arrangement": 15,
+          "industry": 10
+        },
+        "cv_language": "en",
+        "cv_template": "simple",
+        "resume_mode": "tailored",
+        "limits": {
+          "scan_max_jobs": 1000,
+          "request_concurrency_per_host": 1,
+          "ai_requests_per_day": 50,
+          "fill_attempts_per_day": 10,
+          "approval_ttl_hours": 24,
+          "consented_evidence_capture": false,
+          "raw_logs": false
+        },
+        "prompt_style_suffix": null
+      }
+    },
+    {
+      "id": "preferences/unknown-key",
+      "schema": "Preferences",
+      "valid": false,
+      "constraint": "additionalProperties",
+      "payload": {
+        "settings_version": 1,
+        "target_titles": [],
+        "excluded_titles": [],
+        "required_skills": [],
+        "preferred_skills": [],
+        "excluded_companies": [],
+        "countries": [],
+        "remote_modes": ["remote"],
+        "employment_types": ["full_time"],
+        "languages": ["en"],
+        "salary": null,
+        "sponsorship_policy": "unknown",
+        "unknown_eligibility_policy": "review",
+        "scan_interval_hours": 24,
+        "match_weights": {
+          "skills": 40,
+          "role_title": 20,
+          "seniority": 15,
+          "work_arrangement": 15,
+          "industry": 10
+        },
+        "cv_language": "en",
+        "cv_template": "simple",
+        "resume_mode": "tailored",
+        "limits": {
+          "scan_max_jobs": 1000,
+          "request_concurrency_per_host": 1,
+          "ai_requests_per_day": 50,
+          "fill_attempts_per_day": 10,
+          "approval_ttl_hours": 24,
+          "consented_evidence_capture": false,
+          "raw_logs": false
+        },
+        "prompt_style_suffix": null,
+        "auto_submit": true
+      }
+    },
+    {
+      "id": "preferences/too-many-remote-modes",
+      "schema": "Preferences",
+      "valid": false,
+      "constraint": "maxItems",
+      "payload": {
+        "settings_version": 1,
+        "target_titles": [],
+        "excluded_titles": [],
+        "required_skills": [],
+        "preferred_skills": [],
+        "excluded_companies": [],
+        "countries": [],
+        "remote_modes": ["remote", "hybrid", "onsite", "remote"],
+        "employment_types": ["full_time"],
+        "languages": ["en"],
+        "salary": null,
+        "sponsorship_policy": "unknown",
+        "unknown_eligibility_policy": "review",
+        "scan_interval_hours": 24,
+        "match_weights": {
+          "skills": 40,
+          "role_title": 20,
+          "seniority": 15,
+          "work_arrangement": 15,
+          "industry": 10
+        },
+        "cv_language": "en",
+        "cv_template": "simple",
+        "resume_mode": "tailored",
+        "limits": {
+          "scan_max_jobs": 1000,
+          "request_concurrency_per_host": 1,
+          "ai_requests_per_day": 50,
+          "fill_attempts_per_day": 10,
+          "approval_ttl_hours": 24,
+          "consented_evidence_capture": false,
+          "raw_logs": false
+        },
+        "prompt_style_suffix": null
+      }
+    },
+    {
+      "id": "preferences/country-not-iso-alpha2",
+      "schema": "Preferences",
+      "valid": false,
+      "constraint": "pattern (array item)",
+      "payload": {
+        "settings_version": 1,
+        "target_titles": [],
+        "excluded_titles": [],
+        "required_skills": [],
+        "preferred_skills": [],
+        "excluded_companies": [],
+        "countries": ["USA"],
+        "remote_modes": ["remote"],
+        "employment_types": ["full_time"],
+        "languages": ["en"],
+        "salary": null,
+        "sponsorship_policy": "unknown",
+        "unknown_eligibility_policy": "review",
+        "scan_interval_hours": 24,
+        "match_weights": {
+          "skills": 40,
+          "role_title": 20,
+          "seniority": 15,
+          "work_arrangement": 15,
+          "industry": 10
+        },
+        "cv_language": "en",
+        "cv_template": "simple",
+        "resume_mode": "tailored",
+        "limits": {
+          "scan_max_jobs": 1000,
+          "request_concurrency_per_host": 1,
+          "ai_requests_per_day": 50,
+          "fill_attempts_per_day": 10,
+          "approval_ttl_hours": 24,
+          "consented_evidence_capture": false,
+          "raw_logs": false
+        },
+        "prompt_style_suffix": null
+      }
+    },
+    {
+      "id": "preferences/empty-target-title",
+      "schema": "Preferences",
+      "valid": false,
+      "constraint": "minLength (array item)",
+      "payload": {
+        "settings_version": 1,
+        "target_titles": [""],
+        "excluded_titles": [],
+        "required_skills": [],
+        "preferred_skills": [],
+        "excluded_companies": [],
+        "countries": [],
+        "remote_modes": ["remote"],
+        "employment_types": ["full_time"],
+        "languages": ["en"],
+        "salary": null,
+        "sponsorship_policy": "unknown",
+        "unknown_eligibility_policy": "review",
+        "scan_interval_hours": 24,
+        "match_weights": {
+          "skills": 40,
+          "role_title": 20,
+          "seniority": 15,
+          "work_arrangement": 15,
+          "industry": 10
+        },
+        "cv_language": "en",
+        "cv_template": "simple",
+        "resume_mode": "tailored",
+        "limits": {
+          "scan_max_jobs": 1000,
+          "request_concurrency_per_host": 1,
+          "ai_requests_per_day": 50,
+          "fill_attempts_per_day": 10,
+          "approval_ttl_hours": 24,
+          "consented_evidence_capture": false,
+          "raw_logs": false
+        },
+        "prompt_style_suffix": null
+      }
+    }
+  ]
+}

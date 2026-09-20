@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/NoopEchoResult.schema.json",
+  "title": "NoopEchoResult",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "echoed",
+    "worker_id",
+    "worker_runtime",
+    "processed_at"
+  ],
+  "properties": {
+    "echoed": {
+      "type": "string"
+    },
+    "worker_id": {
+      "type": "string"
+    },
+    "worker_runtime": {
+      "type": "string"
+    },
+    "processed_at": {
+      "format": "date-time",
+      "type": "string"
+    }
+  }
+}

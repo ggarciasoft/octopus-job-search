@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/SetupRequest.schema.json",
+  "title": "SetupRequest",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "setup_token",
+    "email",
+    "password"
+  ],
+  "properties": {
+    "setup_token": {
+      "minLength": 16,
+      "maxLength": 200,
+      "type": "string"
+    },
+    "email": {
+      "minLength": 3,
+      "maxLength": 320,
+      "type": "string"
+    },
+    "password": {
+      "minLength": 12,
+      "maxLength": 200,
+      "type": "string"
+    },
+    "locale": {
+      "anyOf": [
+        {
+          "const": "en",
+          "type": "string"
+        },
+        {
+          "const": "es",
+          "type": "string"
+        }
+      ]
+    }
+  }
+}

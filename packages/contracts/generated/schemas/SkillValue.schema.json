@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/SkillValue.schema.json",
+  "title": "SkillValue",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "canonical_name",
+    "aliases",
+    "user_declared_proficiency",
+    "years"
+  ],
+  "properties": {
+    "canonical_name": {
+      "minLength": 1,
+      "maxLength": 80,
+      "type": "string"
+    },
+    "aliases": {
+      "maxItems": 20,
+      "type": "array",
+      "items": {
+        "maxLength": 80,
+        "type": "string"
+      }
+    },
+    "user_declared_proficiency": {
+      "anyOf": [
+        {
+          "const": "beginner",
+          "type": "string"
+        },
+        {
+          "const": "intermediate",
+          "type": "string"
+        },
+        {
+          "const": "advanced",
+          "type": "string"
+        },
+        {
+          "const": "expert",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "years": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "maximum": 70,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

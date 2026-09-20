@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/OperationalLimits.schema.json",
+  "title": "OperationalLimits",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "scan_max_jobs",
+    "request_concurrency_per_host",
+    "ai_requests_per_day",
+    "fill_attempts_per_day",
+    "approval_ttl_hours",
+    "consented_evidence_capture",
+    "raw_logs"
+  ],
+  "properties": {
+    "scan_max_jobs": {
+      "minimum": 1,
+      "maximum": 1000,
+      "type": "integer"
+    },
+    "request_concurrency_per_host": {
+      "minimum": 1,
+      "maximum": 1,
+      "type": "integer"
+    },
+    "ai_requests_per_day": {
+      "minimum": 0,
+      "maximum": 1000,
+      "type": "integer"
+    },
+    "fill_attempts_per_day": {
+      "minimum": 0,
+      "maximum": 100,
+      "type": "integer"
+    },
+    "approval_ttl_hours": {
+      "minimum": 1,
+      "maximum": 24,
+      "type": "integer"
+    },
+    "consented_evidence_capture": {
+      "type": "boolean"
+    },
+    "raw_logs": {
+      "type": "boolean"
+    }
+  }
+}

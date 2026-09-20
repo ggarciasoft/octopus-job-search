@@ -1,0 +1,244 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/TaskView.schema.json",
+  "title": "TaskView",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "id",
+    "type",
+    "state",
+    "progress",
+    "attempt",
+    "max_attempts",
+    "cancel_requested",
+    "run_after",
+    "created_at",
+    "updated_at",
+    "result",
+    "error"
+  ],
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "type": {
+      "anyOf": [
+        {
+          "const": "noop_echo",
+          "type": "string"
+        },
+        {
+          "const": "parse_profile",
+          "type": "string"
+        },
+        {
+          "const": "fetch_board",
+          "type": "string"
+        },
+        {
+          "const": "fetch_job",
+          "type": "string"
+        },
+        {
+          "const": "match_job",
+          "type": "string"
+        },
+        {
+          "const": "render_cv",
+          "type": "string"
+        },
+        {
+          "const": "build_packet",
+          "type": "string"
+        },
+        {
+          "const": "fill_local",
+          "type": "string"
+        },
+        {
+          "const": "export_workspace",
+          "type": "string"
+        },
+        {
+          "const": "delete_workspace",
+          "type": "string"
+        },
+        {
+          "const": "discover_boards",
+          "type": "string"
+        }
+      ]
+    },
+    "state": {
+      "anyOf": [
+        {
+          "const": "queued",
+          "type": "string"
+        },
+        {
+          "const": "leased",
+          "type": "string"
+        },
+        {
+          "const": "succeeded",
+          "type": "string"
+        },
+        {
+          "const": "failed",
+          "type": "string"
+        },
+        {
+          "const": "cancelled",
+          "type": "string"
+        }
+      ]
+    },
+    "progress": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "stage",
+            "percent"
+          ],
+          "properties": {
+            "stage": {
+              "maxLength": 120,
+              "type": "string"
+            },
+            "percent": {
+              "minimum": 0,
+              "maximum": 100,
+              "type": "integer"
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "attempt": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "max_attempts": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "cancel_requested": {
+      "type": "boolean"
+    },
+    "run_after": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "result": {
+      "anyOf": [
+        {},
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "error": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "code",
+            "message",
+            "retryable"
+          ],
+          "properties": {
+            "code": {
+              "anyOf": [
+                {
+                  "const": "PROVIDER_UNAVAILABLE",
+                  "type": "string"
+                },
+                {
+                  "const": "PROVIDER_INVALID_OUTPUT",
+                  "type": "string"
+                },
+                {
+                  "const": "BUDGET_EXHAUSTED",
+                  "type": "string"
+                },
+                {
+                  "const": "INPUT_INVALID",
+                  "type": "string"
+                },
+                {
+                  "const": "FILE_UNREADABLE",
+                  "type": "string"
+                },
+                {
+                  "const": "ENCRYPTED_DOCUMENT",
+                  "type": "string"
+                },
+                {
+                  "const": "OCR_REQUIRED",
+                  "type": "string"
+                },
+                {
+                  "const": "EXTRACTION_EMPTY",
+                  "type": "string"
+                },
+                {
+                  "const": "LIMIT_EXCEEDED",
+                  "type": "string"
+                },
+                {
+                  "const": "FETCH_BLOCKED",
+                  "type": "string"
+                },
+                {
+                  "const": "RATE_LIMITED",
+                  "type": "string"
+                },
+                {
+                  "const": "TIMEOUT",
+                  "type": "string"
+                },
+                {
+                  "const": "CANCELLED",
+                  "type": "string"
+                },
+                {
+                  "const": "UNSUPPORTED_TASK_TYPE",
+                  "type": "string"
+                },
+                {
+                  "const": "INTERNAL_ERROR",
+                  "type": "string"
+                }
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

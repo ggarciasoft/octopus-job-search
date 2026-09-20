@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/CreateProfileImportRequest.schema.json",
+  "title": "CreateProfileImportRequest",
+  "additionalProperties": false,
+  "type": "object",
+  "properties": {
+    "file_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "pasted_text": {
+      "minLength": 1,
+      "maxLength": 200000,
+      "type": "string"
+    },
+    "format_hint": {
+      "anyOf": [
+        {
+          "const": "pdf",
+          "type": "string"
+        },
+        {
+          "const": "docx",
+          "type": "string"
+        },
+        {
+          "const": "linkedin_export_text",
+          "type": "string"
+        },
+        {
+          "const": "plain_text",
+          "type": "string"
+        },
+        {
+          "const": "auto",
+          "type": "string"
+        }
+      ]
+    }
+  }
+}

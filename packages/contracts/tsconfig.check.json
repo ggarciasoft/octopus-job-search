@@ -1,0 +1,13 @@
+{
+  // Typecheck-only view. The build config keeps rootDir at src/ so emitted
+  // declarations stay flat; that same setting makes it impossible to also
+  // include scripts/ and tests/, which still need to be checked in CI.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false
+  },
+  "include": ["src/**/*.ts", "scripts/**/*.ts", "tests/**/*.ts"]
+}

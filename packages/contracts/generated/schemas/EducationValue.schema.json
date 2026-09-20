@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/EducationValue.schema.json",
+  "title": "EducationValue",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "institution",
+    "degree",
+    "subject",
+    "start_month",
+    "end_month",
+    "current"
+  ],
+  "properties": {
+    "institution": {
+      "minLength": 1,
+      "maxLength": 200,
+      "type": "string"
+    },
+    "degree": {
+      "anyOf": [
+        {
+          "maxLength": 200,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "subject": {
+      "anyOf": [
+        {
+          "maxLength": 200,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "start_month": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "end_month": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "current": {
+      "type": "boolean"
+    }
+  }
+}

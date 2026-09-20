@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ProfileImportWarning.schema.json",
+  "title": "ProfileImportWarning",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "code",
+    "message"
+  ],
+  "properties": {
+    "code": {
+      "anyOf": [
+        {
+          "const": "EXTRACTION_SHORT",
+          "type": "string"
+        },
+        {
+          "const": "PAGES_TRUNCATED",
+          "type": "string"
+        },
+        {
+          "const": "CHARS_TRUNCATED",
+          "type": "string"
+        },
+        {
+          "const": "TABLE_LAYOUT_UNCERTAIN",
+          "type": "string"
+        },
+        {
+          "const": "DATE_AMBIGUOUS",
+          "type": "string"
+        },
+        {
+          "const": "FIELD_DROPPED_INVALID",
+          "type": "string"
+        },
+        {
+          "const": "MODEL_CORRECTED_ONCE",
+          "type": "string"
+        },
+        {
+          "const": "NO_PROVIDER_CONFIGURED",
+          "type": "string"
+        },
+        {
+          "const": "PROMPT_INJECTION_TEXT_IGNORED",
+          "type": "string"
+        }
+      ]
+    },
+    "message": {
+      "maxLength": 500,
+      "type": "string"
+    },
+    "detail": {
+      "maxLength": 500,
+      "type": "string"
+    }
+  }
+}

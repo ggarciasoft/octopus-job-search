@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/RegisterRequest.schema.json",
+  "title": "RegisterRequest",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "email",
+    "password",
+    "invite_code"
+  ],
+  "properties": {
+    "email": {
+      "minLength": 3,
+      "maxLength": 320,
+      "type": "string"
+    },
+    "password": {
+      "minLength": 12,
+      "maxLength": 200,
+      "type": "string"
+    },
+    "invite_code": {
+      "minLength": 1,
+      "maxLength": 200,
+      "type": "string"
+    }
+  }
+}

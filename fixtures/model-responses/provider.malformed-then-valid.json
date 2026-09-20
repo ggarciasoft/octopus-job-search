@@ -1,0 +1,12 @@
+{
+  "attempts": [
+    {
+      "raw": "{\"draft_facts\": [ {\"kind\": \"contact\" ",
+      "valid": false
+    },
+    {
+      "raw": "{\"draft_facts\": [], \"warnings\": []}",
+      "valid": true
+    }
+  ]
+}

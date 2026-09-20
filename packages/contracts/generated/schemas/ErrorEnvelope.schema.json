@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ErrorEnvelope.schema.json",
+  "title": "ErrorEnvelope",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "error"
+  ],
+  "properties": {
+    "error": {
+      "type": "object",
+      "required": [
+        "code",
+        "message",
+        "request_id"
+      ],
+      "properties": {
+        "code": {
+          "anyOf": [
+            {
+              "const": "VALIDATION_ERROR",
+              "type": "string"
+            },
+            {
+              "const": "MALFORMED_REQUEST",
+              "type": "string"
+            },
+            {
+              "const": "UNAUTHENTICATED",
+              "type": "string"
+            },
+            {
+              "const": "FORBIDDEN",
+              "type": "string"
+            },
+            {
+              "const": "NOT_FOUND",
+              "type": "string"
+            },
+            {
+              "const": "CONFLICT",
+              "type": "string"
+            },
+            {
+              "const": "STALE_REVISION",
+              "type": "string"
+            },
+            {
+              "const": "IDEMPOTENCY_MISMATCH",
+              "type": "string"
+            },
+            {
+              "const": "PAYLOAD_TOO_LARGE",
+              "type": "string"
+            },
+            {
+              "const": "UNPROCESSABLE",
+              "type": "string"
+            },
+            {
+              "const": "QUOTA_EXCEEDED",
+              "type": "string"
+            },
+            {
+              "const": "SETUP_CLOSED",
+              "type": "string"
+            },
+            {
+              "const": "BUDGET_EXHAUSTED",
+              "type": "string"
+            },
+            {
+              "const": "PROVIDER_UNAVAILABLE",
+              "type": "string"
+            },
+            {
+              "const": "INTERNAL_ERROR",
+              "type": "string"
+            }
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "fields": {
+          "type": "object",
+          "patternProperties": {
+            "^(.*)$": {
+              "type": "string"
+            }
+          }
+        },
+        "request_id": {
+          "format": "uuid",
+          "type": "string"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/TaskProgress.schema.json",
+  "title": "TaskProgress",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "stage",
+    "percent"
+  ],
+  "properties": {
+    "stage": {
+      "maxLength": 120,
+      "type": "string"
+    },
+    "percent": {
+      "minimum": 0,
+      "maximum": 100,
+      "type": "integer"
+    }
+  }
+}

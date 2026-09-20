@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ClaimResponse.schema.json",
+  "title": "ClaimResponse",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "task_id",
+    "type",
+    "lease_token",
+    "lease_expires_at",
+    "attempt",
+    "max_attempts",
+    "input_schema_version",
+    "input",
+    "files"
+  ],
+  "properties": {
+    "task_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "type": {
+      "anyOf": [
+        {
+          "const": "noop_echo",
+          "type": "string"
+        },
+        {
+          "const": "parse_profile",
+          "type": "string"
+        },
+        {
+          "const": "fetch_board",
+          "type": "string"
+        },
+        {
+          "const": "fetch_job",
+          "type": "string"
+        },
+        {
+          "const": "match_job",
+          "type": "string"
+        },
+        {
+          "const": "render_cv",
+          "type": "string"
+        },
+        {
+          "const": "build_packet",
+          "type": "string"
+        },
+        {
+          "const": "fill_local",
+          "type": "string"
+        },
+        {
+          "const": "export_workspace",
+          "type": "string"
+        },
+        {
+          "const": "delete_workspace",
+          "type": "string"
+        },
+        {
+          "const": "discover_boards",
+          "type": "string"
+        }
+      ]
+    },
+    "lease_token": {
+      "minLength": 32,
+      "type": "string"
+    },
+    "lease_expires_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "attempt": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "max_attempts": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "input_schema_version": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "input": {},
+    "files": {
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "file_id",
+          "purpose",
+          "original_name",
+          "mime",
+          "bytes",
+          "sha256"
+        ],
+        "properties": {
+          "file_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "purpose": {
+            "maxLength": 64,
+            "type": "string"
+          },
+          "original_name": {
+            "maxLength": 255,
+            "type": "string"
+          },
+          "mime": {
+            "maxLength": 128,
+            "type": "string"
+          },
+          "bytes": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "sha256": {
+            "pattern": "^[a-f0-9]{64}$",
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

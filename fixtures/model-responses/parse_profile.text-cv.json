@@ -1,0 +1,331 @@
+{
+  "draft_facts": [
+    {
+      "draft_id": "contact-1",
+      "kind": "contact",
+      "value": {
+        "full_name": "Ana Rivera",
+        "email": "ana.rivera@example.invalid",
+        "phone": "+1 555 0100",
+        "city": "Montevideo",
+        "country": "Uruguay",
+        "links": [
+          {
+            "label": "GitHub",
+            "url": "github.com/example-ana"
+          },
+          {
+            "label": "LinkedIn",
+            "url": "linkedin.com/in/example-ana"
+          }
+        ]
+      },
+      "source_excerpt": "Ana Rivera\nana.rivera@example.invalid | +1 555 0100 | Montevideo, Uruguay",
+      "source_locator": "page 1",
+      "confidence": 0.95
+    },
+    {
+      "draft_id": "experience-1",
+      "kind": "experience",
+      "value": {
+        "employer": "Northwind Logistics",
+        "title": "Senior Backend Engineer",
+        "start_month": "2022-03",
+        "end_month": null,
+        "current": true,
+        "employment_type": "full_time",
+        "location": "Remote",
+        "bullets": [
+          {
+            "text": "Led the migration of the shipment tracking service to PostgreSQL.",
+            "evidence_reference": "page 1, Northwind Logistics bullet 1"
+          },
+          {
+            "text": "Reduced median API latency on the quoting endpoint from 800ms to 210ms.",
+            "evidence_reference": "page 1, Northwind Logistics bullet 2"
+          },
+          {
+            "text": "Mentored two junior engineers through their first on-call rotation.",
+            "evidence_reference": "page 1, Northwind Logistics bullet 3"
+          }
+        ],
+        "skills": [
+          "Python",
+          "PostgreSQL",
+          "Docker",
+          "AWS"
+        ]
+      },
+      "source_excerpt": "Senior Backend Engineer, Northwind Logistics\n2022-03 - Present | Remote",
+      "source_locator": "page 1",
+      "confidence": 0.92
+    },
+    {
+      "draft_id": "experience-2",
+      "kind": "experience",
+      "value": {
+        "employer": "Cobalt Analytics",
+        "title": "Backend Engineer",
+        "start_month": "2019-06",
+        "end_month": "2022-02",
+        "current": false,
+        "employment_type": "full_time",
+        "location": "Montevideo, Uruguay",
+        "bullets": [
+          {
+            "text": "Built an ingestion pipeline processing 4 million events per day.",
+            "evidence_reference": "page 1, Cobalt Analytics bullet 1"
+          },
+          {
+            "text": "Introduced contract tests between the API and three internal consumers.",
+            "evidence_reference": "page 1, Cobalt Analytics bullet 2"
+          }
+        ],
+        "skills": [
+          "Node.js",
+          "TypeScript",
+          "Kafka",
+          "Terraform"
+        ]
+      },
+      "source_excerpt": "Backend Engineer, Cobalt Analytics\n2019-06 - 2022-02",
+      "source_locator": "page 1",
+      "confidence": 0.9
+    },
+    {
+      "draft_id": "experience-3",
+      "kind": "experience",
+      "value": {
+        "employer": "Fenix Software",
+        "title": "Junior Developer",
+        "start_month": "2017-08",
+        "end_month": "2019-05",
+        "current": false,
+        "employment_type": "full_time",
+        "location": "Montevideo, Uruguay",
+        "bullets": [
+          {
+            "text": "Maintained a Django reporting application used by 40 internal staff.",
+            "evidence_reference": "page 2, Fenix Software bullet 1"
+          },
+          {
+            "text": "Wrote the first automated test suite for the billing module.",
+            "evidence_reference": "page 2, Fenix Software bullet 2"
+          }
+        ],
+        "skills": [
+          "Python",
+          "Django"
+        ]
+      },
+      "source_excerpt": "Junior Developer, Fenix Software\n2017-08 - 2019-05",
+      "source_locator": "page 2",
+      "confidence": 0.88
+    },
+    {
+      "draft_id": "education-1",
+      "kind": "education",
+      "value": {
+        "institution": "Universidad de la Republica",
+        "degree": "Licenciatura en Informatica",
+        "subject": "Computer Science",
+        "start_month": "2013-03",
+        "end_month": "2017-07",
+        "current": false
+      },
+      "source_excerpt": "Universidad de la Republica\nLicenciatura en Informatica, Computer Science, 2013-03 - 2017-07",
+      "source_locator": "page 2",
+      "confidence": 0.9
+    },
+    {
+      "draft_id": "certification-1",
+      "kind": "certification",
+      "value": {
+        "name": "AWS Certified Solutions Architect - Associate",
+        "issuer": null,
+        "issued_month": "2023-04",
+        "expires_month": null,
+        "credential_id": null
+      },
+      "source_excerpt": "AWS Certified Solutions Architect - Associate, 2023-04",
+      "source_locator": "page 2",
+      "confidence": 0.85
+    },
+    {
+      "draft_id": "project-1",
+      "kind": "project",
+      "value": {
+        "name": "Tidewatch",
+        "role": null,
+        "url": null,
+        "start_month": null,
+        "end_month": null,
+        "bullets": [
+          {
+            "text": "A tide-prediction CLI written in Rust; 300 GitHub stars.",
+            "evidence_reference": "page 2, Projects"
+          }
+        ],
+        "skills": [
+          "Rust"
+        ]
+      },
+      "source_excerpt": "Tidewatch (open source)",
+      "source_locator": "page 2",
+      "confidence": 0.8
+    },
+    {
+      "draft_id": "authorization-1",
+      "kind": "authorization",
+      "value": {
+        "country": "UY",
+        "authorized": "yes",
+        "sponsorship_required": "no",
+        "note": "Stated on the CV."
+      },
+      "source_excerpt": "Authorized to work in Uruguay.",
+      "source_locator": "page 2",
+      "confidence": 0.7
+    },
+    {
+      "draft_id": "authorization-2",
+      "kind": "authorization",
+      "value": {
+        "country": "US",
+        "authorized": "unknown",
+        "sponsorship_required": "yes",
+        "note": "CV states sponsorship is required; authorization status not stated."
+      },
+      "source_excerpt": "Requires sponsorship for the United States.",
+      "source_locator": "page 2",
+      "confidence": 0.7
+    },
+    {
+      "draft_id": "skill-python",
+      "kind": "skill",
+      "value": {
+        "canonical_name": "Python",
+        "aliases": [],
+        "user_declared_proficiency": null,
+        "years": null
+      },
+      "source_excerpt": "Python, TypeScript, Node.js, PostgreSQL, Docker, Kafka, AWS, Terraform",
+      "source_locator": "page 2, Skills",
+      "confidence": 0.75
+    },
+    {
+      "draft_id": "skill-typescript",
+      "kind": "skill",
+      "value": {
+        "canonical_name": "TypeScript",
+        "aliases": [],
+        "user_declared_proficiency": null,
+        "years": null
+      },
+      "source_excerpt": "Python, TypeScript, Node.js, PostgreSQL, Docker, Kafka, AWS, Terraform",
+      "source_locator": "page 2, Skills",
+      "confidence": 0.75
+    },
+    {
+      "draft_id": "skill-node-js",
+      "kind": "skill",
+      "value": {
+        "canonical_name": "Node.js",
+        "aliases": [],
+        "user_declared_proficiency": null,
+        "years": null
+      },
+      "source_excerpt": "Python, TypeScript, Node.js, PostgreSQL, Docker, Kafka, AWS, Terraform",
+      "source_locator": "page 2, Skills",
+      "confidence": 0.75
+    },
+    {
+      "draft_id": "skill-postgresql",
+      "kind": "skill",
+      "value": {
+        "canonical_name": "PostgreSQL",
+        "aliases": [],
+        "user_declared_proficiency": null,
+        "years": null
+      },
+      "source_excerpt": "Python, TypeScript, Node.js, PostgreSQL, Docker, Kafka, AWS, Terraform",
+      "source_locator": "page 2, Skills",
+      "confidence": 0.75
+    },
+    {
+      "draft_id": "skill-docker",
+      "kind": "skill",
+      "value": {
+        "canonical_name": "Docker",
+        "aliases": [],
+        "user_declared_proficiency": null,
+        "years": null
+      },
+      "source_excerpt": "Python, TypeScript, Node.js, PostgreSQL, Docker, Kafka, AWS, Terraform",
+      "source_locator": "page 2, Skills",
+      "confidence": 0.75
+    },
+    {
+      "draft_id": "skill-kafka",
+      "kind": "skill",
+      "value": {
+        "canonical_name": "Kafka",
+        "aliases": [],
+        "user_declared_proficiency": null,
+        "years": null
+      },
+      "source_excerpt": "Python, TypeScript, Node.js, PostgreSQL, Docker, Kafka, AWS, Terraform",
+      "source_locator": "page 2, Skills",
+      "confidence": 0.75
+    },
+    {
+      "draft_id": "skill-aws",
+      "kind": "skill",
+      "value": {
+        "canonical_name": "AWS",
+        "aliases": [],
+        "user_declared_proficiency": null,
+        "years": null
+      },
+      "source_excerpt": "Python, TypeScript, Node.js, PostgreSQL, Docker, Kafka, AWS, Terraform",
+      "source_locator": "page 2, Skills",
+      "confidence": 0.75
+    },
+    {
+      "draft_id": "skill-terraform",
+      "kind": "skill",
+      "value": {
+        "canonical_name": "Terraform",
+        "aliases": [],
+        "user_declared_proficiency": null,
+        "years": null
+      },
+      "source_excerpt": "Python, TypeScript, Node.js, PostgreSQL, Docker, Kafka, AWS, Terraform",
+      "source_locator": "page 2, Skills",
+      "confidence": 0.75
+    },
+    {
+      "draft_id": "language-es",
+      "kind": "language",
+      "value": {
+        "code": "es",
+        "declared_level": "native"
+      },
+      "source_excerpt": "Spanish (native), English (professional)",
+      "source_locator": "page 2, Languages",
+      "confidence": 0.9
+    },
+    {
+      "draft_id": "language-en",
+      "kind": "language",
+      "value": {
+        "code": "en",
+        "declared_level": "professional"
+      },
+      "source_excerpt": "Spanish (native), English (professional)",
+      "source_locator": "page 2, Languages",
+      "confidence": 0.9
+    }
+  ],
+  "warnings": []
+}

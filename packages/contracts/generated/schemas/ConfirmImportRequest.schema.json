@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ConfirmImportRequest.schema.json",
+  "title": "ConfirmImportRequest",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "expected_profile_revision",
+    "accepted_fields"
+  ],
+  "properties": {
+    "expected_profile_revision": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "accepted_fields": {
+      "maxItems": 500,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "draft_id"
+        ],
+        "properties": {
+          "draft_id": {
+            "minLength": 1,
+            "maxLength": 64,
+            "type": "string"
+          },
+          "edited_value": {},
+          "supersedes_fact_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "name": "@job-getter/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "migrate": "tsx src/db/migrate.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src tests",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@fastify/cookie": "11.1.2",
+    "@fastify/csrf-protection": "8.0.1",
+    "@fastify/helmet": "13.1.1",
+    "@fastify/multipart": "10.1.1",
+    "@fastify/rate-limit": "11.2.0",
+    "@fastify/static": "10.1.4",
+    "@job-getter/contracts": "workspace:*",
+    "@sinclair/typebox": "0.34.52",
+    "argon2": "0.45.1",
+    "fastify": "5.12.5",
+    "file-type": "22.1.1",
+    "kysely": "0.29.6",
+    "pg": "8.23.0",
+    "pino": "10.3.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@testcontainers/postgresql": "12.1.0",
+    "@types/node": "24.13.6",
+    "@types/pg": "8.23.1",
+    "eslint": "9.39.5",
+    "globals": "17.12.0",
+    "pino-pretty": "13.1.3",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.70.0",
+    "undici": "8.10.2",
+    "vitest": "5.0.1"
+  }
+}

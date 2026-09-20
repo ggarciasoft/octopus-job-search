@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/FileValidation.schema.json",
+  "title": "FileValidation",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "signature_ok",
+    "extension_matches_signature",
+    "encrypted",
+    "malware_scan",
+    "warnings"
+  ],
+  "properties": {
+    "signature_ok": {
+      "type": "boolean"
+    },
+    "extension_matches_signature": {
+      "type": "boolean"
+    },
+    "encrypted": {
+      "type": "boolean"
+    },
+    "malware_scan": {
+      "anyOf": [
+        {
+          "const": "clean",
+          "type": "string"
+        },
+        {
+          "const": "skipped_not_configured",
+          "type": "string"
+        },
+        {
+          "const": "quarantined",
+          "type": "string"
+        },
+        {
+          "const": "pending",
+          "type": "string"
+        }
+      ]
+    },
+    "warnings": {
+      "maxItems": 20,
+      "type": "array",
+      "items": {
+        "maxLength": 300,
+        "type": "string"
+      }
+    }
+  }
+}

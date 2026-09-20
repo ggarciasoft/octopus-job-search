@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ProfilePatchRequest.schema.json",
+  "title": "ProfilePatchRequest",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "expected_revision",
+    "changes"
+  ],
+  "properties": {
+    "expected_revision": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "contact": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "full_name",
+        "email"
+      ],
+      "properties": {
+        "full_name": {
+          "minLength": 1,
+          "maxLength": 200,
+          "type": "string"
+        },
+        "email": {
+          "minLength": 3,
+          "maxLength": 320,
+          "type": "string"
+        },
+        "phone": {
+          "maxLength": 40,
+          "type": "string"
+        },
+        "city": {
+          "maxLength": 120,
+          "type": "string"
+        },
+        "country": {
+          "maxLength": 120,
+          "type": "string"
+        },
+        "links": {
+          "maxItems": 12,
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "label",
+              "url"
+            ],
+            "properties": {
+              "label": {
+                "minLength": 1,
+                "maxLength": 60,
+                "type": "string"
+              },
+              "url": {
+                "minLength": 1,
+                "maxLength": 500,
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "locale": {
+      "anyOf": [
+        {
+          "const": "en",
+          "type": "string"
+        },
+        {
+          "const": "es",
+          "type": "string"
+        }
+      ]
+    },
+    "changes": {
+      "maxItems": 200,
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "op",
+              "kind",
+              "value",
+              "confirmed"
+            ],
+            "properties": {
+              "op": {
+                "const": "upsert",
+                "type": "string"
+              },
+              "id": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "kind": {
+                "anyOf": [
+                  {
+                    "const": "contact",
+                    "type": "string"
+                  },
+                  {
+                    "const": "summary",
+                    "type": "string"
+                  },
+                  {
+                    "const": "experience",
+                    "type": "string"
+                  },
+                  {
+                    "const": "education",
+                    "type": "string"
+                  },
+                  {
+                    "const": "skill",
+                    "type": "string"
+                  },
+                  {
+                    "const": "language",
+                    "type": "string"
+                  },
+                  {
+                    "const": "authorization",
+                    "type": "string"
+                  },
+                  {
+                    "const": "project",
+                    "type": "string"
+                  },
+                  {
+                    "const": "certification",
+                    "type": "string"
+                  }
+                ]
+              },
+              "value": {},
+              "confirmed": {
+                "type": "boolean"
+              },
+              "source_excerpt": {
+                "anyOf": [
+                  {
+                    "maxLength": 2000,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "source_file_id": {
+                "anyOf": [
+                  {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "op",
+              "id"
+            ],
+            "properties": {
+              "op": {
+                "const": "delete",
+                "type": "string"
+              },
+              "id": {
+                "format": "uuid",
+                "type": "string"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
