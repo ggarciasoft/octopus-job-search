@@ -1,5 +1,5 @@
 /**
- * Migrations must survive compilation.
+ * Migrations — and the entrypoint — must survive compilation.
  *
  * `tsc` compiles `.ts` and copies nothing else, so a container image built
  * from `dist/` contains no `.sql` files. A directory-reading migration runner
@@ -10,13 +10,15 @@
  * These tests assert the property from the *built artifact*, not from the
  * source tree, because the source tree is exactly what is absent in a
  * container. The build is performed here rather than assumed, so the test
- * cannot pass against a stale `dist/`.
+ * cannot pass against a stale `dist/`, and it uses the production tsconfig
+ * rather than the typecheck one — asserting a property of a compilation nobody
+ * deploys is how the `dist/server.js` break got in to begin with.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { rm } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
+import { readFile, readdir, rm } from 'node:fs/promises';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   EmptyMigrationSetError,
@@ -31,21 +33,52 @@ const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
 /** Inside `dist/`, which is already git-ignored. */
 const buildOutput = join(packageRoot, 'dist', '.packaging-test');
 
+/**
+ * The *production* tsconfig, not the typecheck one.
+ *
+ * `tsconfig.json` keeps `rootDir: "."` so it can also cover `tests/`;
+ * `tsconfig.build.json` sets `rootDir: "src"` and is what `pnpm build` and the
+ * container image use.
+ */
+const BUILD_TSCONFIG = 'tsconfig.build.json';
+
 interface BuiltMigrateModule {
   loadMigrations(): Promise<{ name: string; sql: string; checksum: string }[]>;
 }
 
 let built: BuiltMigrateModule;
+/**
+ * Resolved from the build output rather than assumed, so a `rootDir` change
+ * fails loudly here instead of quietly testing nothing.
+ */
+let compiledMigratePath: string;
+let compiledMigrationsDir: string;
+let emittedFiles: string[];
+
+/** Every file under `directory`, as `/`-separated paths relative to it. */
+async function walk(directory: string, prefix = ''): Promise<string[]> {
+  const entries = await readdir(directory, { withFileTypes: true });
+  const found: string[] = [];
+  for (const entry of entries) {
+    const relativePath = prefix === '' ? entry.name : `${prefix}/${entry.name}`;
+    if (entry.isDirectory()) {
+      found.push(...(await walk(join(directory, entry.name), relativePath)));
+    } else {
+      found.push(relativePath);
+    }
+  }
+  return found;
+}
 
 beforeAll(async () => {
-  // A real compile with the package's own tsconfig. Declarations and source
-  // maps are off purely for speed; they do not affect what is emitted.
+  // A real compile with the production tsconfig. Declarations and source maps
+  // are off purely for speed; they do not affect what is emitted.
   execFileSync(
     process.execPath,
     [
       join(packageRoot, 'node_modules', 'typescript', 'bin', 'tsc'),
       '-p',
-      join(packageRoot, 'tsconfig.json'),
+      join(packageRoot, BUILD_TSCONFIG),
       '--outDir',
       buildOutput,
       '--declaration',
@@ -58,9 +91,24 @@ beforeAll(async () => {
     { cwd: packageRoot, stdio: 'pipe' },
   );
 
-  // `rootDir` is the package root, so `src/` keeps its place under the output.
-  const compiled = join(buildOutput, 'src', 'db', 'migrate.js');
-  built = (await import(pathToFileURL(compiled).href)) as BuiltMigrateModule;
+  emittedFiles = await walk(buildOutput);
+
+  // Locate the compiled runner instead of hard-coding a layout. Exactly one
+  // match is required: zero means the build dropped it, more than one means
+  // the layout is ambiguous. Either way the test must fail rather than pick a
+  // path and pass.
+  const candidates = emittedFiles.filter((file) => file.endsWith('db/migrate.js'));
+  if (candidates.length !== 1) {
+    throw new Error(
+      `Expected exactly one compiled db/migrate.js under ${buildOutput}, found ` +
+        `${candidates.length}: ${candidates.join(', ') || '(none)'}. ` +
+        `Did ${BUILD_TSCONFIG} change its rootDir or include list?`,
+    );
+  }
+  compiledMigratePath = join(buildOutput, candidates[0]!);
+  compiledMigrationsDir = join(dirname(compiledMigratePath), 'migrations');
+
+  built = (await import(pathToFileURL(compiledMigratePath).href)) as BuiltMigrateModule;
 }, 180_000);
 
 afterAll(async () => {
@@ -99,15 +147,17 @@ describe('migration packaging', () => {
   });
 
   it('needs no .sql file at runtime: the built tree has none', async () => {
-    const { readdir } = await import('node:fs/promises');
-    const compiledDbDir = join(buildOutput, 'src', 'db', 'migrations');
-    const entries = await readdir(compiledDbDir);
+    const entries = await readdir(compiledMigrationsDir);
 
     // This is the whole point: there is no .sql here, and the runner still
     // resolves every migration.
     expect(entries.filter((entry) => entry.endsWith('.sql'))).toEqual([]);
     expect(entries).toContain('bundled.js');
     expect((await built.loadMigrations()).length).toBeGreaterThan(0);
+
+    // Nowhere else in the image either. A copy step would reintroduce the
+    // two-sources-of-truth problem the bundle exists to remove.
+    expect(emittedFiles.filter((file) => file.endsWith('.sql'))).toEqual([]);
   });
 
   it('applies the built migrations to a real empty database', async () => {
@@ -117,8 +167,7 @@ describe('migration packaging', () => {
     const database = await startTestDatabase();
     const pool = createPool({ connectionString: database.connectionString, max: 2 });
     try {
-      const compiled = join(buildOutput, 'src', 'db', 'migrate.js');
-      const module = (await import(pathToFileURL(compiled).href)) as {
+      const module = (await import(pathToFileURL(compiledMigratePath).href)) as {
         runMigrations(pool: unknown): Promise<{ applied: string[] }>;
         isSchemaCurrent(pool: unknown): Promise<{ current: boolean }>;
       };
@@ -140,14 +189,40 @@ describe('migration packaging', () => {
   }, 180_000);
 });
 
+describe('built entrypoint', () => {
+  it('emits the server at the path `pnpm start` invokes', async () => {
+    // The break this guards: building with `tsconfig.json` (rootDir ".",
+    // includes tests/) emits dist/src/server.js while package.json declares
+    // `node dist/server.js`, so a container exits with MODULE_NOT_FOUND.
+    const manifest = JSON.parse(await readFile(join(packageRoot, 'package.json'), 'utf8')) as {
+      scripts: Record<string, string>;
+    };
+
+    const startScript = manifest.scripts['start'] ?? '';
+    const match = /node\s+(\S+)/.exec(startScript);
+    expect(match, `could not read an entrypoint from start: "${startScript}"`).not.toBeNull();
+
+    // `dist/server.js` -> `server.js`, relative to the output directory.
+    const declared = relative('dist', match![1]!).split('\\').join('/');
+    expect(emittedFiles, `package.json start runs ${match![1]}`).toContain(declared);
+  });
+
+  it('does not compile the test suite into the shipped artifact', () => {
+    const testArtifacts = emittedFiles.filter(
+      (file) => file.startsWith('tests/') || file.endsWith('.test.js'),
+    );
+    expect(testArtifacts).toEqual([]);
+  });
+});
+
 describe('bundle drift', () => {
   it('is exactly what the generator would produce from the .sql files today', async () => {
     const fromDisk = await loadMigrationsFromDisk();
     const expected = renderBundle(fromDisk);
-    const { readFile } = await import('node:fs/promises');
     const actual = await readFile(join(migrationsDirectory(), 'bundled.ts'), 'utf8');
 
-    // If this fails, a .sql file was edited without regenerating the bundle.
+    // If this fails, a .sql file was edited without regenerating the bundle —
+    // or a formatter rewrote the generated file (see .prettierignore).
     expect(
       actual.replace(/\r\n/g, '\n'),
       'src/db/migrations/bundled.ts is stale. Run:\n' +
@@ -164,7 +239,7 @@ describe('bundle drift', () => {
 });
 
 describe('empty migration set', () => {
-  it('is a fatal error, never a silent success', async () => {
+  it('is a fatal error, never a silent success', () => {
     // The failure mode a missing copy step produces. It must not look like
     // "schema is up to date".
     const error = new EmptyMigrationSetError();

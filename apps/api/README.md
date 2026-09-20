@@ -62,12 +62,26 @@ forget. After editing or adding a `.sql` migration:
 pnpm --filter @job-getter/api exec tsx src/db/bundle-migrations.ts
 ```
 
-`tests/db/packaging.test.ts` compiles the package for real, imports the built
-`migrate.js` and asserts the migration set is non-empty, byte-identical to the
-`.sql` sources, and still applies to an empty database — and separately that the
-bundle is exactly what the generator would produce today. Both a missing bundle
-and a stale one fail with an actionable message. `loadMigrations()` throws
-`EmptyMigrationSetError` rather than reporting success on an empty set.
+`tests/db/packaging.test.ts` compiles the package for real — with
+**`tsconfig.build.json`, the config that actually ships**, not the typecheck
+one — then imports the built `migrate.js` and asserts that:
+
+- the migration set is non-empty, byte-identical to the `.sql` sources, and
+  still applies to a real empty database;
+- no `.sql` file appears anywhere in the built tree;
+- the server lands at the exact path `package.json`'s `start` script invokes,
+  and the test suite is not compiled into the shipped artifact;
+- the bundle is exactly what the generator would produce from the `.sql` files
+  today.
+
+The compiled runner is located by searching the output rather than by assuming
+a layout, so a `rootDir` change fails loudly instead of testing nothing.
+`loadMigrations()` throws `EmptyMigrationSetError` rather than reporting success
+on an empty set.
+
+`src/db/migrations/bundled.ts` is generated and is listed in `.prettierignore`:
+reformatting it makes the drift check fail for a reason unrelated to the
+migrations. Any future generated file needs the same treatment.
 
 ### Currently unused dependencies
 
