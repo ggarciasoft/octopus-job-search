@@ -12,7 +12,15 @@ services/worker/src/job_getter_worker/contracts/generated/
 docs/spec/
 
 # Generated artifacts and vendored fixtures.
+#
+# The fixture corpus is produced by fixtures/generate.py and pinned
+# byte-for-byte by MANIFEST.sha256. Prettier collapses short JSON arrays onto
+# one line where json.dumps expands them, so formatting these files made the
+# committed bytes disagree with the manifest and failed CI on a fresh clone
+# while passing locally. Generated output is never formatted by hand.
 fixtures/MANIFEST.sha256
+fixtures/cvs/
+fixtures/model-responses/
 apps/api/dist/
 apps/web/dist/
 

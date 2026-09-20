@@ -49,7 +49,12 @@
             "evidence_reference": "page 1, Northwind Logistics bullet 3"
           }
         ],
-        "skills": ["Python", "PostgreSQL", "Docker", "AWS"]
+        "skills": [
+          "Python",
+          "PostgreSQL",
+          "Docker",
+          "AWS"
+        ]
       },
       "source_excerpt": "Senior Backend Engineer, Northwind Logistics\n2022-03 - Present | Remote",
       "source_locator": "page 1",
@@ -76,7 +81,12 @@
             "evidence_reference": "page 1, Cobalt Analytics bullet 2"
           }
         ],
-        "skills": ["Node.js", "TypeScript", "Kafka", "Terraform"]
+        "skills": [
+          "Node.js",
+          "TypeScript",
+          "Kafka",
+          "Terraform"
+        ]
       },
       "source_excerpt": "Backend Engineer, Cobalt Analytics\n2019-06 - 2022-02",
       "source_locator": "page 1",
@@ -103,7 +113,10 @@
             "evidence_reference": "page 2, Fenix Software bullet 2"
           }
         ],
-        "skills": ["Python", "Django"]
+        "skills": [
+          "Python",
+          "Django"
+        ]
       },
       "source_excerpt": "Junior Developer, Fenix Software\n2017-08 - 2019-05",
       "source_locator": "page 2",
@@ -153,7 +166,9 @@
             "evidence_reference": "page 2, Projects"
           }
         ],
-        "skills": ["Rust"]
+        "skills": [
+          "Rust"
+        ]
       },
       "source_excerpt": "Tidewatch (open source)",
       "source_locator": "page 2",

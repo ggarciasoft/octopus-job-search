@@ -168,9 +168,15 @@ browser-profile/
 
 # Private file storage for local installations (uploaded CVs, generated
 # documents, exports). Never commit a real CV.
-files/
-data/
-storage/
+#
+# Anchored to the repository root on purpose. An unanchored `files/` matches
+# ANY directory of that name, and it silently excluded apps/api/src/files/ --
+# the API's entire storage layer -- from the first eight commits. Everything
+# passed locally because the files existed on disk; CI on a fresh clone could
+# not compile. Keep these patterns anchored.
+/files/
+/data/
+/storage/
 *.local.sqlite
 
 # Personal data. docs/spec/11_TESTING_ACCEPTANCE.md forbids personal data in CI

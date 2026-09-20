@@ -235,10 +235,27 @@ def main() -> int:
     }
     lines = [f"{digest}  {name}\n" for name, digest in sorted(digests.items())]
     if manifest.exists():
+        recorded: dict[str, str] = {}
+        for line in manifest.read_text(encoding="utf-8").splitlines():
+            if "  " in line:
+                digest, name = line.split("  ", 1)
+                recorded[name] = digest
+        identical = recorded == digests
         check(
-            manifest.read_text(encoding="utf-8") == "".join(lines),
+            identical,
             "regenerating the fixtures reproduced identical bytes (AT11 relies on this)",
         )
+        if not identical:
+            # Say exactly which entries differ. A bare pass/fail here sent a CI
+            # failure back with no way to tell a changed fixture from a stray
+            # file that should never have been hashed.
+            for name in sorted(set(recorded) - set(digests)):
+                print(f"        missing on disk : {name}")
+            for name in sorted(set(digests) - set(recorded)):
+                print(f"        not in manifest : {name}")
+            for name in sorted(set(recorded) & set(digests)):
+                if recorded[name] != digests[name]:
+                    print(f"        bytes differ    : {name}")
     else:
         manifest.write_text("".join(lines), encoding="utf-8", newline="\n")
         print("  note  wrote MANIFEST.sha256 for the first time")
