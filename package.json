@@ -13,7 +13,7 @@
     "contracts:check": "pnpm --filter @job-getter/contracts check",
     "typecheck": "pnpm --filter @job-getter/contracts build && pnpm --filter @job-getter/api-client build && pnpm -r typecheck",
     "lint": "pnpm -r lint",
-    "test": "pnpm -r test",
+    "test": "pnpm --filter @job-getter/contracts build && pnpm --filter @job-getter/api-client build && pnpm -r test",
     "dev": "pnpm -r --parallel dev",
     "migrate": "pnpm --filter @job-getter/api migrate",
     "format": "prettier --write \"**/*.{ts,tsx,json,md,yaml,yml}\"",
