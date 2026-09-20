@@ -31,10 +31,12 @@
 *.gz            binary
 *.dump          binary
 
-# Lockfiles are generated. Keep them in the repository, but do not let a diff
-# of them drown a review.
-pnpm-lock.yaml  -diff linguist-generated=true
-uv.lock         -diff linguist-generated=true
+# Lockfiles are generated, so collapse them in review UIs -- but deliberately
+# WITHOUT `-diff`. A lockfile diff is how a dependency substitution or an
+# unexpected transitive addition gets caught, so `git diff` must keep working
+# on them locally.
+pnpm-lock.yaml  linguist-generated=true
+uv.lock         linguist-generated=true
 
 # Generated contract artifacts. Reviewed through their source schemas, not by
 # reading the emitted files.
