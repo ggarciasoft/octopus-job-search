@@ -37,25 +37,25 @@ a locator the worker cannot reproduce is not provenance.
 
 ## Layout
 
-| Path                   | What it does                                                       |
-| ---------------------- | ------------------------------------------------------------------ |
-| `settings.py`          | Environment contract, capability validation                        |
-| `logging.py`           | Structured JSON logs with mandatory redaction                      |
-| `errors.py`            | Failure codes derived from the generated `FailRequest`             |
-| `cancellation.py`      | The cooperative cancellation token                                 |
-| `api.py`               | Client for `/internal/v1/tasks`                                    |
-| `worker.py`            | Claim → lease → heartbeat → complete/fail loop                     |
-| `handlers/`            | Task registry; `noop_echo` (M0), `parse_profile` (M1), `fetch_board` and `fetch_job` (M2) |
-| `extraction/`          | PDF, DOCX and text extraction with bounds and locators             |
-| `profile/`             | Injection sanitising, grounding, the fact allowlist                |
+| Path                   | What it does                                                                                  |
+| ---------------------- | --------------------------------------------------------------------------------------------- |
+| `settings.py`          | Environment contract, capability validation                                                   |
+| `logging.py`           | Structured JSON logs with mandatory redaction                                                 |
+| `errors.py`            | Failure codes derived from the generated `FailRequest`                                        |
+| `cancellation.py`      | The cooperative cancellation token                                                            |
+| `api.py`               | Client for `/internal/v1/tasks`                                                               |
+| `worker.py`            | Claim → lease → heartbeat → complete/fail loop                                                |
+| `handlers/`            | Task registry; `noop_echo` (M0), `parse_profile` (M1), `fetch_board` and `fetch_job` (M2)     |
+| `extraction/`          | PDF, DOCX and text extraction with bounds and locators                                        |
+| `profile/`             | Injection sanitising, grounding, the fact allowlist                                           |
 | `net/`                 | The only outbound HTTP to job sources: destination policy, pinned fetcher, robots, politeness |
-| `connectors/`          | Discovery connector contract; Greenhouse and Lever                 |
-| `discovery/`           | HTML-to-text, JSON-LD `JobPosting`, the country table, normalisation and `content_hash` |
-| `prompts/`             | Versioned prompt constants                                         |
-| `providers/`           | `ModelProvider` and the fake / Ollama / OpenAI-compatible adapters |
-| `cli.py`               | `job-getter-worker` - the container worker                         |
-| `runner_cli.py`        | `job-getter-runner` - **not implemented until M4**                 |
-| `contracts/generated/` | Generated from the TypeBox schemas. **Never edit.**                |
+| `connectors/`          | Discovery connector contract; Greenhouse and Lever                                            |
+| `discovery/`           | HTML-to-text, JSON-LD `JobPosting`, the country table, normalisation and `content_hash`       |
+| `prompts/`             | Versioned prompt constants                                                                    |
+| `providers/`           | `ModelProvider` and the fake / Ollama / OpenAI-compatible adapters                            |
+| `cli.py`               | `job-getter-worker` - the container worker                                                    |
+| `runner_cli.py`        | `job-getter-runner` - **not implemented until M4**                                            |
+| `contracts/generated/` | Generated from the TypeBox schemas. **Never edit.**                                           |
 
 Every shared model, enum and constant is imported from
 `job_getter_worker.contracts.generated`. There is no hand-written parallel
