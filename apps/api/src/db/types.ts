@@ -23,6 +23,9 @@ import type {
   TaskState,
   TaskType,
   TriState,
+  Locale,
+  ResumeMode,
+  ResumeStatus,
 } from '@job-getter/contracts';
 
 /** jsonb: select as parsed value, insert/update as a JSON string. */
@@ -392,6 +395,32 @@ export interface MatchesTable {
   updated_at: TimestampColumn;
 }
 
+export interface ResumesTable {
+  id: Generated<string>;
+  workspace_id: string;
+  mode: ResumeMode;
+  status: Generated<ResumeStatus>;
+  job_id: string | null;
+  job_revision: number | null;
+  profile_revision: number;
+  language: Locale;
+  template_id: Generated<string>;
+  page_target: Generated<number>;
+  /** Renderer-independent document. NULL in original mode, by constraint. */
+  document_json: NullableJsonColumn;
+  validation: NullableJsonColumn;
+  input_file_id: string | null;
+  pdf_file_id: string | null;
+  docx_file_id: string | null;
+  /** Set only by the approve route, never by a task. */
+  approved_at: NullableTimestampColumn;
+  task_id: string | null;
+  error_code: string | null;
+  error_message: string | null;
+  created_at: TimestampColumn;
+  updated_at: TimestampColumn;
+}
+
 export interface SchemaMigrationsTable {
   name: string;
   checksum: string;
@@ -420,6 +449,7 @@ export interface Database {
   scans: ScansTable;
   jobs: JobsTable;
   matches: MatchesTable;
+  resumes: ResumesTable;
   job_sources: JobSourcesTable;
   job_imports: JobImportsTable;
   schema_migrations: SchemaMigrationsTable;
@@ -454,6 +484,7 @@ export const WORKSPACE_SCOPED_TABLES = [
   'job_sources',
   'job_imports',
   'matches',
+  'resumes',
 ] as const;
 
 export type WorkspaceScopedTable = (typeof WORKSPACE_SCOPED_TABLES)[number];
@@ -495,3 +526,5 @@ export type JobSourceRow = Selectable<JobSourcesTable>;
 export type JobImportRow = Selectable<JobImportsTable>;
 export type MatchRow = Selectable<MatchesTable>;
 export type NewMatchRow = Insertable<MatchesTable>;
+export type ResumeRow = Selectable<ResumesTable>;
+export type NewResumeRow = Insertable<ResumesTable>;

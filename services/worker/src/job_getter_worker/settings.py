@@ -51,7 +51,7 @@ class WorkerSettings(BaseSettings):
     auth_token: SecretStr
     worker_id: Annotated[str, Field(min_length=1, max_length=128, validation_alias="WORKER_ID")]
     capabilities: Annotated[str, Field(min_length=1)] = (
-        "noop_echo,parse_profile,fetch_board,fetch_job,match_job"
+        "noop_echo,parse_profile,fetch_board,fetch_job,match_job,render_cv"
     )
 
     poll_interval_seconds: Annotated[float, Field(gt=0, le=300)] = 2.0

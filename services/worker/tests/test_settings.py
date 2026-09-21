@@ -73,5 +73,5 @@ def test_registry_refuses_capabilities_it_cannot_serve() -> None:
     registry.assert_capabilities_supported((TaskType.NOOP_ECHO, TaskType.PARSE_PROFILE))
 
     with pytest.raises(RuntimeError) as raised:
-        registry.assert_capabilities_supported((TaskType.RENDER_CV,))
-    assert "render_cv" in str(raised.value)
+        registry.assert_capabilities_supported((TaskType.BUILD_PACKET,))
+    assert "build_packet" in str(raised.value)

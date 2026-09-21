@@ -1405,3 +1405,173 @@ class MatchJobResult(BaseModel):
     coverage_percent: Annotated[int, Field(ge=0, le=100)]
     explanation: MatchExplanation
     computed_at: TimestampString
+
+
+class ResumeContact(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    full_name: Annotated[str, Field(min_length=1, max_length=200)]
+    email: Annotated[str, Field(max_length=320)] | None
+    phone: Annotated[str, Field(max_length=50)] | None
+    location: Annotated[str, Field(max_length=200)] | None
+    links: Annotated[list[Annotated[str, Field(max_length=500)]], Field(max_length=10)]
+    fact_ids: Annotated[list[UuidString], Field(max_length=5)]
+
+
+class ResumeBullet(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    text: Annotated[str, Field(min_length=1, max_length=600)]
+    fact_ids: Annotated[list[UuidString], Field(min_length=1, max_length=10)]
+
+
+class ResumeEntry(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: Annotated[str, Field(max_length=300)] | None
+    organization: Annotated[str, Field(max_length=200)] | None
+    start_month: Annotated[str, Field(pattern=r"^[0-9]{4}-(0[1-9]|1[0-2])$")] | None
+    end_month: Annotated[str, Field(pattern=r"^[0-9]{4}-(0[1-9]|1[0-2])$")] | None
+    current: bool
+    detail: Annotated[str, Field(max_length=300)] | None
+    bullets: Annotated[list[ResumeBullet], Field(max_length=20)]
+    fact_ids: Annotated[list[UuidString], Field(min_length=1, max_length=20)]
+
+
+class ResumeSection(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal[
+        "summary",
+        "skills",
+        "experience",
+        "projects",
+        "education",
+        "certifications",
+        "languages"
+    ]
+    heading: Annotated[str, Field(min_length=1, max_length=120)]
+    entries: Annotated[list[ResumeEntry], Field(max_length=100)]
+
+
+class ResumeDocument(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: Literal[1]
+    language: Literal["en", "es"]
+    contact: ResumeContact
+    sections: Annotated[list[ResumeSection], Field(max_length=10)]
+
+
+class ResumeFinding(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    code: Literal[
+        "BULLET_WITHOUT_FACT",
+        "UNKNOWN_FACT_ID",
+        "NUMBER_NOT_IN_FACTS",
+        "NAME_NOT_IN_FACTS",
+        "DATE_NOT_IN_FACTS",
+        "CREDENTIAL_NOT_IN_FACTS",
+        "ROLES_MERGED",
+        "PROJECT_PRESENTED_AS_EMPLOYMENT",
+        "SKILL_NOT_CONFIRMED",
+        "SECTION_OMITTED_EMPTY",
+        "PAGE_OVERFLOW",
+        "MODEL_CORRECTED_ONCE",
+        "NO_PROVIDER_CONFIGURED",
+        "MODEL_OUTPUT_REJECTED",
+        "PDF_UNAVAILABLE"
+    ]
+    severity: Literal["blocking", "warning"]
+    where: Annotated[str, Field(max_length=200)] | None
+    excerpt: Annotated[str, Field(max_length=600)] | None
+    removed: bool
+
+
+class ResumeProvenance(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    template_version: Annotated[str, Field(max_length=40)]
+    prompt_version: Annotated[str, Field(max_length=60)] | None
+    provider: Annotated[str, Field(max_length=40)] | None
+    model: Annotated[str, Field(max_length=120)] | None
+    deterministic: bool
+
+
+class ResumeValidation(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    passed_automatic_checks: bool
+    findings: Annotated[list[ResumeFinding], Field(max_length=200)]
+    fact_ids: Annotated[list[UuidString], Field(max_length=500)]
+    provenance: ResumeProvenance
+    pdf_pages: Annotated[int, Field(ge=1)] | None
+
+
+class ResumeView(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: UuidString
+    mode: Literal["original", "tailored"]
+    status: Literal["queued", "ready", "failed"]
+    job_id: UuidString | None
+    job_revision: Annotated[int, Field(ge=1)] | None
+    profile_revision: Annotated[int, Field(ge=1)]
+    language: Literal["en", "es"]
+    template_id: Annotated[str, Field(max_length=40)]
+    document: ResumeDocument | None
+    validation: ResumeValidation | None
+    input_file_id: UuidString | None
+    pdf_file_id: UuidString | None
+    docx_file_id: UuidString | None
+    approved_at: TimestampString | None
+    error_code: Annotated[str, Field(max_length=60)] | None
+    error_message: Annotated[str, Field(max_length=600)] | None
+    task_id: UuidString | None
+    created_at: TimestampString
+    updated_at: TimestampString
+
+
+class CreateResumeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    mode: Literal["original", "tailored"]
+    job_id: UuidString | None = None
+    input_file_id: UuidString | None = None
+    template_id: Literal["simple"] | None = None
+    language: Literal["en", "es"] | None = None
+    page_target: Annotated[int, Field(ge=1, le=3)] | None = None
+
+
+class RenderCvInputJob(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    job_id: UuidString
+    job_revision: Annotated[int, Field(ge=1)]
+    company: Annotated[str, Field(max_length=200)]
+    title: Annotated[str, Field(max_length=300)]
+    requirements: Annotated[list[JobRequirement], Field(max_length=200)]
+
+
+class RenderCvInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    resume_id: UuidString
+    profile_revision: Annotated[int, Field(ge=1)]
+    language: Literal["en", "es"]
+    template_id: Literal["simple"]
+    page_target: Annotated[int, Field(ge=1, le=3)]
+    confirmed_facts: Annotated[list[ProfileFact], Field(max_length=500)]
+    job: RenderCvInputJob | None
+    prompt_style_suffix: Annotated[str, Field(max_length=1000)] | None
+
+
+class RenderCvResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    document_json: ResumeDocument
+    validation: ResumeValidation
+    pdf_file_id: UuidString | None
+    docx_file_id: UuidString | None
+    fact_ids: Annotated[list[UuidString], Field(max_length=500)]

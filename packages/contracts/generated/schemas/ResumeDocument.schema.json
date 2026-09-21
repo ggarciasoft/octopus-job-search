@@ -1,0 +1,266 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ResumeDocument.schema.json",
+  "title": "ResumeDocument",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "schema_version",
+    "language",
+    "contact",
+    "sections"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "type": "number"
+    },
+    "language": {
+      "anyOf": [
+        {
+          "const": "en",
+          "type": "string"
+        },
+        {
+          "const": "es",
+          "type": "string"
+        }
+      ]
+    },
+    "contact": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "full_name",
+        "email",
+        "phone",
+        "location",
+        "links",
+        "fact_ids"
+      ],
+      "properties": {
+        "full_name": {
+          "minLength": 1,
+          "maxLength": 200,
+          "type": "string"
+        },
+        "email": {
+          "anyOf": [
+            {
+              "maxLength": 320,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "phone": {
+          "anyOf": [
+            {
+              "maxLength": 50,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "location": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "links": {
+          "maxItems": 10,
+          "type": "array",
+          "items": {
+            "maxLength": 500,
+            "type": "string"
+          }
+        },
+        "fact_ids": {
+          "maxItems": 5,
+          "type": "array",
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      }
+    },
+    "sections": {
+      "maxItems": 10,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "heading",
+          "entries"
+        ],
+        "properties": {
+          "kind": {
+            "anyOf": [
+              {
+                "const": "summary",
+                "type": "string"
+              },
+              {
+                "const": "skills",
+                "type": "string"
+              },
+              {
+                "const": "experience",
+                "type": "string"
+              },
+              {
+                "const": "projects",
+                "type": "string"
+              },
+              {
+                "const": "education",
+                "type": "string"
+              },
+              {
+                "const": "certifications",
+                "type": "string"
+              },
+              {
+                "const": "languages",
+                "type": "string"
+              }
+            ]
+          },
+          "heading": {
+            "minLength": 1,
+            "maxLength": 120,
+            "type": "string"
+          },
+          "entries": {
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "title",
+                "organization",
+                "start_month",
+                "end_month",
+                "current",
+                "detail",
+                "bullets",
+                "fact_ids"
+              ],
+              "properties": {
+                "title": {
+                  "anyOf": [
+                    {
+                      "maxLength": 300,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "organization": {
+                  "anyOf": [
+                    {
+                      "maxLength": 200,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "start_month": {
+                  "anyOf": [
+                    {
+                      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "end_month": {
+                  "anyOf": [
+                    {
+                      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "current": {
+                  "type": "boolean"
+                },
+                "detail": {
+                  "anyOf": [
+                    {
+                      "maxLength": 300,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "bullets": {
+                  "maxItems": 20,
+                  "type": "array",
+                  "items": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "text",
+                      "fact_ids"
+                    ],
+                    "properties": {
+                      "text": {
+                        "minLength": 1,
+                        "maxLength": 600,
+                        "type": "string"
+                      },
+                      "fact_ids": {
+                        "minItems": 1,
+                        "maxItems": 10,
+                        "type": "array",
+                        "items": {
+                          "format": "uuid",
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                },
+                "fact_ids": {
+                  "minItems": 1,
+                  "maxItems": 20,
+                  "type": "array",
+                  "items": {
+                    "format": "uuid",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

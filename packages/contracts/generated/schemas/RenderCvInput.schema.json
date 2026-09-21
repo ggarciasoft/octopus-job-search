@@ -1,0 +1,251 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/RenderCvInput.schema.json",
+  "title": "RenderCvInput",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "resume_id",
+    "profile_revision",
+    "language",
+    "template_id",
+    "page_target",
+    "confirmed_facts",
+    "job",
+    "prompt_style_suffix"
+  ],
+  "properties": {
+    "resume_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "profile_revision": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "language": {
+      "anyOf": [
+        {
+          "const": "en",
+          "type": "string"
+        },
+        {
+          "const": "es",
+          "type": "string"
+        }
+      ]
+    },
+    "template_id": {
+      "const": "simple",
+      "type": "string"
+    },
+    "page_target": {
+      "minimum": 1,
+      "maximum": 3,
+      "type": "integer"
+    },
+    "confirmed_facts": {
+      "maxItems": 500,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "value",
+          "source_file_id",
+          "source_excerpt",
+          "confirmed",
+          "revision",
+          "supersedes_id",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "const": "contact",
+                "type": "string"
+              },
+              {
+                "const": "summary",
+                "type": "string"
+              },
+              {
+                "const": "experience",
+                "type": "string"
+              },
+              {
+                "const": "education",
+                "type": "string"
+              },
+              {
+                "const": "skill",
+                "type": "string"
+              },
+              {
+                "const": "language",
+                "type": "string"
+              },
+              {
+                "const": "authorization",
+                "type": "string"
+              },
+              {
+                "const": "project",
+                "type": "string"
+              },
+              {
+                "const": "certification",
+                "type": "string"
+              }
+            ]
+          },
+          "value": {},
+          "source_file_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_excerpt": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "confirmed": {
+            "type": "boolean"
+          },
+          "revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "supersedes_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          }
+        }
+      }
+    },
+    "job": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "job_id",
+            "job_revision",
+            "company",
+            "title",
+            "requirements"
+          ],
+          "properties": {
+            "job_id": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "job_revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "company": {
+              "maxLength": 200,
+              "type": "string"
+            },
+            "title": {
+              "maxLength": 300,
+              "type": "string"
+            },
+            "requirements": {
+              "maxItems": 200,
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "text",
+                  "kind",
+                  "evidence_excerpt"
+                ],
+                "properties": {
+                  "text": {
+                    "minLength": 1,
+                    "maxLength": 600,
+                    "type": "string"
+                  },
+                  "kind": {
+                    "anyOf": [
+                      {
+                        "const": "required",
+                        "type": "string"
+                      },
+                      {
+                        "const": "preferred",
+                        "type": "string"
+                      },
+                      {
+                        "const": "unknown",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "evidence_excerpt": {
+                    "minLength": 1,
+                    "maxLength": 600,
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "prompt_style_suffix": {
+      "anyOf": [
+        {
+          "maxLength": 1000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

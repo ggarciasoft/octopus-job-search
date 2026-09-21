@@ -252,7 +252,7 @@ async def test_unknown_task_type_fails_the_task_not_the_loop(
     respx.post(route("claim")).mock(
         side_effect=[
             httpx.Response(
-                200, json=claim_payload(task_id=TASK_ID, task_type="render_cv", task_input={})
+                200, json=claim_payload(task_id=TASK_ID, task_type="build_packet", task_input={})
             ),
             httpx.Response(204),
         ]
@@ -285,14 +285,14 @@ async def test_worker_refuses_to_start_without_a_matching_handler(
 ) -> None:
     """Declared capabilities and registered handlers must agree.
 
-    ``render_cv`` is the example because it is declared in the task registry
-    but has no handler yet. When M3 gives it one, move this to the next
-    unimplemented type rather than deleting the test: the check it makes is
-    about the agreement itself, not about any particular task.
+    ``build_packet`` is the example because it is declared in the task
+    registry but has no handler yet. When M4 gives it one, move this to the
+    next unimplemented type rather than deleting the test: the check it
+    makes is about the agreement itself, not about any particular task.
     """
-    settings = make_settings(WORKER_CAPABILITIES="noop_echo,render_cv")
+    settings = make_settings(WORKER_CAPABILITIES="noop_echo,build_packet")
     async with api_client() as api:
-        with pytest.raises(RuntimeError, match="render_cv"):
+        with pytest.raises(RuntimeError, match="build_packet"):
             Worker(settings, api, build_default_registry())
 
 

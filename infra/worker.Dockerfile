@@ -160,7 +160,7 @@ USER worker
 # worker actually implements keeps the API from leasing it work it will fail
 # (invariant 10).
 ENV WORKER_ID=container-worker-1 \
-    WORKER_CAPABILITIES=noop_echo,parse_profile,fetch_board,fetch_job,match_job
+    WORKER_CAPABILITIES=noop_echo,parse_profile,fetch_board,fetch_job,match_job,render_cv
 
 # The worker polls outward; it exposes no port and serves no HTTP surface
 # (docs/spec/02_ARCHITECTURE.md: "an outbound polling worker, not another

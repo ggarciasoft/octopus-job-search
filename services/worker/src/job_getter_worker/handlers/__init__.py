@@ -104,6 +104,7 @@ def build_default_registry() -> HandlerRegistry:
     from .match_job import handle_match_job
     from .noop_echo import handle_noop_echo
     from .parse_profile import handle_parse_profile
+    from .render_cv import handle_render_cv
 
     registry = HandlerRegistry()
     registry.register(TaskType.NOOP_ECHO, handle_noop_echo)
@@ -111,6 +112,7 @@ def build_default_registry() -> HandlerRegistry:
     registry.register(TaskType.FETCH_BOARD, handle_fetch_board)
     registry.register(TaskType.FETCH_JOB, handle_fetch_job)
     registry.register(TaskType.MATCH_JOB, handle_match_job)
+    registry.register(TaskType.RENDER_CV, handle_render_cv)
     return registry
 
 

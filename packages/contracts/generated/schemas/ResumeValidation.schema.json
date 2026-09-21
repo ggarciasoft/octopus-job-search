@@ -1,0 +1,209 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ResumeValidation.schema.json",
+  "title": "ResumeValidation",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "passed_automatic_checks",
+    "findings",
+    "fact_ids",
+    "provenance",
+    "pdf_pages"
+  ],
+  "properties": {
+    "passed_automatic_checks": {
+      "type": "boolean"
+    },
+    "findings": {
+      "maxItems": 200,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "severity",
+          "where",
+          "excerpt",
+          "removed"
+        ],
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "const": "BULLET_WITHOUT_FACT",
+                "type": "string"
+              },
+              {
+                "const": "UNKNOWN_FACT_ID",
+                "type": "string"
+              },
+              {
+                "const": "NUMBER_NOT_IN_FACTS",
+                "type": "string"
+              },
+              {
+                "const": "NAME_NOT_IN_FACTS",
+                "type": "string"
+              },
+              {
+                "const": "DATE_NOT_IN_FACTS",
+                "type": "string"
+              },
+              {
+                "const": "CREDENTIAL_NOT_IN_FACTS",
+                "type": "string"
+              },
+              {
+                "const": "ROLES_MERGED",
+                "type": "string"
+              },
+              {
+                "const": "PROJECT_PRESENTED_AS_EMPLOYMENT",
+                "type": "string"
+              },
+              {
+                "const": "SKILL_NOT_CONFIRMED",
+                "type": "string"
+              },
+              {
+                "const": "SECTION_OMITTED_EMPTY",
+                "type": "string"
+              },
+              {
+                "const": "PAGE_OVERFLOW",
+                "type": "string"
+              },
+              {
+                "const": "MODEL_CORRECTED_ONCE",
+                "type": "string"
+              },
+              {
+                "const": "NO_PROVIDER_CONFIGURED",
+                "type": "string"
+              },
+              {
+                "const": "MODEL_OUTPUT_REJECTED",
+                "type": "string"
+              },
+              {
+                "const": "PDF_UNAVAILABLE",
+                "type": "string"
+              }
+            ]
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "const": "blocking",
+                "type": "string"
+              },
+              {
+                "const": "warning",
+                "type": "string"
+              }
+            ]
+          },
+          "where": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "excerpt": {
+            "anyOf": [
+              {
+                "maxLength": 600,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "removed": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "fact_ids": {
+      "maxItems": 500,
+      "type": "array",
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      }
+    },
+    "provenance": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "template_version",
+        "prompt_version",
+        "provider",
+        "model",
+        "deterministic"
+      ],
+      "properties": {
+        "template_version": {
+          "maxLength": 40,
+          "type": "string"
+        },
+        "prompt_version": {
+          "anyOf": [
+            {
+              "maxLength": 60,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "maxLength": 40,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "model": {
+          "anyOf": [
+            {
+              "maxLength": 120,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "deterministic": {
+          "type": "boolean"
+        }
+      }
+    },
+    "pdf_pages": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

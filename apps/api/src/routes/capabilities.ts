@@ -28,6 +28,7 @@ const CREATING_OPERATION: Partial<Record<TaskType, string>> = {
   fetch_job: 'importJob',
   // M3.
   match_job: 'matchJob',
+  render_cv: 'createResume',
 };
 
 /**

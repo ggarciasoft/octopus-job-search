@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ResumeContact.schema.json",
+  "title": "ResumeContact",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "full_name",
+    "email",
+    "phone",
+    "location",
+    "links",
+    "fact_ids"
+  ],
+  "properties": {
+    "full_name": {
+      "minLength": 1,
+      "maxLength": 200,
+      "type": "string"
+    },
+    "email": {
+      "anyOf": [
+        {
+          "maxLength": 320,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "phone": {
+      "anyOf": [
+        {
+          "maxLength": 50,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "location": {
+      "anyOf": [
+        {
+          "maxLength": 200,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "links": {
+      "maxItems": 10,
+      "type": "array",
+      "items": {
+        "maxLength": 500,
+        "type": "string"
+      }
+    },
+    "fact_ids": {
+      "maxItems": 5,
+      "type": "array",
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      }
+    }
+  }
+}

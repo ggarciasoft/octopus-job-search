@@ -41,7 +41,14 @@ def test_fill_local_is_not_implemented_anywhere() -> None:
     from job_getter_worker.handlers import build_default_registry
 
     registered = {task_type.value for task_type in build_default_registry().registered}
-    assert registered == {"noop_echo", "parse_profile", "fetch_board", "fetch_job", "match_job"}
+    assert registered == {
+        "noop_echo",
+        "parse_profile",
+        "fetch_board",
+        "fetch_job",
+        "match_job",
+        "render_cv",
+    }
     assert "fill_local" not in registered
 
 

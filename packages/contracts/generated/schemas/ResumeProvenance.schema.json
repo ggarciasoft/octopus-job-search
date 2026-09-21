@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ResumeProvenance.schema.json",
+  "title": "ResumeProvenance",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "template_version",
+    "prompt_version",
+    "provider",
+    "model",
+    "deterministic"
+  ],
+  "properties": {
+    "template_version": {
+      "maxLength": 40,
+      "type": "string"
+    },
+    "prompt_version": {
+      "anyOf": [
+        {
+          "maxLength": 60,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "provider": {
+      "anyOf": [
+        {
+          "maxLength": 40,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "model": {
+      "anyOf": [
+        {
+          "maxLength": 120,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "deterministic": {
+      "type": "boolean"
+    }
+  }
+}

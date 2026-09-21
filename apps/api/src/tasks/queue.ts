@@ -34,6 +34,7 @@ import {
   type FetchJobResult,
   type MatchJobResult,
   type ParseProfileResult,
+  type RenderCvResult,
 } from '@job-getter/contracts';
 import type { Db, DbExecutor, DbTransaction } from '../db/pool.js';
 import type { TaskRow } from '../db/types.js';
@@ -46,6 +47,7 @@ import { applyParseProfileFailure, applyParseProfileResult } from '../profile/im
 import { applyFetchBoardFailure, applyFetchBoardResult } from '../discovery/apply-board.js';
 import { applyFetchJobFailure, applyFetchJobResult } from '../discovery/imports.js';
 import { applyMatchJobResult } from '../matching/matches.js';
+import { applyRenderCvFailure, applyRenderCvResult } from '../resumes/service.js';
 
 /**
  * Applies a validated task result to the domain rows it owns.
@@ -71,6 +73,8 @@ async function applyDomainResult(
     await applyFetchJobResult(trx, task, result as FetchJobResult);
   } else if (task.type === 'match_job') {
     await applyMatchJobResult(trx, task, result as MatchJobResult);
+  } else if (task.type === 'render_cv') {
+    await applyRenderCvResult(trx, task, result as RenderCvResult);
   }
 }
 
@@ -87,6 +91,8 @@ async function applyDomainFailure(
     await applyFetchBoardFailure(trx, task, code, message);
   } else if (task.type === 'fetch_job') {
     await applyFetchJobFailure(trx, task, code, message);
+  } else if (task.type === 'render_cv') {
+    await applyRenderCvFailure(trx, task, code, message);
   }
   // `match_job` has no domain row to mark: a score that could not be computed
   // simply does not exist, and the job keeps reading "not checked". Inventing

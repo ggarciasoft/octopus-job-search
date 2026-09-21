@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ResumeFinding.schema.json",
+  "title": "ResumeFinding",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "code",
+    "severity",
+    "where",
+    "excerpt",
+    "removed"
+  ],
+  "properties": {
+    "code": {
+      "anyOf": [
+        {
+          "const": "BULLET_WITHOUT_FACT",
+          "type": "string"
+        },
+        {
+          "const": "UNKNOWN_FACT_ID",
+          "type": "string"
+        },
+        {
+          "const": "NUMBER_NOT_IN_FACTS",
+          "type": "string"
+        },
+        {
+          "const": "NAME_NOT_IN_FACTS",
+          "type": "string"
+        },
+        {
+          "const": "DATE_NOT_IN_FACTS",
+          "type": "string"
+        },
+        {
+          "const": "CREDENTIAL_NOT_IN_FACTS",
+          "type": "string"
+        },
+        {
+          "const": "ROLES_MERGED",
+          "type": "string"
+        },
+        {
+          "const": "PROJECT_PRESENTED_AS_EMPLOYMENT",
+          "type": "string"
+        },
+        {
+          "const": "SKILL_NOT_CONFIRMED",
+          "type": "string"
+        },
+        {
+          "const": "SECTION_OMITTED_EMPTY",
+          "type": "string"
+        },
+        {
+          "const": "PAGE_OVERFLOW",
+          "type": "string"
+        },
+        {
+          "const": "MODEL_CORRECTED_ONCE",
+          "type": "string"
+        },
+        {
+          "const": "NO_PROVIDER_CONFIGURED",
+          "type": "string"
+        },
+        {
+          "const": "MODEL_OUTPUT_REJECTED",
+          "type": "string"
+        },
+        {
+          "const": "PDF_UNAVAILABLE",
+          "type": "string"
+        }
+      ]
+    },
+    "severity": {
+      "anyOf": [
+        {
+          "const": "blocking",
+          "type": "string"
+        },
+        {
+          "const": "warning",
+          "type": "string"
+        }
+      ]
+    },
+    "where": {
+      "anyOf": [
+        {
+          "maxLength": 200,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "excerpt": {
+      "anyOf": [
+        {
+          "maxLength": 600,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "removed": {
+      "type": "boolean"
+    }
+  }
+}

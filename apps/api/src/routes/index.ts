@@ -30,6 +30,7 @@ import { getProviderSettings, putProviderSettings, testProviderSettings } from '
 import { createSource, deleteSource, listSources, patchSource, scanSource } from './sources.js';
 import { getScan } from './scans.js';
 import { getJob, importJob, listJobs, matchJob, patchJob } from './jobs.js';
+import { approveResume, createResume, getResume } from './resumes.js';
 import type { RouteContext, RouteHandler } from './context.js';
 
 /**
@@ -105,6 +106,9 @@ function handlers(): Readonly<Record<string, RouteHandler>> {
     getJob,
     matchJob,
     patchJob,
+    createResume,
+    getResume,
+    approveResume,
   };
 }
 

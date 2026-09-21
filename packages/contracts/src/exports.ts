@@ -9,6 +9,8 @@ import * as Jobs from './schemas/jobs.js';
 import * as Matches from './schemas/matches.js';
 import * as MatchJob from './tasks/match-job.js';
 import * as Requirements from './schemas/requirements.js';
+import * as RenderCv from './tasks/render-cv.js';
+import * as Resumes from './schemas/resumes.js';
 import * as FetchBoard from './tasks/fetch-board.js';
 import * as NoopEcho from './tasks/noop-echo.js';
 import * as ParseProfile from './tasks/parse-profile.js';
@@ -26,6 +28,7 @@ export const TASK_IO_SCHEMAS: Record<string, { input: TSchema; output: TSchema }
   fetch_board: { input: FetchBoard.FetchBoardInput, output: FetchBoard.FetchBoardResult },
   fetch_job: { input: FetchBoard.FetchJobInput, output: FetchBoard.FetchJobResult },
   match_job: { input: MatchJob.MatchJobInput, output: MatchJob.MatchJobResult },
+  render_cv: { input: RenderCv.RenderCvInput, output: RenderCv.RenderCvResult },
 };
 
 /**
@@ -137,6 +140,19 @@ export const EXPORTED_SCHEMAS: Record<string, TSchema> = {
   MatchJobSnapshot: MatchJob.MatchJobSnapshot,
   MatchJobInput: MatchJob.MatchJobInput,
   MatchJobResult: MatchJob.MatchJobResult,
+
+  ResumeContact: Resumes.ResumeContact,
+  ResumeBullet: Resumes.ResumeBullet,
+  ResumeEntry: Resumes.ResumeEntry,
+  ResumeSection: Resumes.ResumeSection,
+  ResumeDocument: Resumes.ResumeDocument,
+  ResumeFinding: Resumes.ResumeFinding,
+  ResumeProvenance: Resumes.ResumeProvenance,
+  ResumeValidation: Resumes.ResumeValidation,
+  ResumeView: Resumes.ResumeView,
+  CreateResumeRequest: Resumes.CreateResumeRequest,
+  RenderCvInput: RenderCv.RenderCvInput,
+  RenderCvResult: RenderCv.RenderCvResult,
 };
 
 /** Enumerations mirrored into Python so there is one source of truth. */
@@ -154,6 +170,10 @@ export const EXPORTED_ENUMS: Record<string, readonly string[]> = {
   MatchUnknownCode: Matches.ALL_MATCH_UNKNOWN_CODES,
   EligibilityFilter: Matches.ALL_ELIGIBILITY_FILTERS,
   EligibilityCode: Matches.ALL_ELIGIBILITY_CODES,
+  ResumeMode: Resumes.ALL_RESUME_MODES,
+  ResumeSectionKind: Resumes.ALL_RESUME_SECTION_KINDS,
+  ResumeFindingCode: Resumes.ALL_RESUME_FINDING_CODES,
+  ResumeStatus: Resumes.ALL_RESUME_STATUSES,
 };
 
 /** Shared numeric constants that must not diverge between runtimes. */
@@ -174,4 +194,7 @@ export const EXPORTED_CONSTANTS = {
   SKILL_ALIAS_MAP_VERSION: Matches.SKILL_ALIAS_MAP_VERSION,
   SKILL_REQUIRED_WEIGHT: Matches.SKILL_REQUIRED_WEIGHT,
   SKILL_PREFERRED_WEIGHT: Matches.SKILL_PREFERRED_WEIGHT,
+  RESUME_SCHEMA_VERSION: Resumes.RESUME_SCHEMA_VERSION,
+  RESUME_TEMPLATE_VERSION: Resumes.RESUME_TEMPLATE_VERSION,
+  RESUME_MIN_FONT_PT: Resumes.RESUME_MIN_FONT_PT,
 } as const;

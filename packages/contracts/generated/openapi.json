@@ -28,6 +28,9 @@
       "name": "profile"
     },
     {
+      "name": "resumes"
+    },
+    {
       "name": "scans"
     },
     {
@@ -615,6 +618,56 @@
                 "type": "string"
               }
             ]
+          }
+        }
+      },
+      "CreateResumeRequest": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "mode"
+        ],
+        "properties": {
+          "mode": {
+            "anyOf": [
+              {
+                "const": "original",
+                "type": "string"
+              },
+              {
+                "const": "tailored",
+                "type": "string"
+              }
+            ]
+          },
+          "job_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "input_file_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "template_id": {
+            "const": "simple",
+            "type": "string"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "const": "en",
+                "type": "string"
+              },
+              {
+                "const": "es",
+                "type": "string"
+              }
+            ]
+          },
+          "page_target": {
+            "minimum": 1,
+            "maximum": 3,
+            "type": "integer"
           }
         }
       },
@@ -5547,6 +5600,854 @@
           "invite_code": {
             "minLength": 1,
             "maxLength": 200,
+            "type": "string"
+          }
+        }
+      },
+      "RenderCvInput": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "resume_id",
+          "profile_revision",
+          "language",
+          "template_id",
+          "page_target",
+          "confirmed_facts",
+          "job",
+          "prompt_style_suffix"
+        ],
+        "properties": {
+          "resume_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "profile_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "const": "en",
+                "type": "string"
+              },
+              {
+                "const": "es",
+                "type": "string"
+              }
+            ]
+          },
+          "template_id": {
+            "const": "simple",
+            "type": "string"
+          },
+          "page_target": {
+            "minimum": 1,
+            "maximum": 3,
+            "type": "integer"
+          },
+          "confirmed_facts": {
+            "maxItems": 500,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileFact"
+            }
+          },
+          "job": {
+            "anyOf": [
+              {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "job_id",
+                  "job_revision",
+                  "company",
+                  "title",
+                  "requirements"
+                ],
+                "properties": {
+                  "job_id": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "job_revision": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "company": {
+                    "maxLength": 200,
+                    "type": "string"
+                  },
+                  "title": {
+                    "maxLength": 300,
+                    "type": "string"
+                  },
+                  "requirements": {
+                    "maxItems": 200,
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/JobRequirement"
+                    }
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "prompt_style_suffix": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "RenderCvResult": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "document_json",
+          "validation",
+          "pdf_file_id",
+          "docx_file_id",
+          "fact_ids"
+        ],
+        "properties": {
+          "document_json": {
+            "$ref": "#/components/schemas/ResumeDocument"
+          },
+          "validation": {
+            "$ref": "#/components/schemas/ResumeValidation"
+          },
+          "pdf_file_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "docx_file_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fact_ids": {
+            "maxItems": 500,
+            "type": "array",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ResumeBullet": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "text",
+          "fact_ids"
+        ],
+        "properties": {
+          "text": {
+            "minLength": 1,
+            "maxLength": 600,
+            "type": "string"
+          },
+          "fact_ids": {
+            "minItems": 1,
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ResumeContact": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "full_name",
+          "email",
+          "phone",
+          "location",
+          "links",
+          "fact_ids"
+        ],
+        "properties": {
+          "full_name": {
+            "minLength": 1,
+            "maxLength": 200,
+            "type": "string"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "maxLength": 320,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "maxLength": 50,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "location": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "links": {
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "maxLength": 500,
+              "type": "string"
+            }
+          },
+          "fact_ids": {
+            "maxItems": 5,
+            "type": "array",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ResumeDocument": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "schema_version",
+          "language",
+          "contact",
+          "sections"
+        ],
+        "properties": {
+          "schema_version": {
+            "const": 1,
+            "type": "number"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "const": "en",
+                "type": "string"
+              },
+              {
+                "const": "es",
+                "type": "string"
+              }
+            ]
+          },
+          "contact": {
+            "$ref": "#/components/schemas/ResumeContact"
+          },
+          "sections": {
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResumeSection"
+            }
+          }
+        }
+      },
+      "ResumeEntry": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "organization",
+          "start_month",
+          "end_month",
+          "current",
+          "detail",
+          "bullets",
+          "fact_ids"
+        ],
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "organization": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "start_month": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "end_month": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "current": {
+            "type": "boolean"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "bullets": {
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResumeBullet"
+            }
+          },
+          "fact_ids": {
+            "minItems": 1,
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ResumeFinding": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "severity",
+          "where",
+          "excerpt",
+          "removed"
+        ],
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "const": "BULLET_WITHOUT_FACT",
+                "type": "string"
+              },
+              {
+                "const": "UNKNOWN_FACT_ID",
+                "type": "string"
+              },
+              {
+                "const": "NUMBER_NOT_IN_FACTS",
+                "type": "string"
+              },
+              {
+                "const": "NAME_NOT_IN_FACTS",
+                "type": "string"
+              },
+              {
+                "const": "DATE_NOT_IN_FACTS",
+                "type": "string"
+              },
+              {
+                "const": "CREDENTIAL_NOT_IN_FACTS",
+                "type": "string"
+              },
+              {
+                "const": "ROLES_MERGED",
+                "type": "string"
+              },
+              {
+                "const": "PROJECT_PRESENTED_AS_EMPLOYMENT",
+                "type": "string"
+              },
+              {
+                "const": "SKILL_NOT_CONFIRMED",
+                "type": "string"
+              },
+              {
+                "const": "SECTION_OMITTED_EMPTY",
+                "type": "string"
+              },
+              {
+                "const": "PAGE_OVERFLOW",
+                "type": "string"
+              },
+              {
+                "const": "MODEL_CORRECTED_ONCE",
+                "type": "string"
+              },
+              {
+                "const": "NO_PROVIDER_CONFIGURED",
+                "type": "string"
+              },
+              {
+                "const": "MODEL_OUTPUT_REJECTED",
+                "type": "string"
+              },
+              {
+                "const": "PDF_UNAVAILABLE",
+                "type": "string"
+              }
+            ]
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "const": "blocking",
+                "type": "string"
+              },
+              {
+                "const": "warning",
+                "type": "string"
+              }
+            ]
+          },
+          "where": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "excerpt": {
+            "anyOf": [
+              {
+                "maxLength": 600,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "removed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ResumeProvenance": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "template_version",
+          "prompt_version",
+          "provider",
+          "model",
+          "deterministic"
+        ],
+        "properties": {
+          "template_version": {
+            "maxLength": 40,
+            "type": "string"
+          },
+          "prompt_version": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "model": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "deterministic": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ResumeSection": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "heading",
+          "entries"
+        ],
+        "properties": {
+          "kind": {
+            "anyOf": [
+              {
+                "const": "summary",
+                "type": "string"
+              },
+              {
+                "const": "skills",
+                "type": "string"
+              },
+              {
+                "const": "experience",
+                "type": "string"
+              },
+              {
+                "const": "projects",
+                "type": "string"
+              },
+              {
+                "const": "education",
+                "type": "string"
+              },
+              {
+                "const": "certifications",
+                "type": "string"
+              },
+              {
+                "const": "languages",
+                "type": "string"
+              }
+            ]
+          },
+          "heading": {
+            "minLength": 1,
+            "maxLength": 120,
+            "type": "string"
+          },
+          "entries": {
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResumeEntry"
+            }
+          }
+        }
+      },
+      "ResumeValidation": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "passed_automatic_checks",
+          "findings",
+          "fact_ids",
+          "provenance",
+          "pdf_pages"
+        ],
+        "properties": {
+          "passed_automatic_checks": {
+            "type": "boolean"
+          },
+          "findings": {
+            "maxItems": 200,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResumeFinding"
+            }
+          },
+          "fact_ids": {
+            "maxItems": 500,
+            "type": "array",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/ResumeProvenance"
+          },
+          "pdf_pages": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "ResumeView": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "mode",
+          "status",
+          "job_id",
+          "job_revision",
+          "profile_revision",
+          "language",
+          "template_id",
+          "document",
+          "validation",
+          "input_file_id",
+          "pdf_file_id",
+          "docx_file_id",
+          "approved_at",
+          "error_code",
+          "error_message",
+          "task_id",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "mode": {
+            "anyOf": [
+              {
+                "const": "original",
+                "type": "string"
+              },
+              {
+                "const": "tailored",
+                "type": "string"
+              }
+            ]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "const": "queued",
+                "type": "string"
+              },
+              {
+                "const": "ready",
+                "type": "string"
+              },
+              {
+                "const": "failed",
+                "type": "string"
+              }
+            ]
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "job_revision": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "profile_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "const": "en",
+                "type": "string"
+              },
+              {
+                "const": "es",
+                "type": "string"
+              }
+            ]
+          },
+          "template_id": {
+            "maxLength": 40,
+            "type": "string"
+          },
+          "document": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResumeDocument"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "validation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResumeValidation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "input_file_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pdf_file_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "docx_file_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "approved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "maxLength": 600,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "task_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
             "type": "string"
           }
         }
@@ -11073,6 +11974,410 @@
                 "additionalProperties": false,
                 "type": "object",
                 "properties": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/resumes": {
+      "post": {
+        "operationId": "createResume",
+        "summary": "Generate a tailored CV, or register an original file unchanged.",
+        "tags": [
+          "resumes"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Generate a tailored CV, or register an original file unchanged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body, query or header.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated: no valid session, device token or worker credential.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted for this workspace resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or not accessible from the authenticated workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale revision, duplicate command or idempotency key reuse with a different body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload exceeds the configured upload limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Structurally valid but invalid domain input.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota or rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "Mandatory for this command. Replaying the same key returns the stored response for 24 hours; reusing it with a different body returns 409.",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "description": "Anti-CSRF token for cookie-authenticated mutations; origin is verified too.",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 200
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateResumeRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/resumes/{id}": {
+      "get": {
+        "operationId": "getResume",
+        "summary": "The document, its validation findings and the generated files.",
+        "tags": [
+          "resumes"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The document, its validation findings and the generated files.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResumeView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body, query or header.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated: no valid session, device token or worker credential.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted for this workspace resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or not accessible from the authenticated workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale revision, duplicate command or idempotency key reuse with a different body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload exceeds the configured upload limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Structurally valid but invalid domain input.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota or rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/resumes/{id}/approve": {
+      "post": {
+        "operationId": "approveResume",
+        "summary": "Record the mandatory user approval of a generated CV.",
+        "tags": [
+          "resumes"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Record the mandatory user approval of a generated CV.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResumeView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body, query or header.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated: no valid session, device token or worker credential.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted for this workspace resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or not accessible from the authenticated workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale revision, duplicate command or idempotency key reuse with a different body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload exceeds the configured upload limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Structurally valid but invalid domain input.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota or rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "description": "Anti-CSRF token for cookie-authenticated mutations; origin is verified too.",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 200
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "approved"
+                ],
+                "properties": {
+                  "approved": {
+                    "type": "boolean"
+                  }
+                }
               }
             }
           }

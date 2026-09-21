@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ResumeBullet.schema.json",
+  "title": "ResumeBullet",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "text",
+    "fact_ids"
+  ],
+  "properties": {
+    "text": {
+      "minLength": 1,
+      "maxLength": 600,
+      "type": "string"
+    },
+    "fact_ids": {
+      "minItems": 1,
+      "maxItems": 10,
+      "type": "array",
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      }
+    }
+  }
+}

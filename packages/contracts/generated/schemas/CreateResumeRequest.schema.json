@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/CreateResumeRequest.schema.json",
+  "title": "CreateResumeRequest",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "mode"
+  ],
+  "properties": {
+    "mode": {
+      "anyOf": [
+        {
+          "const": "original",
+          "type": "string"
+        },
+        {
+          "const": "tailored",
+          "type": "string"
+        }
+      ]
+    },
+    "job_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "input_file_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "template_id": {
+      "const": "simple",
+      "type": "string"
+    },
+    "language": {
+      "anyOf": [
+        {
+          "const": "en",
+          "type": "string"
+        },
+        {
+          "const": "es",
+          "type": "string"
+        }
+      ]
+    },
+    "page_target": {
+      "minimum": 1,
+      "maximum": 3,
+      "type": "integer"
+    }
+  }
+}

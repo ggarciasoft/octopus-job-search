@@ -22,6 +22,7 @@ import {
   CreateProfileImportRequest,
   ProfileImportView,
 } from './tasks/parse-profile.js';
+import { ApproveResumeRequest, CreateResumeRequest, ResumeView } from './schemas/resumes.js';
 import { NoopEchoInput } from './tasks/noop-echo.js';
 import { TaskView } from './tasks/protocol.js';
 import {
@@ -478,6 +479,40 @@ export const ROUTES: readonly RouteDefinition[] = [
     params: IdParam,
     body: PatchJobRequest,
     response: JobView,
+    successStatus: 200,
+    csrf: true,
+  },
+  {
+    operationId: 'createResume',
+    method: 'POST',
+    path: '/resumes',
+    auth: 'session',
+    summary: 'Generate a tailored CV, or register an original file unchanged.',
+    body: CreateResumeRequest,
+    response: AcceptedResponse,
+    successStatus: 202,
+    requiresIdempotencyKey: true,
+    csrf: true,
+  },
+  {
+    operationId: 'getResume',
+    method: 'GET',
+    path: '/resumes/:id',
+    auth: 'session',
+    summary: 'The document, its validation findings and the generated files.',
+    params: IdParam,
+    response: ResumeView,
+    successStatus: 200,
+  },
+  {
+    operationId: 'approveResume',
+    method: 'POST',
+    path: '/resumes/:id/approve',
+    auth: 'session',
+    summary: 'Record the mandatory user approval of a generated CV.',
+    params: IdParam,
+    body: ApproveResumeRequest,
+    response: ResumeView,
     successStatus: 200,
     csrf: true,
   },

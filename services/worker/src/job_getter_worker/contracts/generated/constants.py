@@ -18,6 +18,7 @@ IMPLEMENTED_TASK_TYPES: Final = (
     "fetch_board",
     "fetch_job",
     "match_job",
+    "render_cv",
 )
 RUNNER_ONLY_CAPABILITIES: Final = ("fill_local",)
 NO_RETRY_TASK_TYPES: Final = ("fill_local",)
@@ -25,3 +26,6 @@ MATCH_ALGORITHM_VERSION: Final = "v1"
 SKILL_ALIAS_MAP_VERSION: Final = "v1"
 SKILL_REQUIRED_WEIGHT: Final = 2
 SKILL_PREFERRED_WEIGHT: Final = 1
+RESUME_SCHEMA_VERSION: Final = 1
+RESUME_TEMPLATE_VERSION: Final = "simple/v1"
+RESUME_MIN_FONT_PT: Final = 10
