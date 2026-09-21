@@ -26,7 +26,22 @@ const CREATING_OPERATION: Partial<Record<TaskType, string>> = {
   // M2: advertised automatically once these routes leave DEFERRED_OPERATIONS.
   fetch_board: 'scanSource',
   fetch_job: 'importJob',
+  // M3.
+  match_job: 'matchJob',
 };
+
+/**
+ * Task types with a handler but deliberately no user-facing creating route.
+ *
+ * Being `Partial`, CREATING_OPERATION cannot fail to compile when a task type
+ * is implemented and nobody adds it here, which is exactly how `match_job`
+ * shipped invisible to `GET /me` for one commit: the route worked, the
+ * worker claimed the task, and the capability said the build could not do it.
+ * `tests/capabilities.test.ts` now requires every implemented task type to
+ * appear in one of these two lists, so the next omission is a failed test
+ * rather than a quietly under-reported capability.
+ */
+export const INTERNAL_ONLY_TASK_TYPES: readonly TaskType[] = [];
 
 export function enqueueableTaskTypes(): readonly TaskType[] {
   return IMPLEMENTED_TASK_TYPES.filter((type) => {
@@ -34,4 +49,14 @@ export function enqueueableTaskTypes(): readonly TaskType[] {
     if (operation === undefined) return false;
     return !(operation in DEFERRED_OPERATIONS);
   });
+}
+
+/**
+ * Implemented task types that are neither reachable through a route nor
+ * declared internal-only. Always empty; the test asserts that.
+ */
+export function unclassifiedTaskTypes(): readonly TaskType[] {
+  return IMPLEMENTED_TASK_TYPES.filter(
+    (type) => CREATING_OPERATION[type] === undefined && !INTERNAL_ONLY_TASK_TYPES.includes(type),
+  );
 }

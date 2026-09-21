@@ -392,7 +392,7 @@ describe('GET /me reports capabilities honestly (invariant 10)', () => {
     const advertised: string[] = body.capabilities.implemented_task_types;
     for (const type of advertised) expect(IMPLEMENTED_TASK_TYPES).toContain(type);
     expect([...advertised].sort()).toEqual(
-      ['noop_echo', 'parse_profile', 'fetch_board', 'fetch_job'].sort(),
+      ['noop_echo', 'parse_profile', 'fetch_board', 'fetch_job', 'match_job'].sort(),
     );
     // M1 and M2 landed: their routes exist, so these flags are true and the
     // task types appear above. Everything beyond M2 must still be false.
