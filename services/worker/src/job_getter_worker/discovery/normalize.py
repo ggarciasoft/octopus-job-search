@@ -454,7 +454,8 @@ _REQUIRED_HEADING: Final = re.compile(
     r"^(?:minimum |basic |required |core |key |essential |technical )?"
     r"(?:requirements?|qualifications?|skills? (?:and|&) (?:experience|qualifications?)|"
     rf"what you(?:'|{_RSQUO})?ll need|what you need|what we(?:'|{_RSQUO})?re looking for|"
-    rf"must[- ]haves?|you have|you bring|you(?:'|{_RSQUO})?ll bring|we expect|"
+    rf"must[- ]haves?|you(?: should| must| will|(?:'|{_RSQUO})?ll)? have|"
+    rf"you(?: should| must| will|(?:'|{_RSQUO})?ll)? bring|we expect|"
     r"requisitos|lo que necesitas|lo que buscamos|qu[ée] buscamos)\b",
     re.I,
 )

@@ -205,6 +205,27 @@ def test_requirement_sections_are_split_with_evidence() -> None:
     assert excerpts(job, "requirements") == ["Requirements"]
 
 
+def test_modal_you_have_headings_open_a_required_section() -> None:
+    """A live Greenhouse posting headed its requirements "You should have".
+
+    The pattern recognised "You have" and "You bring" but not the modal forms,
+    so the whole section was skipped, the skills component -- the heaviest one
+    at weight 40 -- came back unevaluable, and the score rested on a third of
+    the available weight. "What you'll do" must stay out: it lists the work,
+    not what the employer requires.
+    """
+    for heading in ("You should have", "You must have", "You will have", "You should bring"):
+        job = normalise(
+            f"Join us!\n\n{heading}\n\n- 2+ years of production code (required)\n"
+            "- Experience with Ruby, C#, Java, or Python\n\n"
+            "What you'll do\n\n- Review code"
+        )
+        assert [(req.kind, req.text) for req in job.requirements] == [
+            ("required", "2+ years of production code (required)"),
+            ("required", "Experience with Ruby, C#, Java, or Python"),
+        ], heading
+
+
 def test_structured_sections_win_over_text_and_unknown_headings_stay_unknown() -> None:
     job = normalise(
         "Requirements\n- from text",
