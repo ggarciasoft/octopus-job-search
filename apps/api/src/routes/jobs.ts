@@ -369,6 +369,11 @@ export const patchJob: RouteHandler = async (context, request, reply) => {
 
     const closing = body.status === 'closed' && row.status !== 'closed';
     const now = new Date();
+    // A correction is only a correction when it changes something: re-sending
+    // the same words must not claim the source's wording as the user's, or
+    // every save of an unrelated field would quietly freeze the title.
+    const retitled = body.title !== undefined && body.title !== row.title;
+    const recompanied = body.company !== undefined && body.company !== row.company;
     await scoped
       .updateTable('jobs')
       .set({
@@ -376,6 +381,10 @@ export const patchJob: RouteHandler = async (context, request, reply) => {
         // Explicit user closure is immediate and is not undone by the board
         // still listing the posting (see upsertNormalizedJob).
         ...(closing ? { status: 'closed', closed_at: now, closed_reason: 'user' } : {}),
+        // The user's words, and the record that they are the user's: without
+        // the timestamp the next fetch would put the source's back.
+        ...(retitled ? { title: body.title, title_edited_at: now } : {}),
+        ...(recompanied ? { company: body.company, company_edited_at: now } : {}),
         revision: row.revision + 1,
         updated_at: now,
       })
@@ -391,6 +400,9 @@ export const patchJob: RouteHandler = async (context, request, reply) => {
         revision: row.revision + 1,
         saved: body.saved ?? null,
         closed: closing,
+        // Shape only: the corrected words themselves are job content, and the
+        // audit log records what happened, not what a posting says.
+        corrected: [...(recompanied ? ['company'] : []), ...(retitled ? ['title'] : [])],
       },
     });
 

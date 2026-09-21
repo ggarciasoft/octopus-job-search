@@ -1154,6 +1154,16 @@ export const es: Record<MessageKey, string> = {
     'Esto registra que consideras cerrada la oferta. Un tablón que siga listándola no la reabrirá.',
   'jobDetail.markClosedConfirm': 'Marcar cerrado',
   'jobDetail.closing': 'Cerrando…',
+  'jobDetail.correct': 'Corregir título y empleador',
+  'jobDetail.correctTitle': 'Corrige el título y el empleador',
+  'jobDetail.correctHelp':
+    'Una página sin datos estructurados se lee como texto visible, así que el título y el empleador pueden ser lo que dijera la página. Tu redacción la sustituye y se conserva: las descargas posteriores de esta oferta no la sobrescribirán.',
+  'jobDetail.correctSave': 'Guardar corrección',
+  'jobDetail.correctTitleLabel': 'Título del puesto',
+  'jobDetail.correctCompanyLabel': 'Empleador',
+  'jobDetail.correctSaving': 'Guardando…',
+  'jobDetail.correctCancel': 'Cancelar',
+  'jobDetail.correctedNote': 'El título o el empleador muestran tu redacción, no la de la fuente.',
   'jobDetail.prepareUnavailable':
     'Preparar solicitud aún no está disponible: los paquetes de solicitud llegan en el hito M4. No se muestra ningún botón, así que nada puede aparentar que prepara uno.',
   'jobDetail.reload': 'Recargar el empleo',

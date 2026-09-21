@@ -274,6 +274,7 @@ export function makeJob(overrides: Partial<JobView> = {}): JobView {
     ],
     match: null,
     possible_duplicates: [],
+    edited_fields: [],
     ...overrides,
   };
 }

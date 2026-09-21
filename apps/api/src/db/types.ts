@@ -349,6 +349,9 @@ export interface JobsTable {
   excluded_reason: string | null;
   closed_at: NullableTimestampColumn;
   closed_reason: JobClosedReason | null;
+  /** Set when the user corrected the field; the fetch path then leaves it. */
+  title_edited_at: NullableTimestampColumn;
+  company_edited_at: NullableTimestampColumn;
   created_at: TimestampColumn;
   updated_at: TimestampColumn;
 }

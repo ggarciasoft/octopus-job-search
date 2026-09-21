@@ -18,6 +18,16 @@
     "status": {
       "const": "closed",
       "type": "string"
+    },
+    "company": {
+      "minLength": 1,
+      "maxLength": 200,
+      "type": "string"
+    },
+    "title": {
+      "minLength": 1,
+      "maxLength": 300,
+      "type": "string"
     }
   }
 }

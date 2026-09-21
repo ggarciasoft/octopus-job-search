@@ -335,6 +335,12 @@ export const JobView = Type.Object(
     sources: Type.Array(JobSourceView),
     match: Type.Union([MatchSummary, Type.Null()]),
     possible_duplicates: Type.Array(PossibleDuplicate),
+    /**
+     * Fields showing the user's wording rather than the source's, because they
+     * corrected them. A screen that offers to edit the employer's own words
+     * should say whose words are on display.
+     */
+    edited_fields: Type.Array(Type.Union([Type.Literal('company'), Type.Literal('title')])),
   },
   { additionalProperties: false },
 );
@@ -398,6 +404,18 @@ export const PatchJobRequest = Type.Object(
     saved: Type.Optional(Type.Boolean()),
     /** Explicit user closure: closes immediately, unlike disappearance. */
     status: Type.Optional(Type.Literal('closed')),
+    /**
+     * Correcting what the source got wrong. A page with no JSON-LD is read as
+     * visible text, and the import says so in a `NO_STRUCTURED_DATA` warning
+     * that asks the reader to review the title and company - which they could
+     * not do until these existed. A corrected field is the user's, and the
+     * fetch path stops overwriting it.
+     *
+     * These are the posting's identifying words, not a free annotation: they
+     * travel into the application packet, so they may not be blanked.
+     */
+    company: Type.Optional(Type.String({ minLength: 1, maxLength: 200 })),
+    title: Type.Optional(Type.String({ minLength: 1, maxLength: 300 })),
   },
   { additionalProperties: false },
 );

@@ -16,6 +16,7 @@ import {
   type Session,
 } from './helpers/harness.js';
 import {
+  BOARD,
   boardResult,
   claimTask,
   completeTask,
@@ -261,6 +262,84 @@ describe('PATCH /jobs/:id', () => {
     expect(row.closed_at).not.toBeNull();
   });
 
+  it('corrects the title and company the source got wrong, and keeps the correction', async () => {
+    // The pilot's other finding: a page with no JSON-LD is read as visible
+    // text and the import says so, asking the reader to review the title and
+    // company. There was no way to.
+    const source = await createSource(harness, session);
+    await runScan(
+      harness,
+      session,
+      source.id,
+      boardResult([
+        normalizedJob({
+          external_id: '9',
+          title: 'Job Application for Software Engineer at Greenhouse',
+          company: '(company not stated)',
+        }),
+      ]),
+    );
+    const [id] = await harness.db
+      .selectFrom('jobs')
+      .select('id')
+      .execute()
+      .then((rows) => rows.map((row) => row.id));
+
+    const corrected = await patchJob(id!, {
+      expected_revision: 1,
+      title: 'Software Engineer',
+      company: 'Greenhouse',
+    });
+    expect(corrected.statusCode).toBe(200);
+    expect(corrected.json()).toMatchObject({
+      title: 'Software Engineer',
+      company: 'Greenhouse',
+      revision: 2,
+      edited_fields: ['company', 'title'],
+    });
+
+    // The next fetch of the same posting brings the same bad words back and
+    // must not win: on a board scanned daily the correction would not last.
+    await runScan(
+      harness,
+      session,
+      source.id,
+      boardResult([
+        normalizedJob({
+          external_id: '9',
+          title: 'Job Application for Software Engineer at Greenhouse',
+          company: '(company not stated)',
+          description_text: 'The posting was edited upstream.',
+        }),
+      ]),
+    );
+    const after = (await readJob(harness, session, id!)).json();
+    expect(after.title).toBe('Software Engineer');
+    expect(after.company).toBe('Greenhouse');
+    // Everything the user did not correct still follows the source.
+    expect(after.description_text).toBe('The posting was edited upstream.');
+  });
+
+  it('does not claim the source’s own wording as a correction', async () => {
+    const [id] = await seedBoard();
+    const resent = await patchJob(id!, { expected_revision: 1, title: 'Backend Engineer' });
+    expect(resent.statusCode).toBe(200);
+    expect(resent.json().edited_fields).toEqual([]);
+    const row = await harness.db
+      .selectFrom('jobs')
+      .select(['title_edited_at', 'company_edited_at'])
+      .where('id', '=', id!)
+      .executeTakeFirstOrThrow();
+    expect(row.title_edited_at).toBeNull();
+    expect(row.company_edited_at).toBeNull();
+  });
+
+  it('refuses to blank the words an application packet carries', async () => {
+    const [id] = await seedBoard();
+    expect((await patchJob(id!, { expected_revision: 1, title: '' })).statusCode).toBe(400);
+    expect((await patchJob(id!, { expected_revision: 1, company: '' })).statusCode).toBe(400);
+  });
+
   it('rejects a status other than closed at the schema boundary', async () => {
     const [id] = await seedBoard();
     const response = await patchJob(id!, { expected_revision: 1, status: 'active' });
@@ -404,6 +483,58 @@ describe('POST /jobs/import', () => {
       job_id: job.id,
     });
     expect(task.result.job.title).toBe('Platform Engineer');
+  });
+
+  it('links a pasted board link to the posting the connector already found', async () => {
+    // The pilot's finding: pasting the link to a posting the board connector
+    // had already discovered produced a *second* job. Neither source key nor
+    // canonical key can see across the two paths, and the placeholder company
+    // and title an unstructured page yields leave the similarity warning with
+    // nothing to compare either, so the duplicate was silent.
+    const board = await createSource(harness, session);
+    const page = `https://boards.greenhouse.io/${BOARD}/jobs/8214721`;
+    await runScan(
+      harness,
+      session,
+      board.id,
+      boardResult([normalizedJob({ external_id: '8214721', apply_url: null })]),
+    );
+
+    // Tracking parameters are part of the link people actually copy.
+    const created = await importJob({ url: `${page}?utm_source=newsletter` });
+    const taskId = created.json().task_id as string;
+    const claimed = await claimTask(harness, 'fetch_job');
+    await completeTask(
+      harness,
+      taskId,
+      claimed!.lease_token,
+      jobResult(
+        normalizedJob({
+          external_id: page,
+          source_key: `url:${page}`,
+          canonical_url: page,
+          apply_url: null,
+          // What an unstructured page actually yields.
+          company: '(company not stated)',
+          title: 'Job Application for Engineer 8214721',
+        }),
+      ),
+    );
+
+    const jobs = await harness.db.selectFrom('jobs').selectAll().execute();
+    expect(jobs).toHaveLength(1);
+    // The board identity keeps the canonical key; the paste becomes provenance.
+    expect(jobs[0]!.canonical_key).toBe(`greenhouse:${BOARD}:8214721`);
+    // The placeholder title from the unstructured page does not overwrite the
+    // board's own words.
+    expect(jobs[0]!.title).toBe('Engineer 8214721');
+
+    const provenance = await harness.db
+      .selectFrom('job_sources')
+      .selectAll()
+      .where('job_id', '=', jobs[0]!.id)
+      .execute();
+    expect(provenance.map((row) => row.connector).sort()).toEqual(['greenhouse', 'url']);
   });
 
   it('records candidates for the user to choose from when the page held several postings', async () => {

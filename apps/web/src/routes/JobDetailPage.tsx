@@ -1,5 +1,5 @@
 import type { JobDetailView, JobRequirement, JobView } from '@job-getter/contracts';
-import { Badge, Button, Callout, Dialog, Disclosure, Spinner } from '@job-getter/ui';
+import { Badge, Button, Callout, Dialog, Disclosure, Spinner, TextField } from '@job-getter/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
@@ -48,7 +48,10 @@ export function JobDetailPage() {
   });
   const job = jobQuery.data;
 
-  const [pending, setPending] = useState<'save' | 'close' | null>(null);
+  const [pending, setPending] = useState<'save' | 'close' | 'correct' | null>(null);
+  // The correction form, open only when asked for: a posting's own words are
+  // the default, and an always-editable heading invites edits nobody wanted.
+  const [correcting, setCorrecting] = useState<{ title: string; company: string } | null>(null);
   const [patchError, setPatchError] = useState<unknown>(null);
   const [confirmClose, setConfirmClose] = useState(false);
   const nowMs = Date.now();
@@ -101,6 +104,29 @@ export function JobDetailPage() {
       });
       applyPatched(current, patched);
     } catch (caught) {
+      setPatchError(caught);
+    } finally {
+      setPending(null);
+    }
+  };
+
+  const saveCorrection = async (current: JobDetailView) => {
+    if (correcting === null) return;
+    setPending('correct');
+    setPatchError(null);
+    try {
+      const patched = await api.patchJob({
+        params: { id: current.id },
+        body: {
+          expected_revision: current.revision,
+          title: correcting.title.trim(),
+          company: correcting.company.trim(),
+        },
+      });
+      applyPatched(current, patched);
+      setCorrecting(null);
+    } catch (caught) {
+      // The form stays open with what was typed still in it.
       setPatchError(caught);
     } finally {
       setPending(null);
@@ -160,9 +186,15 @@ export function JobDetailPage() {
       </p>
 
       <header className="flex flex-col gap-2">
-        {/* Title and company are the posting's own words: verbatim. */}
+        {/* Title and company are the posting's own words: verbatim, unless the
+            user corrected them, which the badge below says outright. */}
         <h1 className="text-2xl font-semibold text-slate-900">{job.title}</h1>
         <p className="text-base text-slate-800">{job.company}</p>
+        {job.edited_fields.length === 0 ? null : (
+          <p className="text-xs text-slate-600" data-testid="job-corrected">
+            {t('jobDetail.correctedNote')}
+          </p>
+        )}
         <div className="flex flex-wrap items-center gap-2">
           <JobStatusBadge status={job.status} />
           {job.saved ? <Badge tone="info">{t('jobs.savedBadge')}</Badge> : null}
@@ -208,6 +240,14 @@ export function JobDetailPage() {
             {t('jobDetail.markClosed')}
           </Button>
         )}
+        {correcting === null ? (
+          <Button
+            disabled={pending !== null}
+            onClick={() => setCorrecting({ title: job.title, company: job.company })}
+          >
+            {t('jobDetail.correct')}
+          </Button>
+        ) : null}
         <Button
           busy={queueingMatch || matchTaskId !== null}
           busyLabel={t('jobDetail.checkingFit')}
@@ -245,6 +285,67 @@ export function JobDetailPage() {
         </p>
       ) : (
         <FitPanel match={job.match} explanation={job.match_explanation} />
+      )}
+
+      {correcting === null ? null : (
+        <section
+          className="flex flex-col gap-3 rounded border border-slate-300 p-4"
+          data-testid="job-correction"
+        >
+          <h2 className="text-base font-semibold text-slate-900">{t('jobDetail.correctTitle')}</h2>
+          {/* Why the field exists at all: an unstructured page is read as
+              visible text, and the import says so rather than pretending. */}
+          <p className="text-sm text-slate-700">{t('jobDetail.correctHelp')}</p>
+          <TextField
+            label={t('jobDetail.correctTitleLabel')}
+            value={correcting.title}
+            disabled={pending !== null}
+            onChange={(event) => {
+              // Read before the updater runs: React clears `currentTarget`
+              // once the handler returns, and the updater may run after.
+              const value = event.currentTarget.value;
+              setCorrecting((current) =>
+                current === null ? current : { ...current, title: value },
+              );
+            }}
+          />
+          <TextField
+            label={t('jobDetail.correctCompanyLabel')}
+            value={correcting.company}
+            disabled={pending !== null}
+            onChange={(event) => {
+              // Read before the updater runs: React clears `currentTarget`
+              // once the handler returns, and the updater may run after.
+              const value = event.currentTarget.value;
+              setCorrecting((current) =>
+                current === null ? current : { ...current, company: value },
+              );
+            }}
+          />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              busy={pending === 'correct'}
+              busyLabel={t('jobDetail.correctSaving')}
+              // Neither may be blanked: both words travel into the packet an
+              // employer receives, so an empty one is not a correction.
+              disabled={
+                pending !== null ||
+                correcting.title.trim() === '' ||
+                correcting.company.trim() === ''
+              }
+              onClick={() => void saveCorrection(job)}
+            >
+              {t('jobDetail.correctSave')}
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={pending !== null}
+              onClick={() => setCorrecting(null)}
+            >
+              {t('jobDetail.correctCancel')}
+            </Button>
+          </div>
+        </section>
       )}
 
       <Section title={t('jobDetail.summaryTitle')}>

@@ -26,6 +26,7 @@
     "sources",
     "match",
     "possible_duplicates",
+    "edited_fields",
     "description_text",
     "requirements",
     "inferred",
@@ -522,6 +523,21 @@
             "type": "string"
           }
         }
+      }
+    },
+    "edited_fields": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "const": "company",
+            "type": "string"
+          },
+          {
+            "const": "title",
+            "type": "string"
+          }
+        ]
       }
     },
     "description_text": {

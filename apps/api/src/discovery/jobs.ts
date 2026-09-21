@@ -39,7 +39,13 @@ import {
   type MatchInputs,
 } from '../matching/matches.js';
 import type { WorkspaceScope } from '../auth/scope.js';
-import { canonicalKeyFor, isBoardConnector, type JobOrigin } from './connectors.js';
+import {
+  canonicalKeyFor,
+  isBoardConnector,
+  isHttpUrl,
+  normalizeJobUrl,
+  type JobOrigin,
+} from './connectors.js';
 
 // ---------------------------------------------------------------------------
 // Write path
@@ -58,12 +64,41 @@ export interface UpsertOutcome {
   readonly linkedBy: LinkReason | null;
 }
 
+interface JobEdits {
+  readonly title: boolean;
+  readonly company: boolean;
+}
+
 interface ExistingJob {
   readonly id: string;
+  readonly canonical_key: string;
   readonly content_hash: string;
+  readonly title_edited_at: Date | null;
+  readonly company_edited_at: Date | null;
   readonly status: string;
   readonly closed_reason: string | null;
   readonly linkedBy: LinkReason;
+}
+
+/**
+ * Where an application to this posting would actually go, normalised: the
+ * stated application URL, or the posting's own page when the source states no
+ * separate one. Null when neither is an http(s) location, which is the case
+ * for a pasted description.
+ */
+function destinationUrl(applyUrl: string | null, canonicalUrl: string): string | null {
+  const stated =
+    applyUrl !== null && applyUrl.trim() !== '' && isHttpUrl(applyUrl) ? applyUrl : null;
+  const url = stated ?? (isHttpUrl(canonicalUrl) ? canonicalUrl : null);
+  return url === null ? null : normalizeJobUrl(url);
+}
+
+function hostOf(normalisedUrl: string): string | null {
+  try {
+    return new URL(normalisedUrl).host.toLowerCase();
+  } catch {
+    return null;
+  }
 }
 
 async function findExistingJob(
@@ -72,7 +107,15 @@ async function findExistingJob(
   canonicalKey: string,
   origin: JobOrigin,
 ): Promise<ExistingJob | null> {
-  const columns = ['id', 'content_hash', 'status', 'closed_reason'] as const;
+  const columns = [
+    'id',
+    'canonical_key',
+    'content_hash',
+    'status',
+    'closed_reason',
+    'title_edited_at',
+    'company_edited_at',
+  ] as const;
 
   const byProvenance = await scope
     .selectFrom('job_sources')
@@ -95,21 +138,44 @@ async function findExistingJob(
     .executeTakeFirst();
   if (byKey) return { ...byKey, linkedBy: 'same_canonical_key' };
 
-  // Cross-source linking, rule 1: the final application URL is identical.
-  if (job.apply_url !== null && job.apply_url.trim() !== '') {
-    const byApplyUrl = await scope
-      .selectFrom('job_sources')
-      .select('job_id')
-      .where('apply_url', '=', job.apply_url)
-      .orderBy('created_at', 'asc')
-      .executeTakeFirst();
-    if (byApplyUrl) {
-      const row = await scope
-        .selectFrom('jobs')
-        .select(columns)
-        .where('id', '=', byApplyUrl.job_id)
-        .executeTakeFirst();
-      if (row) return { ...row, linkedBy: 'same_apply_url' };
+  // Cross-source linking, rule 1: the final application URL is identical
+  // (03_DATA_MODEL.md, "Deduplication").
+  //
+  // A source that states no separate apply URL is applied to at its own page,
+  // and the packet destination already resolves `apply_url ?? canonical_url`
+  // for exactly that reason (src/applications/service.ts). Identity here uses
+  // the same fallback, so pasting the link to a posting a board already found
+  // lands on that posting instead of creating a second row for it - which is
+  // what it did until a pilot run caught it.
+  //
+  // The comparison is on the normalised URL, because the link a person copies
+  // carries the campaign parameters the normaliser exists to strip. Postgres
+  // cannot run that normaliser, so the host narrows the candidates and the
+  // comparison itself happens here.
+  const destination = destinationUrl(job.apply_url, job.canonical_url);
+  if (destination !== null) {
+    const host = hostOf(destination);
+    if (host !== null) {
+      const candidates = await scope
+        .selectFrom('job_sources')
+        .select(['job_id', 'canonical_url', 'apply_url'])
+        .where((eb) => {
+          const pattern = `%//${host}/%`;
+          return eb.or([eb('apply_url', 'ilike', pattern), eb('canonical_url', 'ilike', pattern)]);
+        })
+        .orderBy('created_at', 'asc')
+        .execute();
+      const hit = candidates.find(
+        (candidate) => destinationUrl(candidate.apply_url, candidate.canonical_url) === destination,
+      );
+      if (hit) {
+        const row = await scope
+          .selectFrom('jobs')
+          .select(columns)
+          .where('id', '=', hit.job_id)
+          .executeTakeFirst();
+        if (row) return { ...row, linkedBy: 'same_apply_url' };
+      }
     }
   }
 
@@ -161,6 +227,21 @@ function contentColumns(job: NormalizedJob) {
 }
 
 /**
+ * The source's content, minus whatever the user has corrected. A corrected
+ * field is theirs and is not written back: the page that produced
+ * "(company not stated)" the first time produces it again on the next fetch,
+ * and on a board scanned daily an uncorrectable correction would last hours.
+ */
+function sourceContent(job: NormalizedJob, edited: JobEdits) {
+  const { company, title, ...rest } = contentColumns(job);
+  return {
+    ...rest,
+    ...(edited.company ? {} : { company }),
+    ...(edited.title ? {} : { title }),
+  };
+}
+
+/**
  * Applies one normalised job inside the caller's transaction.
  *
  * `seenAt` is the snapshot time (the worker's `fetched_at`), which is what
@@ -204,13 +285,24 @@ export async function upsertNormalizedJob(
     // from absence, and presence refutes it.
     const reopen = existing.status !== 'active' && existing.closed_reason !== 'user';
     reopened = reopen;
-    const changed = existing.content_hash !== job.content_hash;
+    // The identity that owns the canonical key names the posting. A job found
+    // by a cross-source rule is the same posting seen from somewhere else, and
+    // that somewhere else may describe it far less well: an unstructured page
+    // yields "(company not stated)" and whatever the <title> tag said, which
+    // must not replace a board's own words. The sighting is still real, so
+    // provenance, freshness and reopening all stand; only the content defers.
+    const secondary = existing.canonical_key !== canonicalKey;
+    const changed = !secondary && existing.content_hash !== job.content_hash;
     updated = changed;
+    const edited: JobEdits = {
+      title: existing.title_edited_at !== null,
+      company: existing.company_edited_at !== null,
+    };
 
     await scope
       .updateTable('jobs')
       .set({
-        ...(changed ? contentColumns(job) : {}),
+        ...(changed ? sourceContent(job, edited) : {}),
         ...(changed ? { revision: sql<number>`revision + 1` } : {}),
         ...(reopen ? { status: 'active', closed_at: null, closed_reason: null } : {}),
         last_seen_at: sql<Date>`GREATEST(last_seen_at, ${seenAt})`,
@@ -414,6 +506,12 @@ function baseView(
     // useful than a blank.
     match: match === null ? null : toMatchSummary(match, inputs),
     possible_duplicates: [...duplicates],
+    // Whose words these are. A screen that lets someone correct an employer's
+    // title should be able to show that the one on display is already theirs.
+    edited_fields: [
+      ...(row.company_edited_at === null ? [] : (['company'] as const)),
+      ...(row.title_edited_at === null ? [] : (['title'] as const)),
+    ],
   };
 }
 

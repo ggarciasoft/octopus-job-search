@@ -19,6 +19,59 @@ async function openDetail(api: JobGetterApi) {
 }
 
 describe('job detail', () => {
+  it('corrects a title and employer the page got wrong, and says whose words they are', async () => {
+    const user = userEvent.setup();
+    const patchJob = vi.fn<JobGetterApi['patchJob']>().mockResolvedValue(
+      makeJob({
+        revision: 2,
+        title: 'Software Engineer',
+        company: 'Greenhouse',
+        edited_fields: ['company', 'title'],
+      }),
+    );
+    await openDetail(
+      createFakeApi({
+        getJob: async () =>
+          makeJobDetail({
+            revision: 1,
+            title: 'Job Application for Software Engineer at Greenhouse',
+            company: '(company not stated)',
+          }),
+        patchJob,
+      }),
+    );
+
+    // Nothing claims to be the user's wording until it is.
+    expect(screen.queryByTestId('job-corrected')).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'Correct title and employer' }));
+    const form = screen.getByTestId('job-correction');
+    const title = within(form).getByLabelText('Job title');
+    const company = within(form).getByLabelText('Employer');
+
+    // An empty field is not a correction: both words reach the employer.
+    await user.clear(title);
+    expect(within(form).getByRole('button', { name: 'Save correction' })).toHaveProperty(
+      'disabled',
+      true,
+    );
+
+    await user.type(title, 'Software Engineer');
+    await user.clear(company);
+    await user.type(company, 'Greenhouse');
+    await user.click(within(form).getByRole('button', { name: 'Save correction' }));
+
+    await waitFor(() => expect(patchJob).toHaveBeenCalledTimes(1));
+    expect(patchJob.mock.calls[0]?.[0].body).toEqual({
+      expected_revision: 1,
+      title: 'Software Engineer',
+      company: 'Greenhouse',
+    });
+    expect(await screen.findByText('Software Engineer')).toBeTruthy();
+    expect(screen.getByTestId('job-corrected').textContent).toContain('your wording');
+    expect(screen.queryByTestId('job-correction')).toBeNull();
+  });
+
   it('says eligibility is not stated when the posting names no countries', async () => {
     await openDetail(
       createFakeApi({ getJob: async () => makeJobDetail({ eligible_countries: null }) }),

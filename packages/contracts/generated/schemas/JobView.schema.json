@@ -25,7 +25,8 @@
     "excluded_reason",
     "sources",
     "match",
-    "possible_duplicates"
+    "possible_duplicates",
+    "edited_fields"
   ],
   "properties": {
     "id": {
@@ -517,6 +518,21 @@
             "type": "string"
           }
         }
+      }
+    },
+    "edited_fields": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "const": "company",
+            "type": "string"
+          },
+          {
+            "const": "title",
+            "type": "string"
+          }
+        ]
       }
     }
   }

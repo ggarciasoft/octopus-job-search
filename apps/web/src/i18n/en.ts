@@ -1138,6 +1138,16 @@ export const en = {
     'This records that you consider the posting closed. A board that still lists it will not reopen it.',
   'jobDetail.markClosedConfirm': 'Mark closed',
   'jobDetail.closing': 'Closing…',
+  'jobDetail.correct': 'Correct title and employer',
+  'jobDetail.correctTitle': 'Correct the title and employer',
+  'jobDetail.correctHelp':
+    'A page with no structured data is read as visible text, so the title and employer may be whatever the page happened to say. Your wording replaces it and is kept: later fetches of this posting will not overwrite it.',
+  'jobDetail.correctSave': 'Save correction',
+  'jobDetail.correctTitleLabel': 'Job title',
+  'jobDetail.correctCompanyLabel': 'Employer',
+  'jobDetail.correctSaving': 'Saving…',
+  'jobDetail.correctCancel': 'Cancel',
+  'jobDetail.correctedNote': 'Title or employer shows your wording, not the source’s.',
   'jobDetail.prepareUnavailable':
     'Prepare application is not available yet: application packets arrive in milestone M4. No button is shown, so nothing can appear to prepare one.',
   'jobDetail.reload': 'Reload the job',

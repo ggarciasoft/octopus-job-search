@@ -1075,6 +1075,7 @@ class JobView(BaseModel):
     sources: list[JobSourceView]
     match: MatchSummary | None
     possible_duplicates: list[PossibleDuplicate]
+    edited_fields: list[Literal["company", "title"]]
 
 
 class MatchEvidence(BaseModel):
@@ -1194,6 +1195,7 @@ class JobDetailView(BaseModel):
     sources: list[JobSourceView]
     match: MatchSummary | None
     possible_duplicates: list[PossibleDuplicate]
+    edited_fields: list[Literal["company", "title"]]
     description_text: str
     requirements: list[JobRequirement]
     inferred: list[InferredField]
@@ -1230,6 +1232,8 @@ class PatchJobRequest(BaseModel):
     expected_revision: Annotated[int, Field(ge=1)]
     saved: bool | None = None
     status: Literal["closed"] | None = None
+    company: Annotated[str, Field(min_length=1, max_length=200)] | None = None
+    title: Annotated[str, Field(min_length=1, max_length=300)] | None = None
 
 
 class FetchLimits(BaseModel):

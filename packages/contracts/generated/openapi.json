@@ -3976,6 +3976,7 @@
           "sources",
           "match",
           "possible_duplicates",
+          "edited_fields",
           "description_text",
           "requirements",
           "inferred",
@@ -4178,6 +4179,21 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PossibleDuplicate"
+            }
+          },
+          "edited_fields": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "const": "company",
+                  "type": "string"
+                },
+                {
+                  "const": "title",
+                  "type": "string"
+                }
+              ]
             }
           },
           "description_text": {
@@ -4513,7 +4529,8 @@
           "excluded_reason",
           "sources",
           "match",
-          "possible_duplicates"
+          "possible_duplicates",
+          "edited_fields"
         ],
         "properties": {
           "id": {
@@ -4711,6 +4728,21 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PossibleDuplicate"
+            }
+          },
+          "edited_fields": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "const": "company",
+                  "type": "string"
+                },
+                {
+                  "const": "title",
+                  "type": "string"
+                }
+              ]
             }
           }
         }
@@ -6458,6 +6490,16 @@
           },
           "status": {
             "const": "closed",
+            "type": "string"
+          },
+          "company": {
+            "minLength": 1,
+            "maxLength": 200,
+            "type": "string"
+          },
+          "title": {
+            "minLength": 1,
+            "maxLength": 300,
             "type": "string"
           }
         }
