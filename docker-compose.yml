@@ -164,6 +164,22 @@ services:
       MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-10485760}
       PROVIDER_DEFAULT: ${PROVIDER_DEFAULT:-none}
       BILLING_ENABLED: ${BILLING_ENABLED:-false}
+    # Loopback only, and only because the paired local runner needs it.
+    #
+    # The runner is a process on this machine (02_ARCHITECTURE.md, "Execution
+    # modes") and it speaks the internal task protocol, which nginx
+    # deliberately does not proxy - infra/proxy/nginx.conf has no location
+    # block for /internal/, so it 404s there by design. Without this the
+    # runner has nowhere to reach the API and the whole local-filling path is
+    # unusable.
+    #
+    # 10_DEPLOYMENT.md's rule is that internal worker routes must not be
+    # reachable from the public internet. 127.0.0.1 is not the public
+    # internet, and the routes still require the operator credential or a
+    # paired device token. Change API_BIND_ADDRESS only if you have decided
+    # deliberately to expose them further.
+    ports:
+      - '${API_BIND_ADDRESS:-127.0.0.1}:${API_PORT:-3001}:8080'
     volumes:
       - files-data:${FILES_ROOT:-/var/lib/job-getter/files}
     depends_on:

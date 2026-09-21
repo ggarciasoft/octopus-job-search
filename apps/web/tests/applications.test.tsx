@@ -196,6 +196,50 @@ describe('the application review screen', () => {
 });
 
 describe('the answer editor', () => {
+  it('shows an unanswered question as empty, never as the word "null"', async () => {
+    // Found by rendering the screen in a real browser: `String(null)` put the
+    // four characters n-u-l-l into the box, and saving would have sent them to
+    // an employer as the answer.
+    const client = createFakeApi({
+      getApplication: async () =>
+        makeApplication({
+          status: 'needs_input',
+          current_packet: makePacket({
+            answers: [
+              {
+                question_key: 'internal_referral_code',
+                label: 'Internal referral code',
+                answer: null,
+                required: true,
+                sensitivity: 'standard',
+                provenance: 'user_entered',
+                source_id: null,
+              },
+            ],
+            unresolved_question_keys: ['internal_referral_code'],
+          }),
+        }),
+    });
+    renderApp({ client, route: `/applications/${APPLICATION_ID}` });
+
+    await screen.findByTestId('answer-editor');
+    const input = screen.getByLabelText('Internal referral code') as HTMLInputElement;
+    expect(input.value).toBe('');
+  });
+
+  it('turns a cleared field back into "not answered"', async () => {
+    const client = createFakeApi({ getApplication: async () => makeApplication() });
+    renderApp({ client, route: `/applications/${APPLICATION_ID}` });
+
+    await screen.findByTestId('answer-editor');
+    const input = screen.getByLabelText('Why do you want this role?') as HTMLInputElement;
+    await userEvent.clear(input);
+
+    // Empty, not an empty string pretending to be an answer: the required
+    // check has to keep failing.
+    expect(input.value).toBe('');
+  });
+
   it('marks a demographic question as never reused and offers no way to save it', async () => {
     const client = createFakeApi({
       getApplication: async () =>

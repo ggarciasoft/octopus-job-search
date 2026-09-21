@@ -1,6 +1,6 @@
 # Implementation status
 
-**Last updated: 2026-09-21** · **M0, M1, M2, M3 complete; M4 in progress** — the application backend, the paired local runner and the M4 screens are landed and tested, including a real Chromium filling a synthetic Greenhouse form and stopping before submit. Export and the deletion ledger are landed; workspace deletion is not, and no adapter has met a live board. No browser has rendered the M2, M3 or M4 screens. Next: **the pilot itself — ten reviewed application workflows, or documented sandbox equivalents**.
+**Last updated: 2026-09-21** · **M0, M1, M2, M3 complete; M4 in progress** — the application backend, the paired local runner and the M4 screens are landed and tested, including a real Chromium filling a synthetic Greenhouse form and stopping before submit. One complete sandbox workflow has now run on the Compose stack — packet, approval, a real Chromium filling a synthetic form and pausing, an outcome and an export — and the five M4 screens have been rendered in a browser for the first time. Workspace deletion is not built and no adapter has met a live board. Next: **the remaining nine pilot workflows, which are the owner's to run**.
 
 This file is required by `docs/spec/00_AI_IMPLEMENTATION_INSTRUCTIONS.md` and by
 the progress-record template in `docs/spec/12_IMPLEMENTATION_PLAN.md`. It is the
@@ -43,13 +43,13 @@ single honest answer to "does this actually work yet?"
 
 ## Summary
 
-|                                     |                                                                                                                                                                                                                                                                                                                                                                                             |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Functional requirements implemented | 10 of 14 (PR01–PR10); PR14's export half is tested, its deletion half is not built                                                                                                                                                                                                                                                                                                          |
-| Acceptance scenarios passing        | 18 of 28 (AT01–AT11 except AT10 is partial, plus AT13–AT15, AT17, AT19, AT20; AT23 is partial — see the rows)                                                                                                                                                                                                                                                                               |
-| Milestones complete                 | 4 of 8 (M0, M1, M2, M3); M4 in progress — see the milestone table for what "complete" covers                                                                                                                                                                                                                                                                                                |
-| Verified working today              | Toolchain; `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm contracts:check`; every test suite (contracts 191, api 567, web 191, ui 7, worker 439); the fixture corpus (46/46); all three images build; `docker compose up` from a `setup.sh`-generated `.env`; `scripts/smoke.sh` through the nginx proxy on `127.0.0.1:3000`; data persistence across `docker compose down`/`up` |
-| **Never executed**                  | `scripts/smoke.ps1`, `scripts/backup.*`, `scripts/restore.*`, `scripts/dev.*` (syntax-checked only); the `local-ai` Ollama profile; any image build on a host WITHOUT TLS interception (the no-secret path is verified only by construction); macOS/Linux hosts                                                                                                                             |
+|                                     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Functional requirements implemented | 10 of 14 (PR01–PR10); PR14's export half is tested, its deletion half is not built                                                                                                                                                                                                                                                                                                                                                                                     |
+| Acceptance scenarios passing        | 18 of 28 (AT01–AT11 except AT10 is partial, plus AT13–AT15, AT17, AT19, AT20; AT23 is partial — see the rows)                                                                                                                                                                                                                                                                                                                                                          |
+| Milestones complete                 | 4 of 8 (M0, M1, M2, M3); M4 in progress, 1 of 10 pilot workflows run — see the milestone table for what "complete" covers                                                                                                                                                                                                                                                                                                                                              |
+| Verified working today              | Toolchain; `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm contracts:check`; every test suite (contracts 191, api 567, web 193, ui 7, worker 441); one full M4 workflow on the Compose stack, including a real Chromium fill; the fixture corpus (46/46); all three images build; `docker compose up` from a `setup.sh`-generated `.env`; `scripts/smoke.sh` through the nginx proxy on `127.0.0.1:3000`; data persistence across `docker compose down`/`up` |
+| **Never executed**                  | `scripts/smoke.ps1`, `scripts/backup.*`, `scripts/restore.*`, `scripts/dev.*` (syntax-checked only); the `local-ai` Ollama profile; any image build on a host WITHOUT TLS interception (the no-secret path is verified only by construction); macOS/Linux hosts                                                                                                                                                                                                        |
 
 If you came here from the README looking for a product: there isn't one yet.
 Source exists and it typechecks — that is not the same as working, and this file
@@ -113,7 +113,7 @@ when a test exists; `—` means there is no test.
 | AT24 | Malicious page message cannot reach token/profile                           | Not started | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | AT25 | Backup/restore: profile, files, hashes and history restored                 | Not started | — (`scripts/restore.sh` explicitly declines to claim this; it needs M1–M4 data to be meaningful)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | AT26 | Delete workspace: access revoked, files erased, completion recorded         | Not started | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| AT27 | English/Spanish flow: labels, Unicode, dates, documents correct             | Not started | — (fixture ready: `fixtures/cvs/text-cv-es.pdf`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| AT27 | English/Spanish flow: labels, Unicode, dates, documents correct             | **Partial** | The catalogue half is covered: `apps/web/tests/i18n.test.tsx` asserts identical key sets, identical placeholders, no empty string and no raw key leaking into a rendered Spanish screen. Live, Chromium with `locale=es-ES` rendered the login screen in Spanish on the Compose stack. What is untested is the rest of the scenario: a full flow in Spanish, accented text through a generated document, and date formatting on real data. Fixture ready: `fixtures/cvs/text-cv-es.pdf`.                                                                                                                                                                                                               |
 | AT28 | No AI configured: manual profile, job import and tracker usable             | Not started | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 **Release gate status:** the M4 pilot gate (AT01–AT18, AT20–AT22, AT25,
@@ -221,9 +221,10 @@ statement is narrower and worth stating precisely.
   are not built, so `fill_local` has no handler and there is no fill route. An
   application is prepared and approved here; the owner opens the page and
   submits it themselves.
-- **No M4 screen has been rendered in a browser.** Application review, Fill
-  assistant, Tracker and Devices exist and are covered by jsdom tests; no
-  person has opened any of them.
+- **The M4 screens have been rendered by a browser but not used by a person.**
+  Chromium loaded all five and the assertions held; nobody has clicked through
+  them, and the first pass found a defect (`null` in an empty answer box) that
+  every jsdom test had missed.
 - The browser extension (`apps/extension/`) is an empty directory.
 - There is **no automatic submission** and there will not be one in the pilot or
   the hosted beta. That is a permanent design position (invariant 4), not a gap.
@@ -639,6 +640,73 @@ history restored" — is a claim about a populated installation surviving a real
 round trip, and this build has not done one. `scripts/restore.sh` reapplies the
 ledger now, but its own report still says the restore is not verified, and that
 is still the honest description.
+
+### M4 live, on the Compose stack (verified 2026-09-21)
+
+The first time any screen in this product has been rendered by a browser, and
+the first time the M4 path has run outside a test harness. Run against the
+Compose stack on `http://127.0.0.1:3000`, with `0005`, `0006` and `0007`
+applied to the **existing populated** database.
+
+| Step                                  | Observed                                                                                                                                                                  |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `docker compose logs migrate`         | `applying 0005_applications` / `0006_devices` / `0007_privacy` — `Applied 3 migration(s).`                                                                                |
+| `GET /me` capabilities                | `[noop_echo, parse_profile, fetch_board, fetch_job, match_job, render_cv, fill_local]`                                                                                    |
+| `POST /applications`                  | `draft`, revision 1.                                                                                                                                                      |
+| `POST /applications/:id/packets`      | `ready_for_review`; destination resolved from the job's own provenance; content hash `66ba78d8…baf0`.                                                                     |
+| Approve with a **wrong** hash         | **HTTP 409.**                                                                                                                                                             |
+| Approve with the displayed hash       | `approved`, expiring 24 hours later.                                                                                                                                      |
+| `POST /devices/pairing` + `/exchange` | A code minted in the session, exchanged once for a scoped token.                                                                                                          |
+| `POST /applications/:id/fill`         | `filling`.                                                                                                                                                                |
+| `job-getter-runner run --headless`    | Claimed the task over the internal protocol, downloaded the CV through the lease-scoped endpoint, **filled 8 of 14 fields** and reported `needs_input` with 6 unresolved. |
+| Resulting application                 | `needs_input`, **packet revision 2**, approval withdrawn, `unresolved_question_keys: ['internal_referral_code']`.                                                         |
+| History                               | `created(user)` → `packet_created(user)` → `packet_approved(user)` → `fill_requested(user)` → `fill_paused(runner)`.                                                      |
+| `POST /applications/:id/outcome`      | `submitted`, `user_report`, reference `SANDBOX-1`.                                                                                                                        |
+| `POST /workspace/export`              | `succeeded`, 324,337 bytes, 4 entries, manifest first; downloaded SHA-256 matched the task result exactly.                                                                |
+| Export contents                       | `secret_ciphertext`, `token_hash`, `password_hash` all absent; `excluded` lists all six omissions.                                                                        |
+| Five M4 screens in Chromium           | Applications, Application review, Tracker, Devices, Privacy all rendered full-page. The tracker shows "Submitted — reported by you" and **not** "Submitted — verified".   |
+| The same build in Spanish             | Chromium with `locale=es-ES` renders `Iniciar sesión`; the English shots use `locale=en-GB`.                                                                              |
+
+**One real defect, found here and fixed.** The answer editor rendered an
+unanswered question's value with `String(answer)`, so a `null` answer appeared
+in the text box as the four characters **`null`** — and pressing save would
+have sent an employer the literal word "null" as the answer to "Internal
+referral code" and "Gender". Every jsdom test passed, because none of them
+looked at what the input displayed for a null. The fix renders an empty field,
+turns a cleared field back into `null` rather than an empty string (so the
+required check keeps failing, which is the point), and keeps a list answer a
+list. Two web tests now pin it, and a browser re-check after the rebuild
+reports `inputs showing the word null: 0`.
+
+**One deployment gap, found here and closed.** The paired runner speaks the
+internal task protocol, and nginx deliberately does not proxy `/internal/`
+(10_DEPLOYMENT.md). The API published no port, so the runner had nowhere to
+reach it and the whole local-filling path was unusable on a real installation.
+The API is now published on `127.0.0.1:3001` by default
+(`API_BIND_ADDRESS`/`API_PORT`), which is not the public internet and still
+requires the operator credential or a paired device token.
+
+**One guard moved, not weakened.** `WORKER_CAPABILITIES=fill_local` used to be
+refused inside the settings model, which also refused the paired runner — the
+one process that may legitimately claim it. The check now lives in the
+container worker's entry point, where the rule ("a headless container has no
+desktop browser") actually applies. Moving it into an environment flag would
+have been the wrong fix: a guard an operator can switch off in `.env` is not a
+guard.
+
+**Sandbox, and what that word is doing.** The form was
+`fixtures/ats-pages/greenhouse-application.html` served from `127.0.0.1:8099`
+with the job's real title and employer substituted in, because the identity
+check compares the two and a mismatch would have proved the guard rather than
+the fill. The destination was written into `job_sources` with `psql`: the
+importer refuses a non-public, non-https apply URL by design (AT20), and a
+loopback form is exactly that. Everything downstream of the destination was
+real. **No live board was touched and nothing was submitted anywhere.**
+
+This is **one** sandbox workflow. The M4 exit criterion asks for ten
+user-reviewed workflows with measured time saved and failures, and nine of them
+have not happened; nor has a single real application been prepared by the
+owner, which is the part only they can do.
 
 ### Infrastructure and scripts (verified 2026-09-20)
 

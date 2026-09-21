@@ -6,7 +6,10 @@ import pytest
 
 from job_getter_worker.contracts.generated import RUNNER_ONLY_CAPABILITIES, TaskType
 from job_getter_worker.handlers import build_default_registry
-from job_getter_worker.settings import CapabilityConfigurationError
+from job_getter_worker.settings import (
+    CapabilityConfigurationError,
+    assert_container_capabilities,
+)
 
 from .conftest import SettingsFactory
 
@@ -21,16 +24,29 @@ def test_capabilities_are_parsed_against_the_generated_enum(
 def test_container_worker_refuses_to_start_with_fill_local(
     make_settings: SettingsFactory,
 ) -> None:
-    """A headless container is not the user's desktop browser (ADR05)."""
+    """A headless container is not the user's desktop browser (ADR05).
+
+    The check moved out of the settings model in M4 and into the container
+    worker's entry point, because the rule is about which process is asking:
+    the paired desktop runner declares exactly this capability legitimately.
+    Parsing the value still succeeds; claiming it as a container does not.
+    """
     assert "fill_local" in RUNNER_ONLY_CAPABILITIES
+    settings = make_settings(WORKER_CAPABILITIES="noop_echo,fill_local")
+    assert TaskType.FILL_LOCAL in settings.declared_capabilities
 
     with pytest.raises(CapabilityConfigurationError) as raised:
-        make_settings(WORKER_CAPABILITIES="noop_echo,fill_local")
+        assert_container_capabilities(settings.declared_capabilities)
 
     message = str(raised.value)
     assert "fill_local" in message
     assert "desktop" in message
     assert "job-getter-runner pair" in message
+
+
+def test_the_runner_may_declare_what_the_container_may_not() -> None:
+    """The guard is about the process, so it must not fire for the runner."""
+    assert_container_capabilities((TaskType.NOOP_ECHO, TaskType.PARSE_PROFILE))
 
 
 def test_unknown_capability_is_rejected(make_settings: SettingsFactory) -> None:

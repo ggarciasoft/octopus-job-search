@@ -15,14 +15,23 @@ from pydantic import ValidationError
 from .api import TaskApiClient
 from .handlers import build_default_registry
 from .logging import configure_logging, get_logger
-from .settings import CapabilityConfigurationError, WorkerSettings, load_settings
+from .settings import (
+    CapabilityConfigurationError,
+    WorkerSettings,
+    assert_container_capabilities,
+    load_settings,
+)
 from .worker import Worker
 
 
 def _load() -> WorkerSettings:
     """Load settings, failing fast with a message an operator can act on."""
     try:
-        return load_settings()
+        settings = load_settings()
+        # This process is the container worker, so it may not claim browser
+        # work however the environment is configured (ADR05).
+        assert_container_capabilities(settings.declared_capabilities)
+        return settings
     except CapabilityConfigurationError as error:
         print(f"job-getter-worker: {error}", file=sys.stderr)
         raise SystemExit(2) from error

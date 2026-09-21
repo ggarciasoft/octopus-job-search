@@ -33,13 +33,55 @@ export function newDraft(questionKey: string, label: string): DraftAnswer {
   return {
     question_key: questionKey,
     label: label === '' ? null : label,
-    answer: '',
+    // A question the user has just added is unanswered, not answered with an
+    // empty string. The distinction is what `needs_input` is built on.
+    answer: null,
     required: true,
     sensitivity: 'standard',
     provenance: 'user_entered',
     source_id: null,
     remember: false,
   };
+}
+
+/**
+ * What the input shows for a stored answer.
+ *
+ * An unanswered question shows an **empty field**, not the word "null". That
+ * sounds like a formatting detail and is not: `String(null)` renders "null",
+ * and a user who pressed save would have sent an employer the four characters
+ * n-u-l-l as their answer to "Internal referral code". This was live on the
+ * review screen until a browser rendered it.
+ */
+export function toInputValue(answer: PacketAnswer['answer']): string {
+  if (answer === null) return '';
+  if (Array.isArray(answer)) return answer.join(', ');
+  return String(answer);
+}
+
+/**
+ * What an edited field means.
+ *
+ * Clearing a field makes the answer **null** again rather than an empty
+ * string: "not answered" is a state the packet has, and blanking a box is how
+ * a person says it. An empty string would pass the required check and send
+ * nothing.
+ *
+ * A field that held a list stays a list, because a checkbox group matched
+ * against the string "Python, Rust" matches no option at all.
+ */
+export function fromInputValue(
+  previous: PacketAnswer['answer'],
+  raw: string,
+): PacketAnswer['answer'] {
+  if (raw.trim() === '') return null;
+  if (Array.isArray(previous)) {
+    return raw
+      .split(',')
+      .map((part) => part.trim())
+      .filter((part) => part !== '');
+  }
+  return raw;
 }
 
 /** The question key the API will accept, derived the same way the runner does. */
@@ -102,11 +144,11 @@ export function AnswerEditor({ answers, bank, disabled, onChange }: AnswerEditor
               >
                 <TextField
                   label={answer.label ?? answer.question_key}
-                  value={typeof answer.answer === 'string' ? answer.answer : String(answer.answer)}
+                  value={toInputValue(answer.answer)}
                   disabled={disabled}
                   onChange={(event) =>
                     update(answer.question_key, {
-                      answer: event.currentTarget.value,
+                      answer: fromInputValue(answer.answer, event.currentTarget.value),
                       // Editing a stored answer makes it the user's own.
                       provenance: 'user_entered',
                       source_id: null,

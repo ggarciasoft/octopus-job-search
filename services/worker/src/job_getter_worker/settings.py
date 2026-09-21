@@ -118,10 +118,15 @@ class WorkerSettings(BaseSettings):
     def declared_capabilities(self) -> tuple[TaskType, ...]:
         """Capabilities this process will claim, validated against the contract.
 
-        A container worker that declares a runner-only capability refuses to
-        start: ``docs/spec/02_ARCHITECTURE.md`` is explicit that a headless
-        container cannot drive the user's desktop browser, and ADR05 exists
-        precisely so it never pretends to.
+        This parses and validates the names; it does not decide who may claim
+        what. The runner-only rule is about which *process* is asking, not
+        about which string is configured, so it lives in
+        :func:`assert_container_capabilities` and is called by the container
+        worker's entry point. Putting it here would have meant the paired
+        runner - which legitimately claims ``fill_local`` - could not use this
+        model at all, and the workaround would have been an environment
+        variable that switched the guard off. A guard an operator can disable
+        in ``.env`` is not a guard.
         """
         raw = [item.strip() for item in self.capabilities.split(",")]
         names = [item for item in raw if item]
@@ -137,17 +142,6 @@ class WorkerSettings(BaseSettings):
             raise CapabilityConfigurationError(
                 f"WORKER_CAPABILITIES contains unknown task type(s) {unknown}. "
                 f"Valid task types are {sorted(known)}"
-            )
-
-        runner_only = [name for name in names if name in RUNNER_ONLY_CAPABILITIES]
-        if runner_only:
-            raise CapabilityConfigurationError(
-                f"WORKER_CAPABILITIES declares {runner_only}, which only the paired "
-                "desktop runner may claim. A headless container has no access to "
-                "the user's desktop browser session, so it must not accept this "
-                "work (docs/spec/02_ARCHITECTURE.md, ADR05). Remove "
-                f"{runner_only} from WORKER_CAPABILITIES, and run "
-                "`job-getter-runner pair` on the desktop instead."
             )
 
         deduplicated: list[TaskType] = []
@@ -167,6 +161,31 @@ class WorkerSettings(BaseSettings):
             timeout_seconds=self.provider_timeout_seconds,
             daily_token_budget=self.provider_daily_token_budget,
             daily_cost_budget=self.provider_daily_cost_budget,
+        )
+
+
+def assert_container_capabilities(capabilities: tuple[TaskType, ...]) -> None:
+    """Refuse runner-only work in the container worker.
+
+    ``docs/spec/02_ARCHITECTURE.md`` and ADR05: a headless container has no
+    access to the user's desktop browser session, so it must never accept
+    browser-filling work. The check belongs to the container worker's entry
+    point rather than to the settings model, because it is a statement about
+    the process, and the paired desktop runner declares exactly this capability
+    legitimately.
+
+    Raises:
+        CapabilityConfigurationError: if any runner-only capability is declared.
+    """
+    runner_only = [item.value for item in capabilities if item.value in RUNNER_ONLY_CAPABILITIES]
+    if runner_only:
+        raise CapabilityConfigurationError(
+            f"WORKER_CAPABILITIES declares {runner_only}, which only the paired "
+            "desktop runner may claim. A headless container has no access to "
+            "the user's desktop browser session, so it must not accept this "
+            "work (docs/spec/02_ARCHITECTURE.md, ADR05). Remove "
+            f"{runner_only} from WORKER_CAPABILITIES, and run "
+            "`job-getter-runner pair` on the desktop instead."
         )
 
 
