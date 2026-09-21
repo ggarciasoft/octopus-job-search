@@ -218,6 +218,24 @@ describe('POST /resumes, tailored', () => {
     expect(JSON.stringify(input.confirmed_facts)).not.toContain('Rust');
   });
 
+  it('refuses a tailored CV when no contact fact is confirmed', async () => {
+    // Found on a live stack: without this the task queued, then died in the
+    // worker with a retryable INTERNAL_ERROR because the document had no name.
+    await addConfirmedFact('skill', {
+      canonical_name: 'Python',
+      aliases: [],
+      user_declared_proficiency: null,
+      years: null,
+    });
+
+    const response = await create({ mode: 'tailored' });
+
+    expect(response.statusCode, response.body).toBe(422);
+    expect(response.json().error.fields).toHaveProperty('profile');
+    // Nothing was queued: the user gets the answer now, not in ten seconds.
+    expect(await claimTask(harness, 'render_cv')).toBeNull();
+  });
+
   it('rejects an input file, because tailored mode generates the document', async () => {
     await seedProfile();
     const fileId = await uploadCv();

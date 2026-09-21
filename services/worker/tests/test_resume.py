@@ -26,7 +26,7 @@ from job_getter_worker.contracts.generated import (
     ResumeEntry,
     ResumeSection,
 )
-from job_getter_worker.resume.document import build_document
+from job_getter_worker.resume.document import MissingContactError, build_document
 from job_getter_worker.resume.docx_render import render_docx
 from job_getter_worker.resume.pdf_render import build_html
 from job_getter_worker.resume.validation import validate_document
@@ -162,9 +162,28 @@ def test_the_document_invents_nothing_without_a_provider() -> None:
     assert experience.entries[0].organization == "Orbital Foods"
 
 
+def test_a_profile_with_no_contact_fact_refuses_rather_than_going_out_unnamed() -> None:
+    """A CV with no name is not a CV, and a placeholder name is an invention.
+
+    This is the case every other fixture in this file accidentally avoids by
+    always including a contact fact. It reached a live stack as a retryable
+    INTERNAL_ERROR before anything here caught it.
+    """
+    with pytest.raises(MissingContactError):
+        build_document([skill_fact(), experience_fact()], "en")
+
+
+def test_a_malformed_contact_fact_is_treated_as_absent() -> None:
+    broken = fact(CONTACT_ID, "contact", {"full_name": "", "email": "not-an-email"})
+
+    with pytest.raises(MissingContactError):
+        build_document([broken, skill_fact()], "en")
+
+
 def test_empty_sections_are_omitted_not_left_as_bare_headings() -> None:
     document = build_document([contact_fact()], "en")
 
+    assert document.contact.full_name == "Ada Lovelace"
     assert document.sections == []
 
 

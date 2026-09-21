@@ -170,6 +170,25 @@ export function buildRenderInput(
   };
 }
 
+/**
+ * Refuse a tailored CV with no name to put on it.
+ *
+ * The worker guards this too, but failing here is what the user actually
+ * needs: an immediate, actionable 422 naming the missing fact, rather than a
+ * queued task that comes back failed a few seconds later. The worker keeps its
+ * own guard because it may not assume the API validated anything.
+ */
+export function assertContactFact(context: ResumeContext): void {
+  const hasContact = context.confirmedFacts.some(
+    (fact) => fact.kind === 'contact' && fact.confirmed,
+  );
+  if (!hasContact) {
+    throw unprocessable('A generated CV needs a name, and no confirmed contact fact exists yet.', {
+      profile: 'Confirm your contact details on the profile screen first.',
+    });
+  }
+}
+
 export function resolvePageTarget(requested: number | undefined): number {
   return requested ?? RESUME_PAGE_TARGET.default;
 }

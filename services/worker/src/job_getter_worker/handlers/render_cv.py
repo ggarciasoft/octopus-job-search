@@ -41,7 +41,7 @@ from ..logging import log_shape
 from ..prompts.render_cv import RENDER_CV_PROMPT_VERSION, build_render_cv_prompt
 from ..providers import build_budget, build_provider, estimate_tokens
 from ..providers.base import ModelProvider, ProviderInvalidOutputError
-from ..resume.document import build_document
+from ..resume.document import MissingContactError, build_document
 from ..resume.docx_render import render_docx
 from ..resume.pdf_render import render_pdf
 from ..resume.validation import validate_document
@@ -169,7 +169,19 @@ async def handle_render_cv(ctx: TaskContext) -> RenderCvResult:
 
     facts: list[ProfileFact] = list(payload.confirmed_facts)
     requirements = list(payload.job.requirements) if payload.job else []
-    baseline = build_document(facts, payload.language, requirements)
+    try:
+        baseline = build_document(facts, payload.language, requirements)
+    except MissingContactError as error:
+        # Not retryable and not an internal error: the same input will fail the
+        # same way until the user confirms a contact fact, so the message says
+        # exactly that instead of burning three attempts on it.
+        raise TaskFailureError(
+            "INPUT_INVALID",
+            "This profile has no confirmed contact fact, so there is no name to "
+            "put on the CV. Confirm your contact details on the profile screen "
+            "and generate it again.",
+            retryable=False,
+        ) from error
 
     findings: list[ResumeFinding] = []
     provider_id: str | None = None

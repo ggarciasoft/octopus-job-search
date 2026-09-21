@@ -26,6 +26,7 @@ import { enqueueTask } from '../tasks/enqueue.js';
 import { readIdempotencyKey, sendOutcome, withIdempotency } from '../tasks/idempotency.js';
 import { workspacePreferences } from '../discovery/scans.js';
 import {
+  assertContactFact,
   assertModeShape,
   buildRenderInput,
   readResumeContext,
@@ -47,6 +48,10 @@ export const createResume: RouteHandler = async (context, request, reply) => {
   const resumeContext = await readResumeContext(scope, preferences);
   const language: Locale = body.language ?? preferences.cv_language ?? resumeContext.locale;
   const pageTarget = resolvePageTarget(body.page_target);
+
+  // Tailored mode builds a document; original mode sends the user's own file,
+  // which already carries whatever name is on it.
+  if (body.mode === 'tailored') assertContactFact(resumeContext);
 
   let job: JobRow | null = null;
   if (body.job_id !== undefined) {

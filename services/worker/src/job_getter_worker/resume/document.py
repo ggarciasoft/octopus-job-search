@@ -134,6 +134,16 @@ def _relevance(text: str, requirements: list[JobRequirement]) -> float:
     return max(overlap(text, requirement.text) for requirement in requirements)
 
 
+class MissingContactError(Exception):
+    """Raised when no confirmed contact fact exists.
+
+    A CV with no name on it is not a CV, and inventing one is exactly what
+    invariant 2 forbids. So generation stops and says what is missing, rather
+    than producing an anonymous document or a placeholder that would be
+    indistinguishable from a real name once rendered.
+    """
+
+
 def _contact(index: FactIndex) -> ResumeContact:
     for fact_id, value in index.of("contact"):
         try:
@@ -151,16 +161,10 @@ def _contact(index: FactIndex) -> ResumeContact:
             links=[link.url for link in (parsed.links or [])][:10],
             fact_ids=[fact_id],
         )
-    # No confirmed contact fact. The document still renders; the validator
-    # reports the gap rather than inventing a name.
-    return ResumeContact(
-        full_name="",
-        email=None,
-        phone=None,
-        location=None,
-        links=[],
-        fact_ids=[],
-    )
+    # No usable confirmed contact fact. The contract requires a non-empty
+    # name, which is the right constraint: it is the caller's job to tell the
+    # user what to fix, not this function's job to fake a document.
+    raise MissingContactError
 
 
 def _summary_section(index: FactIndex, language: str) -> ResumeSection | None:
