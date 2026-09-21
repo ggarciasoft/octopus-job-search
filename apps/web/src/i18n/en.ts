@@ -1313,4 +1313,99 @@ export const en = {
   'jobDetail.fitFailed': 'The fit check did not finish.',
   'jobDetail.fitNotChecked':
     'This job has not been checked against your profile yet. Nothing is scored until you ask.',
+
+  // --- CV studio (M3, PR07) ------------------------------------------------
+  // Validation catches what a deterministic comparison can catch and nothing
+  // more. Nothing below may describe it as proof that a CV is accurate.
+
+  'cvStudio.title': 'CV studio',
+  'cvStudio.intro':
+    'Generate a CV from the facts you have confirmed, or send the file you uploaded exactly as it is. Nothing is sent anywhere from this screen.',
+  'cvStudio.modeLegend': 'Which CV do you want to send?',
+  'cvStudio.modeTailored': 'Generate one from my confirmed profile',
+  'cvStudio.modeTailoredDescription':
+    'Built from your confirmed facts and ordered for this job. Wording may be reordered or shortened; nothing is added.',
+  'cvStudio.modeOriginal': 'Send the file I uploaded',
+  'cvStudio.modeOriginalDescription':
+    'Your file is sent byte for byte. It is never converted, re-rendered or tailored.',
+  'cvStudio.job': 'Job',
+  'cvStudio.jobNone': 'No job — a general CV',
+  'cvStudio.language': 'Language',
+  'cvStudio.pageTarget': 'Target length',
+  'cvStudio.pageTargetOption': '{count} pages',
+  'cvStudio.pageTargetOptionOne': '1 page',
+  'cvStudio.file': 'Uploaded file',
+  'cvStudio.fileNone': 'You have not uploaded a CV yet.',
+  'cvStudio.fileUploadLink': 'Upload one on the profile screen',
+  'cvStudio.generate': 'Generate',
+  'cvStudio.generating': 'Generating',
+  'cvStudio.useOriginal': 'Use this file',
+  'cvStudio.queued': 'Generating your CV. This runs locally unless you configured a provider.',
+  'cvStudio.failed': 'The CV could not be generated.',
+  'cvStudio.loadFailed': 'The CV could not be loaded.',
+  'cvStudio.noProviderNotice':
+    'No AI provider is configured, so the CV was assembled directly from your confirmed facts with no rewriting. That is a complete CV, just not a tailored one.',
+
+  'cvStudio.reviewHeading': 'Review before you send',
+  'cvStudio.reviewNotice':
+    'These checks compare the document against your confirmed facts. They catch invented numbers, names and dates. They cannot judge whether a sentence oversells what you did, so reading this yourself is not optional.',
+  'cvStudio.checksPassed': 'Automatic checks found nothing to flag.',
+  'cvStudio.checksFailed':
+    'Automatic checks flagged {count} problem(s). Each one is listed below with what was removed.',
+  'cvStudio.findingsHeading': 'What the checks found',
+  'cvStudio.findingRemoved': 'Removed from the CV',
+  'cvStudio.findingKept': 'Kept, but worth checking',
+  'cvStudio.documentHeading': 'The document',
+  'cvStudio.documentEmpty':
+    'The document has no sections. Confirm some profile facts and generate it again.',
+  'cvStudio.factsCited': 'Built from {count} confirmed fact(s).',
+  'cvStudio.provenance': 'Template {template}. {source}',
+  'cvStudio.provenanceDeterministic': 'Assembled directly from your facts, with no model involved.',
+  'cvStudio.provenanceModel': 'Presented by {provider} ({model}), prompt {prompt}.',
+  'cvStudio.pages': 'Rendered to {count} page(s).',
+
+  'cvStudio.downloadsHeading': 'Downloads',
+  'cvStudio.downloadPdf': 'Download PDF',
+  'cvStudio.downloadDocx': 'Download DOCX',
+  'cvStudio.downloadOriginal': 'Download your original file',
+  'cvStudio.pdfUnavailable':
+    'The PDF could not be produced on this installation, so only the DOCX is offered. The button is absent rather than broken.',
+  'cvStudio.atsNotice':
+    'A simple single-column layout parses more reliably than a designed one. That improves the odds; it cannot guarantee any particular employer system reads it correctly.',
+
+  'cvStudio.approveHeading': 'Your approval',
+  'cvStudio.approveNotice':
+    'Nothing is approved by generating it. Read the document above, then approve it yourself.',
+  'cvStudio.approve': 'I have read this and approve it',
+  'cvStudio.approved': 'Approved on {date}',
+  'cvStudio.withdraw': 'Withdraw approval',
+  'cvStudio.approveFailed': 'The approval could not be recorded.',
+
+  'resumeFinding.BULLET_WITHOUT_FACT': 'A bullet cited no confirmed fact.',
+  'resumeFinding.UNKNOWN_FACT_ID': 'Something cited a fact that is not in your profile.',
+  'resumeFinding.NUMBER_NOT_IN_FACTS':
+    'A figure appeared that none of the cited facts contain. It was removed rather than left for you to defend in an interview.',
+  'resumeFinding.NAME_NOT_IN_FACTS': 'An employer or institution your profile does not contain.',
+  'resumeFinding.DATE_NOT_IN_FACTS': 'A date your profile does not state.',
+  'resumeFinding.CREDENTIAL_NOT_IN_FACTS': 'A credential identifier your profile does not carry.',
+  'resumeFinding.ROLES_MERGED': 'Two separate roles had been folded into one entry.',
+  'resumeFinding.PROJECT_PRESENTED_AS_EMPLOYMENT':
+    'A personal project was being presented as employment.',
+  'resumeFinding.SKILL_NOT_CONFIRMED': 'A skill you have not confirmed.',
+  'resumeFinding.SECTION_OMITTED_EMPTY': 'A section was left empty once its entries were removed.',
+  'resumeFinding.PAGE_OVERFLOW':
+    'The CV is longer than your target. Nothing was truncated and no text was shrunk; shorten it yourself if the length matters.',
+  'resumeFinding.MODEL_CORRECTED_ONCE': 'The model needed one correction to return valid output.',
+  'resumeFinding.NO_PROVIDER_CONFIGURED': 'No provider is configured, so nothing was tailored.',
+  'resumeFinding.MODEL_OUTPUT_REJECTED':
+    'The model returned something unusable, so your facts were used directly instead.',
+  'resumeFinding.PDF_UNAVAILABLE': 'The PDF could not be rendered on this installation.',
+
+  'resumeSection.summary': 'Summary',
+  'resumeSection.skills': 'Skills',
+  'resumeSection.experience': 'Experience',
+  'resumeSection.projects': 'Projects',
+  'resumeSection.education': 'Education',
+  'resumeSection.certifications': 'Certifications',
+  'resumeSection.languages': 'Languages',
 } as const;

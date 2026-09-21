@@ -253,6 +253,31 @@ heuristic ranking, never a probability of being hired (invariant 3).
   are sent only when set, and the form says beneath the control that an
   unchecked job is left out rather than assumed to be a poor one.
 
+## CV studio (M3)
+
+`POST /resumes` queues a `render_cv` task in tailored mode and completes at
+once in original mode, where there is nothing to generate. The screen follows
+whichever id comes back.
+
+- **Generating is not approving.** The approve control is separate, says
+  "Nothing is approved by generating it", and the server refuses an approval on
+  anything that is not `ready`. Nothing on this screen sends a CV anywhere.
+- **Validation is described as checks, never as proof.** The copy says the
+  checks catch invented numbers, names and dates, and that they "cannot judge
+  whether a sentence oversells what you did, so reading this yourself is not
+  optional". `tests/cvStudio.test.tsx` asserts the words _verified_, _guarantee_
+  and _proof_ do not appear in that notice.
+- **A removed claim is shown with the text that was removed**, so the user can
+  see what the model tried to say rather than only that something happened.
+- **Only the formats that exist are offered.** When the PDF could not be
+  rendered there is no PDF button and a sentence says it is "absent rather than
+  broken" — never a download that fails when pressed.
+- **No ATS promise.** The layout notice says a simple single-column document
+  parses more reliably and that this "cannot guarantee any particular employer
+  system reads it correctly".
+- **Provenance is shown.** Either "assembled directly from your facts, with no
+  model involved" or the provider, model and prompt version that presented it.
+
 ## Known limitations
 
 These are real gaps, not oversights. Each one is handled honestly in the UI
@@ -302,6 +327,11 @@ today; remove the entry when the underlying cause is fixed.
    dependency of this app, so fact and preference values are checked with the
    small hand-written rules in `src/profile/factValues.ts` (mirroring the API's
    `facts.ts`) plus the server's own field errors. The API remains the authority.
+10. **The CV studio cannot show a CV from an earlier session.** The contract
+    has no list route for resumes, only `POST /resumes` and `GET /resumes/:id`,
+    so the screen knows about a resume only once it has asked for one. Reloading
+    the page loses the reference. A list route would fix it; adding one is a
+    contract change, not a UI change.
 
 ## Task polling
 

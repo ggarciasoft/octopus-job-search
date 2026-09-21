@@ -25,13 +25,8 @@ export const NAV_ITEMS: readonly NavItem[] = [
   // M2: the board registry, scans, manual import, the jobs list and detail.
   { path: '/discover', labelKey: 'nav.discover', available: true },
   { path: '/jobs', labelKey: 'nav.jobs', available: true },
-  {
-    path: '/cv-studio',
-    labelKey: 'nav.cvStudio',
-    available: false,
-    milestone: 'M3',
-    missingKey: 'notImplemented.cvStudio.missing',
-  },
+  // M3: tailored generation and original-file mode.
+  { path: '/cv-studio', labelKey: 'nav.cvStudio', available: true },
   {
     path: '/applications',
     labelKey: 'nav.applications',

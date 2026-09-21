@@ -14,6 +14,7 @@ import {
   type ProfileFact,
   type ProfileImportView,
   type ProviderSettingsView,
+  type ResumeView,
   type ScanView,
   type SourceView,
   type TaskView,
@@ -314,6 +315,75 @@ export function makeMatchExplanation(overrides: Partial<MatchExplanation> = {}):
   };
 }
 
+export const RESUME_ID = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+
+/** A generated CV that passed its checks and was not approved by generating. */
+export function makeResume(overrides: Partial<ResumeView> = {}): ResumeView {
+  return {
+    id: RESUME_ID,
+    mode: 'tailored',
+    status: 'ready',
+    job_id: null,
+    job_revision: null,
+    profile_revision: 1,
+    language: 'en',
+    template_id: 'simple',
+    document: {
+      schema_version: 1,
+      language: 'en',
+      contact: {
+        full_name: 'Ada Lovelace',
+        email: 'ada@example.invalid',
+        phone: null,
+        location: 'Montevideo, Uruguay',
+        links: [],
+        fact_ids: [],
+      },
+      sections: [
+        {
+          kind: 'experience',
+          heading: 'Experience',
+          entries: [
+            {
+              title: 'Senior Backend Engineer',
+              organization: 'Orbital Foods',
+              start_month: '2019-03',
+              end_month: null,
+              current: true,
+              detail: null,
+              bullets: [{ text: 'Ran the ingestion pipeline', fact_ids: ['fact-1'] }],
+              fact_ids: ['fact-1'],
+            },
+          ],
+        },
+      ],
+    },
+    validation: {
+      passed_automatic_checks: true,
+      findings: [],
+      fact_ids: ['fact-1'],
+      provenance: {
+        template_version: 'simple/v1',
+        prompt_version: null,
+        provider: null,
+        model: null,
+        deterministic: true,
+      },
+      pdf_pages: 1,
+    },
+    input_file_id: null,
+    pdf_file_id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+    docx_file_id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeee1',
+    approved_at: null,
+    error_code: null,
+    error_message: null,
+    task_id: RESUME_ID,
+    created_at: '2026-09-21T10:00:00.000Z',
+    updated_at: '2026-09-21T10:00:00.000Z',
+    ...overrides,
+  };
+}
+
 /**
  * A fake that satisfies the same `JobGetterApi` type the real generated client
  * satisfies, so a contract change breaks these tests instead of letting them
@@ -388,6 +458,12 @@ export function createFakeApi(overrides: Partial<JobGetterApi> = {}): JobGetterA
       task_id: '88888888-8888-4888-8888-888888888888',
       status: 'queued' as const,
     })),
+    createResume: vi.fn(async () => ({
+      task_id: RESUME_ID,
+      status: 'queued' as const,
+    })),
+    getResume: vi.fn(async () => makeResume()),
+    approveResume: vi.fn(async () => makeResume({ approved_at: '2026-09-21T12:00:00.000Z' })),
     ...overrides,
   };
 }

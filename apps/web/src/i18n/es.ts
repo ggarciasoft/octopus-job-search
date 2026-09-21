@@ -1330,4 +1330,103 @@ export const es: Record<MessageKey, string> = {
   'jobDetail.fitFailed': 'La comprobacion de ajuste no termino.',
   'jobDetail.fitNotChecked':
     'Este puesto todavia no se ha comparado con tu perfil. No se puntua nada hasta que lo pidas.',
+
+  // --- Estudio de CV (M3, PR07) --------------------------------------------
+
+  'cvStudio.title': 'Estudio de CV',
+  'cvStudio.intro':
+    'Genera un CV a partir de los datos que has confirmado, o envia el archivo que subiste tal cual. Desde esta pantalla no se envia nada a ningun sitio.',
+  'cvStudio.modeLegend': 'Que CV quieres enviar?',
+  'cvStudio.modeTailored': 'Generar uno con mi perfil confirmado',
+  'cvStudio.modeTailoredDescription':
+    'Construido con tus datos confirmados y ordenado para este puesto. La redaccion puede reordenarse o acortarse; no se anade nada.',
+  'cvStudio.modeOriginal': 'Enviar el archivo que subi',
+  'cvStudio.modeOriginalDescription':
+    'Tu archivo se envia byte por byte. Nunca se convierte, se vuelve a generar ni se adapta.',
+  'cvStudio.job': 'Puesto',
+  'cvStudio.jobNone': 'Sin puesto: un CV general',
+  'cvStudio.language': 'Idioma',
+  'cvStudio.pageTarget': 'Longitud objetivo',
+  'cvStudio.pageTargetOption': '{count} paginas',
+  'cvStudio.pageTargetOptionOne': '1 pagina',
+  'cvStudio.file': 'Archivo subido',
+  'cvStudio.fileNone': 'Todavia no has subido un CV.',
+  'cvStudio.fileUploadLink': 'Sube uno en la pantalla de perfil',
+  'cvStudio.generate': 'Generar',
+  'cvStudio.generating': 'Generando',
+  'cvStudio.useOriginal': 'Usar este archivo',
+  'cvStudio.queued':
+    'Generando tu CV. Se ejecuta localmente salvo que hayas configurado un proveedor.',
+  'cvStudio.failed': 'No se pudo generar el CV.',
+  'cvStudio.loadFailed': 'No se pudo cargar el CV.',
+  'cvStudio.noProviderNotice':
+    'No hay ningun proveedor de IA configurado, asi que el CV se armo directamente con tus datos confirmados, sin reescribir nada. Es un CV completo, solo que no adaptado.',
+
+  'cvStudio.reviewHeading': 'Revisa antes de enviar',
+  'cvStudio.reviewNotice':
+    'Estas comprobaciones contrastan el documento con tus datos confirmados. Detectan cifras, nombres y fechas inventados. No pueden juzgar si una frase exagera lo que hiciste, asi que leerlo tu mismo no es opcional.',
+  'cvStudio.checksPassed': 'Las comprobaciones automaticas no encontraron nada que senalar.',
+  'cvStudio.checksFailed':
+    'Las comprobaciones automaticas senalaron {count} problema(s). Cada uno aparece abajo con lo que se elimino.',
+  'cvStudio.findingsHeading': 'Que encontraron las comprobaciones',
+  'cvStudio.findingRemoved': 'Eliminado del CV',
+  'cvStudio.findingKept': 'Conservado, pero conviene revisarlo',
+  'cvStudio.documentHeading': 'El documento',
+  'cvStudio.documentEmpty':
+    'El documento no tiene secciones. Confirma algunos datos del perfil y vuelve a generarlo.',
+  'cvStudio.factsCited': 'Construido a partir de {count} dato(s) confirmado(s).',
+  'cvStudio.provenance': 'Plantilla {template}. {source}',
+  'cvStudio.provenanceDeterministic':
+    'Armado directamente con tus datos, sin intervencion de ningun modelo.',
+  'cvStudio.provenanceModel': 'Presentado por {provider} ({model}), prompt {prompt}.',
+  'cvStudio.pages': 'Generado en {count} pagina(s).',
+
+  'cvStudio.downloadsHeading': 'Descargas',
+  'cvStudio.downloadPdf': 'Descargar PDF',
+  'cvStudio.downloadDocx': 'Descargar DOCX',
+  'cvStudio.downloadOriginal': 'Descargar tu archivo original',
+  'cvStudio.pdfUnavailable':
+    'No se pudo producir el PDF en esta instalacion, asi que solo se ofrece el DOCX. El boton no esta, en lugar de estar roto.',
+  'cvStudio.atsNotice':
+    'Un diseno simple de una sola columna se interpreta con mas fiabilidad que uno elaborado. Eso mejora las probabilidades; no garantiza que un sistema concreto del empleador lo lea bien.',
+
+  'cvStudio.approveHeading': 'Tu aprobacion',
+  'cvStudio.approveNotice':
+    'Generar algo no lo aprueba. Lee el documento de arriba y apruebalo tu mismo.',
+  'cvStudio.approve': 'He leido esto y lo apruebo',
+  'cvStudio.approved': 'Aprobado el {date}',
+  'cvStudio.withdraw': 'Retirar la aprobacion',
+  'cvStudio.approveFailed': 'No se pudo registrar la aprobacion.',
+
+  'resumeFinding.BULLET_WITHOUT_FACT': 'Una vinneta no citaba ningun dato confirmado.',
+  'resumeFinding.UNKNOWN_FACT_ID': 'Algo citaba un dato que no esta en tu perfil.',
+  'resumeFinding.NUMBER_NOT_IN_FACTS':
+    'Aparecio una cifra que ninguno de los datos citados contiene. Se elimino en lugar de dejarte defenderla en una entrevista.',
+  'resumeFinding.NAME_NOT_IN_FACTS': 'Un empleador o una institucion que tu perfil no contiene.',
+  'resumeFinding.DATE_NOT_IN_FACTS': 'Una fecha que tu perfil no indica.',
+  'resumeFinding.CREDENTIAL_NOT_IN_FACTS':
+    'Un identificador de credencial que tu perfil no registra.',
+  'resumeFinding.ROLES_MERGED': 'Dos puestos distintos se habian juntado en una sola entrada.',
+  'resumeFinding.PROJECT_PRESENTED_AS_EMPLOYMENT':
+    'Un proyecto personal se presentaba como empleo.',
+  'resumeFinding.SKILL_NOT_CONFIRMED': 'Una habilidad que no has confirmado.',
+  'resumeFinding.SECTION_OMITTED_EMPTY':
+    'Una seccion quedo vacia despues de eliminar sus entradas.',
+  'resumeFinding.PAGE_OVERFLOW':
+    'El CV es mas largo que tu objetivo. No se trunco nada ni se redujo el texto; acortalo tu mismo si la longitud importa.',
+  'resumeFinding.MODEL_CORRECTED_ONCE':
+    'El modelo necesito una correccion para devolver una salida valida.',
+  'resumeFinding.NO_PROVIDER_CONFIGURED':
+    'No hay proveedor configurado, asi que no se adapto nada.',
+  'resumeFinding.MODEL_OUTPUT_REJECTED':
+    'El modelo devolvio algo inservible, asi que se usaron tus datos directamente.',
+  'resumeFinding.PDF_UNAVAILABLE': 'No se pudo generar el PDF en esta instalacion.',
+
+  'resumeSection.summary': 'Perfil',
+  'resumeSection.skills': 'Habilidades',
+  'resumeSection.experience': 'Experiencia',
+  'resumeSection.projects': 'Proyectos',
+  'resumeSection.education': 'Formacion',
+  'resumeSection.certifications': 'Certificaciones',
+  'resumeSection.languages': 'Idiomas',
 };

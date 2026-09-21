@@ -12,6 +12,8 @@ import type {
   PossibleDuplicate,
   RemoteType,
   RequirementOutcome,
+  ResumeFindingCode,
+  ResumeSectionKind,
   ScanStatus,
   SourceHealthState,
   TriState,
@@ -282,3 +284,45 @@ export const REQUIREMENT_OUTCOME_ORDER: readonly RequirementOutcome[] = [
   'uncertain',
   'matched',
 ];
+
+// ---------------------------------------------------------------------------
+// CV (M3, PR07)
+// ---------------------------------------------------------------------------
+
+/**
+ * Every finding the validator can raise has copy here. A total `Record` means
+ * adding a code to the contract stops this file compiling until somebody has
+ * written what it means to a person reading their own CV.
+ */
+export const RESUME_FINDING_LABEL: Record<ResumeFindingCode, MessageKey> = {
+  BULLET_WITHOUT_FACT: 'resumeFinding.BULLET_WITHOUT_FACT',
+  UNKNOWN_FACT_ID: 'resumeFinding.UNKNOWN_FACT_ID',
+  NUMBER_NOT_IN_FACTS: 'resumeFinding.NUMBER_NOT_IN_FACTS',
+  NAME_NOT_IN_FACTS: 'resumeFinding.NAME_NOT_IN_FACTS',
+  DATE_NOT_IN_FACTS: 'resumeFinding.DATE_NOT_IN_FACTS',
+  CREDENTIAL_NOT_IN_FACTS: 'resumeFinding.CREDENTIAL_NOT_IN_FACTS',
+  ROLES_MERGED: 'resumeFinding.ROLES_MERGED',
+  PROJECT_PRESENTED_AS_EMPLOYMENT: 'resumeFinding.PROJECT_PRESENTED_AS_EMPLOYMENT',
+  SKILL_NOT_CONFIRMED: 'resumeFinding.SKILL_NOT_CONFIRMED',
+  SECTION_OMITTED_EMPTY: 'resumeFinding.SECTION_OMITTED_EMPTY',
+  PAGE_OVERFLOW: 'resumeFinding.PAGE_OVERFLOW',
+  MODEL_CORRECTED_ONCE: 'resumeFinding.MODEL_CORRECTED_ONCE',
+  NO_PROVIDER_CONFIGURED: 'resumeFinding.NO_PROVIDER_CONFIGURED',
+  MODEL_OUTPUT_REJECTED: 'resumeFinding.MODEL_OUTPUT_REJECTED',
+  PDF_UNAVAILABLE: 'resumeFinding.PDF_UNAVAILABLE',
+};
+
+/**
+ * Section names for the UI's own chrome. The document carries its own
+ * headings, already in the CV's language, and those are what the preview
+ * renders — these are for talking *about* a section, not for printing one.
+ */
+export const RESUME_SECTION_LABEL: Record<ResumeSectionKind, MessageKey> = {
+  summary: 'resumeSection.summary',
+  skills: 'resumeSection.skills',
+  experience: 'resumeSection.experience',
+  projects: 'resumeSection.projects',
+  education: 'resumeSection.education',
+  certifications: 'resumeSection.certifications',
+  languages: 'resumeSection.languages',
+};

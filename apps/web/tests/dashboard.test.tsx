@@ -86,17 +86,21 @@ describe('dashboard capability panel', () => {
     renderApp({ route: '/' });
     await screen.findByRole('heading', { name: 'Dashboard', level: 1 });
 
-    const cvStudioLink = screen.getByRole('link', { name: /CV studio/ });
-    expect(cvStudioLink.textContent).toContain('M3');
-    expect(cvStudioLink.getAttribute('href')).toBe('/cv-studio');
+    const trackerLink = screen.getByRole('link', { name: /Tracker/ });
+    expect(trackerLink.textContent).toContain('M4');
+    expect(trackerLink.getAttribute('href')).toBe('/tracker');
     // The accessible name says it is unavailable, not only the badge colour.
-    expect(cvStudioLink.textContent).toContain('Not available yet');
+    expect(trackerLink.textContent).toContain('Not available yet');
 
-    // Discover and Jobs landed in M2: no milestone badge, no "unavailable".
+    // Discover and Jobs landed in M2, CV studio in M3: no milestone badge and
+    // no "unavailable" on any of them.
     const discoverLink = screen.getByRole('link', { name: 'Discover' });
     expect(discoverLink.getAttribute('href')).toBe('/discover');
     expect(discoverLink.textContent).not.toContain('Not available yet');
     expect(screen.getByRole('link', { name: 'Jobs' }).getAttribute('href')).toBe('/jobs');
+    const cvStudioLink = screen.getByRole('link', { name: 'CV studio' });
+    expect(cvStudioLink.getAttribute('href')).toBe('/cv-studio');
+    expect(cvStudioLink.textContent).not.toContain('Not available yet');
 
     // Profile landed in M1: no milestone badge, no "unavailable" in its name.
     const profileLink = screen.getByRole('link', { name: 'Profile' });
