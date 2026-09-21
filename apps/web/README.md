@@ -1,10 +1,12 @@
 # `@job-getter/web`
 
-React 19 + Vite 8 + Tailwind CSS 4 front end. **Milestones M0 and M1**: setup,
+React 19 + Vite 8 + Tailwind CSS 4 front end. **Milestones M0 to M2**: setup,
 sign-in, the capability dashboard, the end-to-end diagnostics probe, the task
 list, the profile (manual editing, draft-versus-confirmed facts), the import
-review flow, and the preferences and AI-provider settings. Discover, Jobs, CV
-studio, Applications and Tracker are still honest "not implemented" screens.
+review flow, the preferences and AI-provider settings, and — M2 — the Discover
+screen (board registry, scans, manual import) plus the Jobs list and job
+detail. CV studio, Applications and Tracker are still honest "not implemented"
+screens.
 
 ## Commands
 
@@ -67,6 +69,9 @@ src/api/          client port, CSRF lookup, idempotency keys, error mapping,
 src/auth/         session context (GET /me), route guard
 src/components/   shell, layout, capability panel, status legend, error UI,
                   FactStateBadge, StringListField
+src/discovery/    M2: enum → label maps typed over the contract, freshness /
+                  salary / import-result helpers, and the Discover panels
+                  (boards + add form, scan status, manual import)
 src/hooks/        useTaskPolling — 2 s active, 15 s idle, stops on terminal
 src/i18n/         en/es catalogues, provider, Intl formatting
 src/profile/      fact value helpers (defaults, client-side checks mirroring the
@@ -132,6 +137,82 @@ contract change breaks the screens and the test fakes at compile time.
 - Scan schedules, devices, export and deletion are listed as missing on the
   settings layout rather than shown as controls.
 
+## Discover and Jobs (M2)
+
+- **Discover** (`/discover`): the board registry, "Scan now", one followed
+  scan and manual import, under a coverage note that says scans read only the
+  boards registered here and the URLs you import — nothing searches the whole
+  internet (`01_PRODUCT_REQUIREMENTS.md`, "Explicit boundaries"). When `GET /me`
+  reports `job_discovery: false`, every control is disabled with the reason.
+  - _Boards_: connector, key, health badge (`SourceHealthState`, its own tone
+    per state — `unknown` never reads as healthy), the health detail and last
+    error code verbatim, last success, next scheduled scan, job count.
+    "Scan now" is disabled with the reason next to it (`aria-describedby`) when
+    the board is disabled or `blocked`; a blocked board offers "Re-enable",
+    which is the API's own way of clearing a block. Scanning uses one
+    `IdempotentIntent` per board, so a retry reuses the key. Delete asks first
+    and says jobs and provenance are kept.
+  - _Add a board_: connector select from `BOARD_CONNECTOR_IDS`, the board key
+    checked against the contract's own pattern, per-connector help saying where
+    the Greenhouse token / Lever slug is found and that only public boards
+    work, and a Lever-EU toggle that sends `base_url: https://api.eu.lever.co`
+    (the API's allow-listed regional endpoint) — no free-form URL.
+  - _Scan status_: `GET /scans/:id` with the task id `scanSource` returned (or a
+    board's `last_scan_id`), polled at the active cadence while queued/running.
+    A `partial` scan says in words that **nothing was closed because of it**.
+    One exception, from a live run: a re-scan the board answered with HTTP 304
+    is stored as `partial` with `complete_snapshot: false` and zero counts;
+    the panel reads the scan's task (`getTask(task_id)`) and, when its result
+    carries a `NOT_MODIFIED` warning, renders "Unchanged since the last scan"
+    with the board's job count instead of the partial alarm
+    (`presentScan()` in `src/discovery/presentation.ts`). Until the task has
+    been read, neither message is shown.
+  - _Manual import_: URL **or** pasted description (the body is built from the
+    selected mode, so both can never be sent), optional company / title /
+    apply URL hints, one idempotency key per intent, then `useTaskPolling`.
+    The task result is read defensively (`readImportOutcome`): a created job
+    links to its detail; several candidates render a chooser whose choice is a
+    second `importJob` by that posting's `canonical_url` under a new key; a
+    refusal (`BLOCKED_DESTINATION`, `ROBOTS_DISALLOWED`, `ACCESS_DENIED`,
+    `RATE_LIMITED`) is stated plainly and offers paste mode — never a way around
+    the refusal; a failed task shows its real code and message; a queued task
+    with `worker_online: false` says it will not run.
+- **Jobs** (`/jobs`): filters (query, status, saved, show excluded — the
+  contract's `min_score` and `eligible` are deliberately not offered, because
+  no match exists before M3 and a filter that can only return nothing is not a
+  control), then company / title, locations and work arrangement, employment
+  type, salary, status, freshness, match, provenance count and save. Salary is
+  the posting's own numbers, currency code and period, or the **"Salary
+  unknown"** badge; nothing is converted. Freshness flags a job whose
+  `last_fetched_at` is older than `CLOSURE_RULES.recheckBeforePacketHours`
+  (or absent) with "may be stale — recheck before applying". The match column
+  reads **"Not checked"** from the shared status vocabulary for every job:
+  `match` is `null` until M3 and is never shown as a score or a zero. The
+  empty state suggests adding a board, running a scan and relaxing the filters,
+  and contains no rows.
+- **Job detail** (`/jobs/:id`): status, save / mark closed (both with
+  `expected_revision`; a 409 shows the stale-revision message and a reload that
+  refreshes the server copy while the open dialog and the page stay as they
+  were), provenance with `rel="noopener noreferrer"` links, locations with
+  their excerpts, eligibility (`null` → "Not stated — do not assume
+  eligibility"), salary as stated, requirements grouped required / preferred /
+  unknown each with its evidence excerpt in a native `<details>` disclosure,
+  **inferred fields listed explicitly with the excerpt each was inferred from**
+  (in practice `remote_type` and `eligible_countries` are inferred from prose,
+  so this is how a user checks the system did not invent eligibility), the
+  description as plain text (an HTML string is displayed, never rendered),
+  possible duplicates with links, and freshness. "Prepare application" is
+  stated as absent (M4); no button exists that could look like it prepares one.
+  An empty `requirements` list is a normal outcome — extraction relies on
+  explicit section headings — and reads "No requirements were extracted — read
+  the description", never as "no requirements".
+- Every closed enum of the discovery contract (`SourceHealthState`,
+  `ScanStatus`, `JobStatus`, `RemoteType`, `FetchWarningCode`,
+  `InferredField.field`, requirement kinds, duplicate reasons, connectors) has
+  human copy in both catalogues through total `Record<Enum, MessageKey>` maps
+  in `src/discovery/labels.ts`, so a new contract member is a compile error
+  here until it is explained.
+
 ## Known limitations
 
 These are real gaps, not oversights. Each one is handled honestly in the UI
@@ -163,7 +244,15 @@ today; remove the entry when the underlying cause is fixed.
 5. **Provider "Test connection" probes the saved settings.** The route takes no
    body, so unsaved edits cannot be tested; the screen says so whenever the form
    is dirty.
-6. **No client-side JSON Schema validation.** `@sinclair/typebox` is not a
+6. **The scan panel follows one scan at a time, and only ones it can name.**
+   The contract declares no scan list, so the panel can follow the task id
+   `scanSource` just returned or a board's `last_scan_id`; a scan queued by
+   the scheduler is reachable only once it becomes the board's last scan.
+7. **Scan warnings come from the task, not the scan.** `ScanView` carries only
+   `error_code`/`error_message`; the fetch warnings (including the
+   `NOT_MODIFIED` that distinguishes "unchanged" from "partial") are read from
+   `getTask(task_id)`. If that read fails, the generic partial copy is shown.
+8. **No client-side JSON Schema validation.** `@sinclair/typebox` is not a
    dependency of this app, so fact and preference values are checked with the
    small hand-written rules in `src/profile/factValues.ts` (mirroring the API's
    `facts.ts`) plus the server's own field errors. The API remains the authority.

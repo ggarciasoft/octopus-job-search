@@ -4,12 +4,16 @@ import {
   DEFAULT_PROVIDER_LIMITS,
   type Capabilities,
   type DraftFact,
+  type JobDetailView,
+  type JobView,
   type MeResponse,
   type PreferencesView,
   type Profile,
   type ProfileFact,
   type ProfileImportView,
   type ProviderSettingsView,
+  type ScanView,
+  type SourceView,
   type TaskView,
 } from '@job-getter/contracts';
 import { QueryClient } from '@tanstack/react-query';
@@ -28,6 +32,11 @@ export const IMPORT_ID = '66666666-6666-4666-8666-666666666666';
 export const FILE_ID = '77777777-7777-4777-8777-777777777777';
 export const FACT_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 export const FACT_ID_2 = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+export const SOURCE_ID = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+export const SCAN_ID = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+export const JOB_ID = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
+export const JOB_ID_2 = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
+export const JOB_SOURCE_ID = '12121212-1212-4121-8121-121212121212';
 
 /**
  * Capability flags default to "nothing is built", which is the honest M0 state.
@@ -179,6 +188,100 @@ export function makeProviderView(
   };
 }
 
+export function makeSource(overrides: Partial<SourceView> = {}): SourceView {
+  return {
+    id: SOURCE_ID,
+    connector: 'greenhouse',
+    connector_version: '1',
+    board_key: 'acme',
+    base_url: null,
+    enabled: true,
+    last_success_at: null,
+    last_scan_id: null,
+    next_scan_after: null,
+    health: {
+      state: 'unknown',
+      consecutive_failures: 0,
+      last_error_code: null,
+      last_error_at: null,
+      detail: null,
+    },
+    job_count: 0,
+    created_at: '2026-01-01T00:00:00.000Z',
+    updated_at: '2026-01-01T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+export function makeScan(overrides: Partial<ScanView> = {}): ScanView {
+  return {
+    id: SCAN_ID,
+    source_id: SOURCE_ID,
+    task_id: TASK_ID,
+    status: 'queued',
+    complete_snapshot: false,
+    counts: { fetched: 0, created: 0, updated: 0, unchanged: 0, closed: 0, pages: 0 },
+    error_code: null,
+    error_message: null,
+    started_at: null,
+    completed_at: null,
+    created_at: '2026-01-01T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+/**
+ * A job as the M2 API returns it: nothing invented. `match` is null (no M3),
+ * salary and eligibility null unless a test states them.
+ */
+export function makeJob(overrides: Partial<JobView> = {}): JobView {
+  return {
+    id: JOB_ID,
+    canonical_key: 'greenhouse:acme:1001',
+    company: 'Acme Corp',
+    title: 'Backend Engineer',
+    status: 'active',
+    remote_type: 'unknown',
+    locations: [],
+    eligible_countries: null,
+    employment_type: null,
+    salary: null,
+    language: null,
+    published_at: null,
+    first_seen_at: '2026-01-01T00:00:00.000Z',
+    last_seen_at: '2026-01-02T00:00:00.000Z',
+    last_fetched_at: new Date().toISOString(),
+    revision: 1,
+    saved: false,
+    excluded_reason: null,
+    sources: [
+      {
+        id: JOB_SOURCE_ID,
+        source_id: SOURCE_ID,
+        connector: 'greenhouse',
+        external_id: '1001',
+        canonical_url: 'https://boards.greenhouse.io/acme/jobs/1001',
+        apply_url: null,
+        retrieved_at: '2026-01-02T00:00:00.000Z',
+      },
+    ],
+    match: null,
+    possible_duplicates: [],
+    ...overrides,
+  };
+}
+
+export function makeJobDetail(overrides: Partial<JobDetailView> = {}): JobDetailView {
+  return {
+    ...makeJob(),
+    description_text: 'We are hiring a backend engineer.',
+    requirements: [],
+    inferred: [],
+    content_hash: 'a'.repeat(64),
+    ...overrides,
+  };
+}
+
 /**
  * A fake that satisfies the same `JobGetterApi` type the real generated client
  * satisfies, so a contract change breaks these tests instead of letting them
@@ -237,6 +340,18 @@ export function createFakeApi(overrides: Partial<JobGetterApi> = {}): JobGetterA
       latency_ms: 42,
       detail: 'probe ok',
     })),
+    // M2: empty registry and empty job list by default — a test that wants
+    // rows must supply them; nothing is fabricated here either.
+    listSources: vi.fn(async () => ({ items: [], next_cursor: null })),
+    createSource: vi.fn(async () => makeSource()),
+    patchSource: vi.fn(async () => makeSource()),
+    deleteSource: vi.fn(async () => undefined),
+    scanSource: vi.fn(async () => ({ task_id: TASK_ID, status: 'queued' as const })),
+    getScan: vi.fn(async () => makeScan()),
+    importJob: vi.fn(async () => ({ task_id: TASK_ID, status: 'queued' as const })),
+    listJobs: vi.fn(async () => ({ items: [], next_cursor: null })),
+    getJob: vi.fn(async () => makeJobDetail()),
+    patchJob: vi.fn(async () => makeJob({ revision: 2 })),
     ...overrides,
   };
 }

@@ -12,7 +12,10 @@ import { I18nProvider } from './i18n/I18nProvider';
 import { PLACEHOLDER_SCREENS } from './navigation';
 import { DashboardPage } from './routes/DashboardPage';
 import { DiagnosticsPage } from './routes/DiagnosticsPage';
+import { DiscoverPage } from './routes/DiscoverPage';
 import { ImportPage } from './routes/ImportPage';
+import { JobDetailPage } from './routes/JobDetailPage';
+import { JobsPage } from './routes/JobsPage';
 import { LoginPage } from './routes/LoginPage';
 import { NotFoundPage } from './routes/NotFoundPage';
 import { ProfilePage } from './routes/ProfilePage';
@@ -75,6 +78,9 @@ export function AppRoutes() {
           <Route path="/tasks" element={<TasksPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/import" element={<ImportPage />} />
+          <Route path="/discover" element={<DiscoverPage />} />
+          <Route path="/jobs" element={<JobsPage />} />
+          <Route path="/jobs/:id" element={<JobDetailPage />} />
           <Route path="/settings" element={<SettingsLayout />}>
             <Route index element={<Navigate to="/settings/preferences" replace />} />
             <Route path="preferences" element={<PreferencesPage />} />

@@ -62,6 +62,8 @@ describe('message catalogues', () => {
     ['/profile/import', 'Revisión de importación', /^Encolar extracción/],
     ['/settings/preferences', 'Ajustes', /^Guardar preferencias/],
     ['/settings/provider', 'Ajustes', /^Guardar ajustes del proveedor/],
+    ['/discover', 'Descubrir', /^Añadir tablón/],
+    ['/jobs', 'Empleos', /^Aplicar filtros/],
   ] as const) {
     it(`renders ${route} in Spanish without leaking a raw catalogue key`, async () => {
       globalThis.localStorage.setItem('job-getter.locale', 'es');

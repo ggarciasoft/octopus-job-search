@@ -32,6 +32,17 @@ export type JobGetterApi = Pick<
   | 'getProviderSettings'
   | 'putProviderSettings'
   | 'testProviderSettings'
+  // M2: the board registry, scans, manual import and the jobs list/detail.
+  | 'listSources'
+  | 'createSource'
+  | 'patchSource'
+  | 'deleteSource'
+  | 'scanSource'
+  | 'getScan'
+  | 'importJob'
+  | 'listJobs'
+  | 'getJob'
+  | 'patchJob'
 >;
 
 export interface CreateApiClientOptions {

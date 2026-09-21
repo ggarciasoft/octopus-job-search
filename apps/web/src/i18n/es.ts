@@ -859,4 +859,370 @@ export const es: Record<MessageKey, string> = {
   'providerLimit.timeout_seconds': 'Tiempo de espera (segundos)',
   'providerLimit.daily_token_budget': 'Presupuesto diario de tokens',
   'providerLimit.daily_cost_budget': 'Presupuesto diario de coste',
+
+  // --- M2: Descubrir ------------------------------------------------------------
+  'discover.title': 'Descubrir',
+  'discover.intro':
+    'Registra tablones públicos de empleo y escanéalos, o importa una sola oferta desde una URL pública o texto pegado.',
+  'discover.coverageTitle': 'Qué cubre el descubrimiento',
+  'discover.coverageBody':
+    'Los escaneos leen solo los tablones registrados aquí y las URL que importas. Nada busca en todo internet, y ningún tablón se lee si no lo añades. Los listados públicos no son un directorio completo de empresas: una oferta que no esté en un tablón registrado no aparecerá.',
+  'discover.unavailableTitle': 'El descubrimiento de empleos no está disponible en este servidor',
+  'discover.unavailableBody':
+    'La API indica que el descubrimiento de empleos no está disponible, así que añadir tablones, escanear e importar están desactivados aquí. Ningún control de abajo encolará trabajo.',
+  'discover.workerOfflineWarning':
+    'La API no informa de ningún worker en línea. Un escaneo o una importación encolados ahora quedarán en cola hasta que arranque un worker; no fallarán y no se ejecutarán.',
+  'discover.controlUnavailable':
+    'Desactivado porque la API indica que el descubrimiento de empleos no está disponible.',
+
+  'boards.title': 'Tablones',
+  'boards.intro':
+    'Solo funcionan tablones públicos: un token de tablón de Greenhouse o un slug de sitio de Lever que cualquiera pueda abrir sin iniciar sesión. Registrar un tablón no concede permiso para rastrearlo; los escaneos siguen los límites documentados y un tablón que rechaza repetidamente se marca como bloqueado y se deja en paz.',
+  'boards.loading': 'Cargando tablones…',
+  'boards.loadFailed': 'No se pudieron cargar los tablones.',
+  'boards.caption': 'Tablones configurados',
+  'boards.columnBoard': 'Tablón',
+  'boards.columnHealth': 'Estado',
+  'boards.columnLastSuccess': 'Último escaneo correcto',
+  'boards.columnNextScan': 'Próximo escaneo programado',
+  'boards.columnJobs': 'Empleos',
+  'boards.columnActions': 'Acciones',
+  'boards.emptyTitle': 'No hay tablones registrados',
+  'boards.emptyBody':
+    'No se escanea nada hasta que se registre un tablón. No se muestran tablones de ejemplo.',
+  'boards.emptySuggestionAdd':
+    'Añade abajo un token de tablón de Greenhouse o un slug de sitio de Lever.',
+  'boards.emptySuggestionImport': 'O importa una sola oferta desde una URL o texto pegado.',
+  'boards.endpoint': 'Punto de acceso: {url}',
+  'boards.neverSucceeded': 'Nunca',
+  'boards.nextScanDue': 'Pendiente en la próxima pasada del planificador',
+  'boards.nextScanNotScheduled': 'No se programa mientras el tablón esté desactivado o bloqueado',
+  'boards.lastError': 'Último error: {code}',
+  'boards.consecutiveFailures': '{count} fallos consecutivos',
+  'boards.scanNow': 'Escanear ahora',
+  'boards.scanning': 'Encolando escaneo…',
+  'boards.scanBlockedReason':
+    'El escaneo está desactivado: el tablón respondió con rechazos repetidos. Reactívalo para intentarlo de nuevo.',
+  'boards.scanDisabledReason':
+    'El escaneo está desactivado: el tablón está desactivado. Actívalo para escanear.',
+  'boards.enable': 'Activar',
+  'boards.reenable': 'Reactivar',
+  'boards.disable': 'Desactivar',
+  'boards.updating': 'Actualizando…',
+  'boards.delete': 'Eliminar',
+  'boards.deleteTitle': '¿Eliminar este tablón?',
+  'boards.deleteBody':
+    'El tablón de {connector} "{boardKey}" dejará de escanearse. Los empleos ya encontrados a través de él se conservan, con su procedencia; solo se elimina el vínculo con este tablón.',
+  'boards.deleteConfirm': 'Eliminar tablón, conservar empleos',
+  'boards.deleting': 'Eliminando…',
+  'boards.viewLastScan': 'Ver último escaneo',
+  'boards.actionFailed': 'La acción sobre "{boardKey}" no se completó.',
+  'boards.jobCount': '{count} empleos',
+
+  'addBoard.title': 'Añadir un tablón',
+  'addBoard.connector': 'Conector',
+  'addBoard.boardKey': 'Clave del tablón',
+  'addBoard.boardKeyRequired': 'Introduce la clave del tablón.',
+  'addBoard.boardKeyPattern': 'Usa solo letras, dígitos, puntos, guiones y guiones bajos.',
+  'addBoard.greenhouseHelp':
+    'El token de tablón de Greenhouse es la última parte de la URL de un tablón público, como https://boards.greenhouse.io/<token> o https://job-boards.greenhouse.io/<token>. Solo funcionan tablones públicos; un tablón tras un inicio de sesión no puede leerse.',
+  'addBoard.leverHelp':
+    'El slug de sitio de Lever es la parte que sigue a jobs.lever.co/ en la URL de una página pública de ofertas, como https://jobs.lever.co/<slug>. Solo funcionan páginas públicas de ofertas.',
+  'addBoard.leverEu': 'Este tablón de Lever está alojado en la región de la UE',
+  'addBoard.leverEuDescription':
+    'Envía base_url {url}, el punto de acceso documentado de la UE, en lugar del predeterminado. Elígelo solo cuando la URL pública esté en jobs.eu.lever.co.',
+  'addBoard.submit': 'Añadir tablón',
+  'addBoard.submitting': 'Añadiendo…',
+  'addBoard.added':
+    'Tablón "{boardKey}" añadido. Su primer escaneo se encola en la próxima pasada del planificador; usa "Escanear ahora" para iniciar uno de inmediato.',
+
+  'scan.title': 'Estado del escaneo',
+  'scan.intro': 'Sigue un escaneo encolado desde esta página o el último escaneo de un tablón.',
+  'scan.none':
+    'No se está siguiendo ningún escaneo. Usa "Escanear ahora" o "Ver último escaneo" en un tablón.',
+  'scan.loading': 'Leyendo el escaneo…',
+  'scan.loadFailed': 'No se pudo leer el escaneo.',
+  'scan.heading': 'Escaneo {id}',
+  'scan.forBoard': 'Tablón: {board}',
+  'scan.snapshotComplete':
+    'Instantánea completa: se obtuvieron todas las páginas, así que un empleo ausente de ella cuenta para el cierre.',
+  'scan.snapshotPartialTitle': 'Este escaneo fue parcial',
+  'scan.snapshotPartialBody':
+    'No se obtuvieron todas las páginas, así que no es una imagen completa del tablón. No se cerró nada por este escaneo: un empleo ausente de una instantánea parcial no se considera desaparecido.',
+  'scan.unchangedTitle': 'Sin cambios desde el último escaneo',
+  'scan.unchangedBody':
+    'El tablón informó de que no hay cambios desde el último escaneo correcto, así que no se volvió a obtener nada y no se creó, actualizó ni cerró ningún empleo. El tablón sigue listando {count} empleos aquí.',
+  'scan.snapshotPending': 'Si la instantánea es completa se sabrá cuando termine el escaneo.',
+  'scan.warningsPending': 'Leyendo las notas de la obtención…',
+  'scan.countsTitle': 'Recuentos',
+  'scan.count.fetched': 'Obtenidos',
+  'scan.count.created': 'Nuevos',
+  'scan.count.updated': 'Actualizados',
+  'scan.count.unchanged': 'Sin cambios',
+  'scan.count.closed': 'Cerrados',
+  'scan.count.pages': 'Páginas',
+  'scan.errorTitle': 'El escaneo informó de un error',
+  'scan.startedAt': 'Inicio',
+  'scan.completedAt': 'Fin',
+  'scan.notYet': 'Todavía no',
+  'scan.viewJobs': 'Ver empleos',
+  'scan.stopFollowing': 'Dejar de seguir',
+  'scan.queuedNoWorker':
+    'El escaneo está en cola y la API no informa de ningún worker en línea, así que ningún proceso lo tomará. Permanece en la cola y arranca en cuanto se conecte un worker; no necesitas encolarlo de nuevo.',
+  'scan.notesTitle': 'Notas de la obtención',
+
+  'scanStatus.queued': 'En cola',
+  'scanStatus.running': 'En ejecución',
+  'scanStatus.succeeded': 'Correcto',
+  'scanStatus.partial': 'Parcial',
+  'scanStatus.failed': 'Fallido',
+  'scanStatus.cancelled': 'Cancelado',
+  'scanStatus.queued.description': 'Esperando a que un worker lo tome.',
+  'scanStatus.running.description': 'Un worker está obteniendo el tablón.',
+  'scanStatus.succeeded.description': 'Se obtuvieron todas las páginas dentro de los límites.',
+  'scanStatus.partial.description':
+    'Se obtuvo algo pero no una instantánea completa, o el tablón informó de que no hay cambios. Un escaneo parcial no cierra nada.',
+  'scanStatus.failed.description': 'La obtención falló. No se cambió ningún empleo.',
+  'scanStatus.cancelled.description': 'El escaneo se canceló antes de terminar.',
+
+  'sourceHealth.unknown': 'Aún sin escanear',
+  'sourceHealth.ok': 'Correcto',
+  'sourceHealth.degraded': 'Degradado',
+  'sourceHealth.blocked': 'Bloqueado',
+  'sourceHealth.disabled': 'Desactivado',
+  'sourceHealth.unknown.description':
+    'Aún no ha terminado ningún escaneo, así que no se sabe nada de este tablón.',
+  'sourceHealth.ok.description': 'El último escaneo fue correcto.',
+  'sourceHealth.degraded.description':
+    'Los escaneos recientes fallaron o fueron parciales; el escaneo continúa.',
+  'sourceHealth.blocked.description':
+    'El tablón rechazó repetidamente (403 o 429). El escaneo se detuvo y sigue detenido hasta que reactives el tablón.',
+  'sourceHealth.disabled.description': 'Desactivaste este tablón. No se escanea.',
+
+  'connector.greenhouse': 'Greenhouse',
+  'connector.lever': 'Lever',
+  'connector.manual': 'Descripción pegada',
+  'connector.url': 'URL importada',
+
+  'jobImport.title': 'Importar una oferta',
+  'jobImport.intro':
+    'Pega la URL pública de una página de empleo, o pega tú mismo el texto de la descripción. Lo que aportes se guarda como fuente; no se le añade nada sin un extracto que lo respalde.',
+  'jobImport.modeLegend': 'Fuente',
+  'jobImport.modeUrl': 'URL pública',
+  'jobImport.modeUrlDescription':
+    'Solo https. La página se obtiene sin cookies ni credenciales, se lee primero como datos estructurados JobPosting y, si no, como texto.',
+  'jobImport.modeText': 'Descripción pegada',
+  'jobImport.modeTextDescription':
+    'Úsalo cuando una página no pueda obtenerse o rechace el acceso automatizado. Indica la empresa y el título para que el empleo sea identificable.',
+  'jobImport.url': 'URL de la página del empleo',
+  'jobImport.urlRequired': 'Introduce la URL https de la página del empleo.',
+  'jobImport.text': 'Texto de la descripción',
+  'jobImport.textDescription': 'Al menos 20 caracteres. Se guarda exactamente como se pegó.',
+  'jobImport.textRequired': 'Pega el texto de la descripción (al menos 20 caracteres).',
+  'jobImport.hintsTitle': 'Datos opcionales',
+  'jobImport.company': 'Empresa',
+  'jobImport.jobTitle': 'Título',
+  'jobImport.applyUrl': 'URL de solicitud',
+  'jobImport.applyUrlDescription':
+    'Se usa solo cuando la propia página no indica un enlace de solicitud.',
+  'jobImport.submit': 'Importar',
+  'jobImport.submitting': 'Encolando importación…',
+  'jobImport.taskTitle': 'Tarea de importación {taskId}',
+  'jobImport.queuedNoWorker':
+    'La importación está en cola y la API no informa de ningún worker en línea, así que ningún proceso la tomará. Permanece en la cola y arranca en cuanto se conecte un worker; no necesitas encolarla de nuevo.',
+  'jobImport.failedTitle': 'La importación falló',
+  'jobImport.createdTitle': 'Empleo importado',
+  'jobImport.createdBody':
+    'La oferta se guardó con su fuente. Revísala antes de fiarte de cualquier campo.',
+  'jobImport.openJob': 'Abrir el empleo',
+  'jobImport.chooseTitle': 'Se encontraron varias ofertas en esa página',
+  'jobImport.chooseBody':
+    'No se creó ningún empleo. Elige la oferta que querías; se importa desde su propia URL.',
+  'jobImport.choose': 'Importar esta oferta',
+  'jobImport.refusedTitle': 'No se pudo obtener la página',
+  'jobImport.refusedBody':
+    'La obtención fue rechazada o no está permitida, y esta aplicación no sortea un rechazo. Si tienes la oferta abierta en tu navegador, pega su texto en su lugar.',
+  'jobImport.nothingTitle': 'No se pudo leer ninguna oferta en esa página',
+  'jobImport.nothingBody':
+    'La página se obtuvo pero no se reconoció ninguna oferta de empleo en ella. Puedes pegar el texto de la descripción en su lugar.',
+  'jobImport.switchToPaste': 'Pegar la descripción en su lugar',
+  'jobImport.warningsTitle': 'Notas de la obtención',
+  'jobImport.startOver': 'Iniciar otra importación',
+  'jobImport.resultUnreadable':
+    'La tarea terminó pero su resultado no tenía la forma esperada. No se supuso nada sobre él.',
+  'jobImport.awaitingOutcome': 'La tarea terminó; leyendo su resultado…',
+
+  'fetchWarning.RATE_LIMITED': 'El sitio pidió menos peticiones (límite de frecuencia).',
+  'fetchWarning.ACCESS_DENIED': 'El sitio denegó el acceso.',
+  'fetchWarning.NOT_MODIFIED': 'El tablón informó de que no hay cambios desde la última obtención.',
+  'fetchWarning.PAGE_LIMIT_REACHED': 'Se alcanzó el límite de páginas de un escaneo.',
+  'fetchWarning.JOB_LIMIT_REACHED': 'Se alcanzó el límite de empleos de un escaneo.',
+  'fetchWarning.SCHEMA_DRIFT': 'Los datos de la fuente no coincidían con la forma esperada.',
+  'fetchWarning.ROBOTS_DISALLOWED':
+    'Las directivas robots del sitio no permiten obtener esta página.',
+  'fetchWarning.BLOCKED_DESTINATION': 'El destino no es una dirección pública y no se contactó.',
+  'fetchWarning.REDIRECT_LIMIT': 'Demasiadas redirecciones.',
+  'fetchWarning.CONTENT_TYPE_REJECTED': 'La respuesta no era una página HTML ni JSON-LD.',
+  'fetchWarning.BODY_TRUNCATED': 'La página superaba el límite de tamaño y se cortó.',
+  'fetchWarning.NO_STRUCTURED_DATA':
+    'No se encontraron datos estructurados JobPosting; se usó el texto.',
+  'fetchWarning.MULTIPLE_POSTINGS': 'La página lista varias ofertas.',
+  'fetchWarning.FIELD_INFERRED':
+    'Un campo se infirió del texto circundante en lugar de leerse directamente.',
+  'fetchWarning.FIELD_DROPPED_INVALID': 'Se descartó un campo porque su valor no era válido.',
+
+  // --- M2: Empleos --------------------------------------------------------------
+  'jobs.title': 'Empleos',
+  'jobs.intro':
+    'Todos los empleos encontrados a través de tus tablones e importaciones. Nada se ha comparado aún con tu perfil (la comparación llega en un hito posterior), así que cada empleo muestra "Sin comprobar".',
+  'jobs.filtersLegend': 'Filtros',
+  'jobs.query': 'Buscar por título o empresa',
+  'jobs.status': 'Estado',
+  'jobs.statusAny': 'Cualquier estado',
+  'jobs.savedOnly': 'Solo guardados',
+  'jobs.includeExcluded': 'Mostrar empleos excluidos',
+  'jobs.includeExcludedDescription':
+    'Los empleos de empresas de tu lista de exclusión se ocultan por defecto. Al mostrarlos, cada uno lleva su motivo.',
+  'jobs.applyFilters': 'Aplicar filtros',
+  'jobs.clearFilters': 'Limpiar filtros',
+  'jobs.loading': 'Cargando empleos…',
+  'jobs.loadFailed': 'No se pudieron cargar los empleos.',
+  'jobs.caption': 'Empleos',
+  'jobs.columnJob': 'Empleo',
+  'jobs.columnWhere': 'Ubicación',
+  'jobs.columnType': 'Tipo',
+  'jobs.columnSalary': 'Salario',
+  'jobs.columnStatus': 'Estado',
+  'jobs.columnFreshness': 'Actualidad',
+  'jobs.columnMatch': 'Coincidencia',
+  'jobs.columnSources': 'Fuentes',
+  'jobs.columnActions': 'Acciones',
+  'jobs.emptyTitle': 'No hay empleos que mostrar',
+  'jobs.emptyBody': 'Esta lista está vacía. No se muestran empleos de ejemplo en su lugar.',
+  'jobs.emptySuggestionBoards': 'Añade un tablón en la pantalla Descubrir.',
+  'jobs.emptySuggestionScan':
+    'Ejecuta un escaneo de un tablón registrado o importa una sola oferta.',
+  'jobs.emptySuggestionFilters':
+    'Relaja los filtros: limpia la búsqueda, permite cualquier estado o muestra los empleos excluidos.',
+  'jobs.endOfList': 'No hay más empleos.',
+  'jobs.save': 'Guardar',
+  'jobs.unsave': 'Quitar de guardados',
+  'jobs.saving': 'Guardando…',
+  'jobs.savedBadge': 'Guardado',
+  'jobs.updateFailed': 'El cambio en "{title}" no se guardó.',
+  'jobs.reload': 'Recargar la lista',
+  'jobs.sourceOne': '1 fuente',
+  'jobs.sourceMany': '{count} fuentes',
+  'jobs.duplicatesFlag': 'Posible duplicado',
+  'jobs.duplicatesFlagDescription':
+    'Parecido a otro empleo. Un título y una ubicación similares por sí solos son un aviso, nunca una fusión automática.',
+  'jobs.excluded': 'Excluido: {reason}',
+  'jobs.locationNone': 'Ubicación no indicada',
+  'jobs.salaryUnknown': 'Salario desconocido',
+  'jobs.salaryUnknownDescription':
+    'La oferta no indica salario. Desconocido no es cero ni una suposición.',
+  'jobs.salaryCurrencyUnknown': 'moneda no indicada',
+  'jobs.salaryPeriodUnknown': 'periodo no indicado',
+  'jobs.lastSeen': 'Visto por última vez {when}',
+  'jobs.stale': 'Puede estar desactualizado — vuelve a comprobarlo antes de postular',
+  'jobs.staleDescription':
+    'La última obtención correcta tiene más de {hours} horas. La oferta puede haber cambiado o cerrado.',
+  'jobs.neverFetched':
+    'No hay ninguna obtención correcta registrada — vuelve a comprobarlo antes de postular',
+  'jobs.fresh': 'Obtenido en las últimas {hours} horas',
+  'jobs.matchNotCheckedDescription':
+    'Aún no se ha calculado ninguna coincidencia para este empleo. No es una puntuación baja.',
+  'jobs.employmentTypeNotStated': 'Tipo de empleo no indicado',
+
+  'jobStatus.active': 'Activo',
+  'jobStatus.closed': 'Cerrado',
+  'jobStatus.unknown': 'Desconocido',
+  'jobStatus.active.description': 'Listado por su fuente en el último escaneo correcto.',
+  'jobStatus.closed.description':
+    'Ausente de dos instantáneas completas con al menos 24 horas de diferencia, cerrado por la fuente o marcado como cerrado por ti.',
+  'jobStatus.unknown.description':
+    'No se pudo determinar la disponibilidad. Desconocido no es activo ni cerrado.',
+
+  'remoteType.remote': 'Remoto',
+  'remoteType.hybrid': 'Híbrido',
+  'remoteType.onsite': 'Presencial',
+  'remoteType.unknown': 'Modalidad de trabajo no indicada',
+
+  'jobDetail.back': 'Volver a empleos',
+  'jobDetail.loading': 'Cargando empleo…',
+  'jobDetail.loadFailed': 'No se pudo cargar el empleo.',
+  'jobDetail.revision': 'Revisión {revision}',
+  'jobDetail.markClosed': 'Marcar como cerrado',
+  'jobDetail.markClosedTitle': '¿Marcar este empleo como cerrado?',
+  'jobDetail.markClosedBody':
+    'Esto registra que consideras cerrada la oferta. Un tablón que siga listándola no la reabrirá.',
+  'jobDetail.markClosedConfirm': 'Marcar cerrado',
+  'jobDetail.closing': 'Cerrando…',
+  'jobDetail.prepareUnavailable':
+    'Preparar solicitud aún no está disponible: los paquetes de solicitud llegan en el hito M4. No se muestra ningún botón, así que nada puede aparentar que prepara uno.',
+  'jobDetail.reload': 'Recargar el empleo',
+  'jobDetail.summaryTitle': 'Resumen',
+  'jobDetail.remoteType': 'Modalidad de trabajo',
+  'jobDetail.employmentType': 'Tipo de empleo',
+  'jobDetail.language': 'Idioma de la oferta',
+  'jobDetail.publishedAt': 'Publicado',
+  'jobDetail.notStated': 'No indicado',
+  'jobDetail.locationsTitle': 'Ubicaciones',
+  'jobDetail.locationsNone': 'La oferta no indica ubicación.',
+  'jobDetail.readFrom': 'Leído de: “{excerpt}”',
+  'jobDetail.eligibilityTitle': 'Elegibilidad',
+  'jobDetail.eligibilityNotStated':
+    'No indicada — no des por supuesta la elegibilidad. Una oferta remota no significa para todo el mundo.',
+  'jobDetail.eligibilityCountries': 'La oferta nombra estos países: {countries}',
+  'jobDetail.salaryTitle': 'Salario',
+  'jobDetail.salaryAsStated': 'Tal como se indica: “{excerpt}”',
+  'jobDetail.salaryNoConversion':
+    'Se muestra en la moneda y el periodo que usó la oferta; no se convierte nada.',
+  'jobDetail.requirementsTitle': 'Requisitos',
+  'jobDetail.requirementsNone':
+    'No se extrajo ningún requisito — lee la descripción. La extracción depende de encabezados de sección explícitos, así que una lista vacía significa que no se leyó ninguno, no que el empleo no los tenga.',
+  'jobDetail.evidenceExcerpt': 'Extracto del que se leyó',
+  'jobDetail.inferredTitle': 'Campos inferidos',
+  'jobDetail.inferredIntro':
+    'Estos campos no se leyeron de un valor estructurado. Cada uno se infirió del extracto mostrado; comprueba el extracto antes de fiarte del campo.',
+  'jobDetail.inferredNone':
+    'No se infirió ningún campo; todos los valores anteriores se leyeron directamente de la fuente.',
+  'jobDetail.inferredFrom': 'Esto se infirió de:',
+  'jobDetail.descriptionTitle': 'Descripción',
+  'jobDetail.descriptionNote':
+    'Se muestra como texto plano exactamente como se guardó. Las instrucciones dentro de una página de empleo son datos, no órdenes.',
+  'jobDetail.provenanceTitle': 'Dónde se vio este empleo',
+  'jobDetail.provenanceExternalId': 'Id externo',
+  'jobDetail.provenanceCanonical': 'Página de la oferta',
+  'jobDetail.provenanceApply': 'Página de solicitud',
+  'jobDetail.provenanceApplyNone': 'No se indica enlace de solicitud',
+  'jobDetail.provenanceRetrieved': 'Obtenido {when}',
+  'jobDetail.provenanceSourceRemoved':
+    'El tablón del que procede se eliminó después; el empleo se conserva.',
+  'jobDetail.duplicatesTitle': 'Posibles duplicados',
+  'jobDetail.duplicatesIntro':
+    'No se fusionan automáticamente. Compruébalos antes de postular para no preparar dos veces la misma solicitud.',
+  'jobDetail.duplicatesNone': 'No se detectaron posibles duplicados.',
+  'jobDetail.freshnessTitle': 'Actualidad',
+  'jobDetail.firstSeen': 'Visto por primera vez',
+  'jobDetail.lastSeen': 'Visto por última vez',
+  'jobDetail.lastFetched': 'Última obtención correcta',
+  'jobDetail.contentHash': 'Hash del contenido',
+  'jobDetail.opensInNewTab': '(se abre en una pestaña nueva)',
+
+  'requirementKind.required': 'Obligatorio',
+  'requirementKind.preferred': 'Deseable',
+  'requirementKind.unknown': 'Nivel del requisito no indicado',
+
+  'inferredField.remote_type': 'Modalidad de trabajo',
+  'inferredField.locations': 'Ubicaciones',
+  'inferredField.eligible_countries': 'Países elegibles',
+  'inferredField.employment_type': 'Tipo de empleo',
+  'inferredField.salary': 'Salario',
+  'inferredField.language': 'Idioma de la oferta',
+  'inferredField.requirements': 'Requisitos',
+
+  'duplicateReason.same_apply_url': 'Misma URL de solicitud',
+  'duplicateReason.same_requisition': 'Misma requisición',
+  'duplicateReason.similar_title_and_location': 'Título y ubicación similares',
 };

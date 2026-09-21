@@ -22,20 +22,9 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { path: '/tasks', labelKey: 'nav.tasks', available: true },
   // M1: manual editing, import review and confirmed-versus-draft facts.
   { path: '/profile', labelKey: 'nav.profile', available: true },
-  {
-    path: '/discover',
-    labelKey: 'nav.discover',
-    available: false,
-    milestone: 'M2',
-    missingKey: 'notImplemented.discover.missing',
-  },
-  {
-    path: '/jobs',
-    labelKey: 'nav.jobs',
-    available: false,
-    milestone: 'M2',
-    missingKey: 'notImplemented.jobs.missing',
-  },
+  // M2: the board registry, scans, manual import, the jobs list and detail.
+  { path: '/discover', labelKey: 'nav.discover', available: true },
+  { path: '/jobs', labelKey: 'nav.jobs', available: true },
   {
     path: '/cv-studio',
     labelKey: 'nav.cvStudio',
