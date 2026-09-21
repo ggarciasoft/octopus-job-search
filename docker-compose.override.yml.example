@@ -6,10 +6,9 @@
 # Docker Compose picks up `docker-compose.override.yml` automatically and
 # merges it over docker-compose.yml.
 #
-# WARNING: as of this writing `docker-compose.override.yml` is NOT listed in
-# .gitignore. Check `git status` before you commit, or add the line yourself.
-# An override is a personal, machine-specific file; committing one silently
-# changes the stack for everybody else.
+# `docker-compose.override.yml` is gitignored. An override is a personal,
+# machine-specific file; committing one would silently change the stack for
+# everybody else.
 #
 # Everything here is OFF by default and each block explains what you are giving
 # up by turning it on. The committed docker-compose.yml is the safe baseline;
@@ -100,3 +99,39 @@ services:
   # api:
   #   volumes:
   #     - /absolute/path/outside/the/repo/job-getter-files:/var/lib/job-getter/files
+
+  # ---------------------------------------------------------------------------
+  # Your network intercepts TLS (corporate proxy, or an antivirus "web shield"
+  # that re-signs HTTPS with its own root).
+  #
+  # The images verify certificates against the standard bundle, so a running
+  # worker cannot fetch any job board and the API cannot probe a provider:
+  # every outbound connection fails with CERTIFICATE_VERIFY_FAILED. This is
+  # separate from the `build_ca` BuildKit secret, which covers image builds
+  # only. See docs/RUNBOOK.md section 6 for how to identify the root.
+  #
+  # Build a MERGED bundle (the image's own store plus the intercepting root)
+  # into a gitignored location - .local/ is intended for this:
+  #
+  #   docker run --rm --entrypoint sh job-getter/worker:dev \
+  #     -c 'cat /etc/ssl/certs/ca-certificates.crt' > .local/runtime-ca-bundle.pem
+  #   cat /path/to/intercepting-root.pem >> .local/runtime-ca-bundle.pem
+  #
+  # A merged bundle matters for the worker: SSL_CERT_FILE REPLACES the trust
+  # store rather than extending it. The worker deliberately ignores every
+  # other request-altering environment variable (proxies, .netrc) and honours
+  # only this one; verification itself is never disabled. Node's variable is
+  # additive, so the same file is harmless for the API.
+  #
+  # Never put the root in docker-compose.yml, in an image, or in git.
+  # ---------------------------------------------------------------------------
+  # worker:
+  #   volumes:
+  #     - ./.local/runtime-ca-bundle.pem:/etc/job-getter/ca-bundle.pem:ro
+  #   environment:
+  #     SSL_CERT_FILE: /etc/job-getter/ca-bundle.pem
+  # api:
+  #   volumes:
+  #     - ./.local/runtime-ca-bundle.pem:/etc/job-getter/ca-bundle.pem:ro
+  #   environment:
+  #     NODE_EXTRA_CA_CERTS: /etc/job-getter/ca-bundle.pem

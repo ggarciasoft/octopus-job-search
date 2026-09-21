@@ -444,6 +444,22 @@ echo | openssl s_client -connect registry.npmjs.org:443 -servername registry.npm
 /etc/ssl /usr/local/share/ca-certificates` inside both the API and worker
   images finds nothing, and the transient apt config and bundle are absent.
 
+- **At runtime the containers need the root too.** The build secret covers
+  image builds only. A running worker fetching a job board, or the API
+  probing a model provider, verifies TLS against the image's own bundle and
+  fails on an intercepted network with `CERTIFICATE_VERIFY_FAILED`. The
+  worker honours `SSL_CERT_FILE` (and deliberately ignores every other
+  request-altering environment variable, such as proxies and `.netrc`); Node
+  honours `NODE_EXTRA_CA_CERTS`. Build a merged bundle from the image's store
+  plus the intercepting root and mount it through the gitignored
+  `docker-compose.override.yml` — the example file has the exact block. Do
+  not put the root in the base compose file or in an image.
+
+  Verified 2026-09-20: without the override a board scan reported a robots
+  refusal (a misreport, since fixed — an unreachable `robots.txt` is now a
+  transport failure, not a robots decision); with the override the same scan
+  fetched 21 postings.
+
 > ❌ **Never** `NODE_TLS_REJECT_UNAUTHORIZED=0`, `--insecure`, `verify=False` or
 > `--trusted-host`. Disabling verification to get past an interception proxy
 > means you can no longer tell a proxy from an attacker.
