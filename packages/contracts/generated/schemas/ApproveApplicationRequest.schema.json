@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ApproveApplicationRequest.schema.json",
+  "title": "ApproveApplicationRequest",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "expected_revision",
+    "packet_id",
+    "content_hash"
+  ],
+  "properties": {
+    "expected_revision": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "packet_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "content_hash": {
+      "minLength": 64,
+      "maxLength": 64,
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ApplicationsListQuery.schema.json",
+  "title": "ApplicationsListQuery",
+  "additionalProperties": false,
+  "type": "object",
+  "properties": {
+    "status": {
+      "anyOf": [
+        {
+          "const": "draft",
+          "type": "string"
+        },
+        {
+          "const": "preparing",
+          "type": "string"
+        },
+        {
+          "const": "needs_input",
+          "type": "string"
+        },
+        {
+          "const": "ready_for_review",
+          "type": "string"
+        },
+        {
+          "const": "approved",
+          "type": "string"
+        },
+        {
+          "const": "filling",
+          "type": "string"
+        },
+        {
+          "const": "awaiting_user_submit",
+          "type": "string"
+        },
+        {
+          "const": "submitted",
+          "type": "string"
+        },
+        {
+          "const": "outcome_unknown",
+          "type": "string"
+        },
+        {
+          "const": "failed",
+          "type": "string"
+        },
+        {
+          "const": "cancelled",
+          "type": "string"
+        },
+        {
+          "const": "interview",
+          "type": "string"
+        },
+        {
+          "const": "rejected",
+          "type": "string"
+        },
+        {
+          "const": "offer",
+          "type": "string"
+        },
+        {
+          "const": "withdrawn",
+          "type": "string"
+        }
+      ]
+    },
+    "job_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "cursor": {
+      "type": "string"
+    },
+    "limit": {
+      "minimum": 1,
+      "maximum": 100,
+      "type": "integer"
+    }
+  }
+}

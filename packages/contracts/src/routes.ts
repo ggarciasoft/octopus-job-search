@@ -23,6 +23,16 @@ import {
   ProfileImportView,
 } from './tasks/parse-profile.js';
 import { ApproveResumeRequest, CreateResumeRequest, ResumeView } from './schemas/resumes.js';
+import { AnswerBankEntry, AnswerBankListQuery, AnswerBankPutRequest } from './schemas/answers.js';
+import {
+  ApplicationEventView,
+  ApplicationOutcomeRequest,
+  ApplicationView,
+  ApplicationsListQuery,
+  ApproveApplicationRequest,
+  CreateApplicationRequest,
+  CreatePacketRequest,
+} from './schemas/applications.js';
 import { NoopEchoInput } from './tasks/noop-echo.js';
 import { TaskView } from './tasks/protocol.js';
 import {
@@ -514,6 +524,141 @@ export const ROUTES: readonly RouteDefinition[] = [
     body: ApproveResumeRequest,
     response: ResumeView,
     successStatus: 200,
+    csrf: true,
+  },
+
+  // --- Milestone M4: applications, packets and the tracker -------------------
+  {
+    operationId: 'createApplication',
+    method: 'POST',
+    path: '/applications',
+    auth: 'session',
+    summary: 'Start tracking an application, or return the existing one.',
+    body: CreateApplicationRequest,
+    // 200, not 201: the route is idempotent on job_id, because "two
+    // simultaneous application creates return the existing application"
+    // (03_DATA_MODEL.md). Answering 201 for a row that already existed would
+    // be a claim about what happened, not a description of it.
+    response: ApplicationView,
+    successStatus: 200,
+    csrf: true,
+  },
+  {
+    operationId: 'listApplications',
+    method: 'GET',
+    path: '/applications',
+    auth: 'session',
+    summary: 'Tracked applications with their current packet and staleness.',
+    query: ApplicationsListQuery,
+    response: Type.Object(
+      {
+        items: Type.Array(ApplicationView),
+        next_cursor: Type.Union([Type.String(), Type.Null()]),
+      },
+      { additionalProperties: false },
+    ),
+    successStatus: 200,
+  },
+  {
+    operationId: 'getApplication',
+    method: 'GET',
+    path: '/applications/:id',
+    auth: 'session',
+    summary: 'One application, its current packet and any duplicate warning.',
+    params: IdParam,
+    response: ApplicationView,
+    successStatus: 200,
+  },
+  {
+    operationId: 'createApplicationPacket',
+    method: 'POST',
+    path: '/applications/:id/packets',
+    auth: 'session',
+    summary: 'Snapshot CV, answers, revisions and destination as a new packet.',
+    params: IdParam,
+    body: CreatePacketRequest,
+    response: AcceptedResponse,
+    successStatus: 202,
+    requiresIdempotencyKey: true,
+    csrf: true,
+  },
+  {
+    operationId: 'approveApplication',
+    method: 'POST',
+    path: '/applications/:id/approve',
+    auth: 'session',
+    summary: 'Bind the user approval to an exact packet content hash.',
+    params: IdParam,
+    body: ApproveApplicationRequest,
+    response: ApplicationView,
+    successStatus: 200,
+    csrf: true,
+  },
+  {
+    operationId: 'recordApplicationOutcome',
+    method: 'POST',
+    path: '/applications/:id/outcome',
+    auth: 'session',
+    summary: 'Record what happened, with its evidence type, and transition.',
+    params: IdParam,
+    body: ApplicationOutcomeRequest,
+    response: ApplicationView,
+    successStatus: 200,
+    csrf: true,
+  },
+  {
+    operationId: 'listApplicationEvents',
+    method: 'GET',
+    path: '/applications/:id/events',
+    auth: 'session',
+    summary: 'The append-only history: who changed what, when and why.',
+    params: IdParam,
+    query: PaginationQuery,
+    response: Type.Object(
+      {
+        items: Type.Array(ApplicationEventView),
+        next_cursor: Type.Union([Type.String(), Type.Null()]),
+      },
+      { additionalProperties: false },
+    ),
+    successStatus: 200,
+  },
+  {
+    operationId: 'listAnswerBank',
+    method: 'GET',
+    path: '/answer-bank',
+    auth: 'session',
+    summary: 'Stored answers with their reuse scope and sensitivity.',
+    query: AnswerBankListQuery,
+    response: Type.Object(
+      {
+        items: Type.Array(AnswerBankEntry),
+        next_cursor: Type.Union([Type.String(), Type.Null()]),
+      },
+      { additionalProperties: false },
+    ),
+    successStatus: 200,
+  },
+  {
+    operationId: 'putAnswerBankEntry',
+    method: 'PUT',
+    path: '/answer-bank',
+    auth: 'session',
+    summary: 'Store or replace one answer for a question within a scope.',
+    body: AnswerBankPutRequest,
+    response: AnswerBankEntry,
+    successStatus: 200,
+    csrf: true,
+  },
+  {
+    operationId: 'deleteAnswerBankEntry',
+    method: 'DELETE',
+    path: '/answer-bank/:id',
+    auth: 'session',
+    summary: 'Forget a stored answer.',
+    params: IdParam,
+    response: NoContent,
+    successStatus: 204,
     csrf: true,
   },
 ];

@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/CreatePacketRequest.schema.json",
+  "title": "CreatePacketRequest",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "expected_revision",
+    "resume_id",
+    "answers"
+  ],
+  "properties": {
+    "expected_revision": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "resume_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "answers": {
+      "maxItems": 200,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "question_key",
+          "label",
+          "answer",
+          "required",
+          "sensitivity",
+          "provenance",
+          "source_id"
+        ],
+        "properties": {
+          "question_key": {
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[a-z0-9_.:-]+$",
+            "type": "string"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "answer": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "maxLength": 5000,
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "maxItems": 50,
+                    "type": "array",
+                    "items": {
+                      "maxLength": 500,
+                      "type": "string"
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "sensitivity": {
+            "anyOf": [
+              {
+                "const": "standard",
+                "type": "string"
+              },
+              {
+                "const": "sensitive",
+                "type": "string"
+              },
+              {
+                "const": "never_reuse",
+                "type": "string"
+              }
+            ]
+          },
+          "provenance": {
+            "anyOf": [
+              {
+                "const": "user_entered",
+                "type": "string"
+              },
+              {
+                "const": "answer_bank",
+                "type": "string"
+              },
+              {
+                "const": "profile_fact",
+                "type": "string"
+              },
+              {
+                "const": "preference",
+                "type": "string"
+              }
+            ]
+          },
+          "source_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "form_fingerprint": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

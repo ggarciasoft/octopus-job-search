@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/AnswerBankPutRequest.schema.json",
+  "title": "AnswerBankPutRequest",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "question_key",
+    "answer"
+  ],
+  "properties": {
+    "question_key": {
+      "minLength": 1,
+      "maxLength": 120,
+      "pattern": "^[a-z0-9_.:-]+$",
+      "type": "string"
+    },
+    "label": {
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "answer": {
+      "anyOf": [
+        {
+          "maxLength": 5000,
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "maxItems": 50,
+          "type": "array",
+          "items": {
+            "maxLength": 500,
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "sensitivity": {
+      "anyOf": [
+        {
+          "const": "standard",
+          "type": "string"
+        },
+        {
+          "const": "sensitive",
+          "type": "string"
+        },
+        {
+          "const": "never_reuse",
+          "type": "string"
+        }
+      ]
+    },
+    "scope": {
+      "anyOf": [
+        {
+          "const": "general",
+          "type": "string"
+        },
+        {
+          "const": "company",
+          "type": "string"
+        },
+        {
+          "const": "job",
+          "type": "string"
+        }
+      ]
+    },
+    "scope_id": {
+      "anyOf": [
+        {
+          "maxLength": 200,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "confirmed": {
+      "type": "boolean"
+    },
+    "expires_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

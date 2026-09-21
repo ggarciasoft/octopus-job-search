@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/AnswerBankEntry.schema.json",
+  "title": "AnswerBankEntry",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "id",
+    "question_key",
+    "label",
+    "answer",
+    "sensitivity",
+    "scope",
+    "scope_id",
+    "confirmed_at",
+    "expires_at",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "question_key": {
+      "minLength": 1,
+      "maxLength": 120,
+      "pattern": "^[a-z0-9_.:-]+$",
+      "type": "string"
+    },
+    "label": {
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "answer": {
+      "anyOf": [
+        {
+          "maxLength": 5000,
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "maxItems": 50,
+          "type": "array",
+          "items": {
+            "maxLength": 500,
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "sensitivity": {
+      "anyOf": [
+        {
+          "const": "standard",
+          "type": "string"
+        },
+        {
+          "const": "sensitive",
+          "type": "string"
+        },
+        {
+          "const": "never_reuse",
+          "type": "string"
+        }
+      ]
+    },
+    "scope": {
+      "anyOf": [
+        {
+          "const": "general",
+          "type": "string"
+        },
+        {
+          "const": "company",
+          "type": "string"
+        },
+        {
+          "const": "job",
+          "type": "string"
+        }
+      ]
+    },
+    "scope_id": {
+      "anyOf": [
+        {
+          "maxLength": 200,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "confirmed_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "expires_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "created_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "type": "string"
+    }
+  }
+}

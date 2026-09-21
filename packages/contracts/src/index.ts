@@ -32,6 +32,8 @@ export * from './tasks/fetch-board.js';
 export * from './tasks/match-job.js';
 export * from './schemas/resumes.js';
 export * from './tasks/render-cv.js';
+export * from './schemas/answers.js';
+export * from './schemas/applications.js';
 export * from './routes.js';
 export {
   TASK_IO_SCHEMAS,

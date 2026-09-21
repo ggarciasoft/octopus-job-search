@@ -11,6 +11,8 @@ import * as MatchJob from './tasks/match-job.js';
 import * as Requirements from './schemas/requirements.js';
 import * as RenderCv from './tasks/render-cv.js';
 import * as Resumes from './schemas/resumes.js';
+import * as Answers from './schemas/answers.js';
+import * as Applications from './schemas/applications.js';
 import * as FetchBoard from './tasks/fetch-board.js';
 import * as NoopEcho from './tasks/noop-echo.js';
 import * as ParseProfile from './tasks/parse-profile.js';
@@ -153,6 +155,23 @@ export const EXPORTED_SCHEMAS: Record<string, TSchema> = {
   CreateResumeRequest: Resumes.CreateResumeRequest,
   RenderCvInput: RenderCv.RenderCvInput,
   RenderCvResult: RenderCv.RenderCvResult,
+
+  // --- M4 applications ---
+  AnswerBankEntry: Answers.AnswerBankEntry,
+  AnswerBankPutRequest: Answers.AnswerBankPutRequest,
+  AnswerBankListQuery: Answers.AnswerBankListQuery,
+  PacketAnswer: Applications.PacketAnswer,
+  PacketDestination: Applications.PacketDestination,
+  PacketHashMaterial: Applications.PacketHashMaterial,
+  ApplicationPacketView: Applications.ApplicationPacketView,
+  ApplicationEventView: Applications.ApplicationEventView,
+  SubmissionEvidence: Applications.SubmissionEvidence,
+  ApplicationView: Applications.ApplicationView,
+  CreateApplicationRequest: Applications.CreateApplicationRequest,
+  CreatePacketRequest: Applications.CreatePacketRequest,
+  ApproveApplicationRequest: Applications.ApproveApplicationRequest,
+  ApplicationOutcomeRequest: Applications.ApplicationOutcomeRequest,
+  ApplicationsListQuery: Applications.ApplicationsListQuery,
 };
 
 /** Enumerations mirrored into Python so there is one source of truth. */
@@ -174,6 +193,15 @@ export const EXPORTED_ENUMS: Record<string, readonly string[]> = {
   ResumeSectionKind: Resumes.ALL_RESUME_SECTION_KINDS,
   ResumeFindingCode: Resumes.ALL_RESUME_FINDING_CODES,
   ResumeStatus: Resumes.ALL_RESUME_STATUSES,
+  AnswerScope: Answers.ALL_ANSWER_SCOPES,
+  AnswerSensitivity: Answers.ALL_ANSWER_SENSITIVITIES,
+  ApplicationStatus: Applications.ALL_APPLICATION_STATUSES,
+  ApplicationActor: Applications.ALL_APPLICATION_ACTORS,
+  ApplicationEventType: Applications.ALL_APPLICATION_EVENT_TYPES,
+  PacketAnswerProvenance: Applications.ALL_PACKET_ANSWER_PROVENANCES,
+  PacketStalenessReason: Applications.ALL_PACKET_STALENESS_REASONS,
+  EvidenceType: Applications.ALL_EVIDENCE_TYPES,
+  ApplicationOutcome: Applications.ALL_APPLICATION_OUTCOMES,
 };
 
 /** Shared numeric constants that must not diverge between runtimes. */
@@ -197,4 +225,6 @@ export const EXPORTED_CONSTANTS = {
   RESUME_SCHEMA_VERSION: Resumes.RESUME_SCHEMA_VERSION,
   RESUME_TEMPLATE_VERSION: Resumes.RESUME_TEMPLATE_VERSION,
   RESUME_MIN_FONT_PT: Resumes.RESUME_MIN_FONT_PT,
+  PACKET_HASH_VERSION: Applications.PACKET_HASH_VERSION,
+  PACKET_APPROVAL_MAX_TTL_HOURS: Applications.PACKET_APPROVAL_MAX_TTL_HOURS,
 } as const;

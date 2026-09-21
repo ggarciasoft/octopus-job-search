@@ -7,6 +7,12 @@
   },
   "tags": [
     {
+      "name": "answer-bank"
+    },
+    {
+      "name": "applications"
+    },
+    {
       "name": "auth"
     },
     {
@@ -83,6 +89,1099 @@
           },
           "status": {
             "const": "queued",
+            "type": "string"
+          }
+        }
+      },
+      "AnswerBankEntry": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "question_key",
+          "label",
+          "answer",
+          "sensitivity",
+          "scope",
+          "scope_id",
+          "confirmed_at",
+          "expires_at",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "question_key": {
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[a-z0-9_.:-]+$",
+            "type": "string"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "answer": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "maxItems": 50,
+                "type": "array",
+                "items": {
+                  "maxLength": 500,
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "sensitivity": {
+            "anyOf": [
+              {
+                "const": "standard",
+                "type": "string"
+              },
+              {
+                "const": "sensitive",
+                "type": "string"
+              },
+              {
+                "const": "never_reuse",
+                "type": "string"
+              }
+            ]
+          },
+          "scope": {
+            "anyOf": [
+              {
+                "const": "general",
+                "type": "string"
+              },
+              {
+                "const": "company",
+                "type": "string"
+              },
+              {
+                "const": "job",
+                "type": "string"
+              }
+            ]
+          },
+          "scope_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "confirmed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          }
+        }
+      },
+      "AnswerBankListQuery": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "question_key": {
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[a-z0-9_.:-]+$",
+            "type": "string"
+          },
+          "scope": {
+            "anyOf": [
+              {
+                "const": "general",
+                "type": "string"
+              },
+              {
+                "const": "company",
+                "type": "string"
+              },
+              {
+                "const": "job",
+                "type": "string"
+              }
+            ]
+          },
+          "cursor": {
+            "type": "string"
+          },
+          "limit": {
+            "minimum": 1,
+            "maximum": 100,
+            "type": "integer"
+          }
+        }
+      },
+      "AnswerBankPutRequest": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "question_key",
+          "answer"
+        ],
+        "properties": {
+          "question_key": {
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[a-z0-9_.:-]+$",
+            "type": "string"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "answer": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "maxItems": 50,
+                "type": "array",
+                "items": {
+                  "maxLength": 500,
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "sensitivity": {
+            "anyOf": [
+              {
+                "const": "standard",
+                "type": "string"
+              },
+              {
+                "const": "sensitive",
+                "type": "string"
+              },
+              {
+                "const": "never_reuse",
+                "type": "string"
+              }
+            ]
+          },
+          "scope": {
+            "anyOf": [
+              {
+                "const": "general",
+                "type": "string"
+              },
+              {
+                "const": "company",
+                "type": "string"
+              },
+              {
+                "const": "job",
+                "type": "string"
+              }
+            ]
+          },
+          "scope_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "confirmed": {
+            "type": "boolean"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "ApplicationEventView": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "sequence",
+          "type",
+          "actor",
+          "status_before",
+          "status_after",
+          "reason",
+          "data",
+          "occurred_at"
+        ],
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "sequence": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "const": "created",
+                "type": "string"
+              },
+              {
+                "const": "packet_created",
+                "type": "string"
+              },
+              {
+                "const": "packet_approved",
+                "type": "string"
+              },
+              {
+                "const": "approval_invalidated",
+                "type": "string"
+              },
+              {
+                "const": "approval_expired",
+                "type": "string"
+              },
+              {
+                "const": "fill_requested",
+                "type": "string"
+              },
+              {
+                "const": "fill_paused",
+                "type": "string"
+              },
+              {
+                "const": "fill_failed",
+                "type": "string"
+              },
+              {
+                "const": "submitted",
+                "type": "string"
+              },
+              {
+                "const": "outcome_recorded",
+                "type": "string"
+              },
+              {
+                "const": "cancelled",
+                "type": "string"
+              },
+              {
+                "const": "note",
+                "type": "string"
+              }
+            ]
+          },
+          "actor": {
+            "anyOf": [
+              {
+                "const": "user",
+                "type": "string"
+              },
+              {
+                "const": "system",
+                "type": "string"
+              },
+              {
+                "const": "runner",
+                "type": "string"
+              }
+            ]
+          },
+          "status_before": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "const": "draft",
+                    "type": "string"
+                  },
+                  {
+                    "const": "preparing",
+                    "type": "string"
+                  },
+                  {
+                    "const": "needs_input",
+                    "type": "string"
+                  },
+                  {
+                    "const": "ready_for_review",
+                    "type": "string"
+                  },
+                  {
+                    "const": "approved",
+                    "type": "string"
+                  },
+                  {
+                    "const": "filling",
+                    "type": "string"
+                  },
+                  {
+                    "const": "awaiting_user_submit",
+                    "type": "string"
+                  },
+                  {
+                    "const": "submitted",
+                    "type": "string"
+                  },
+                  {
+                    "const": "outcome_unknown",
+                    "type": "string"
+                  },
+                  {
+                    "const": "failed",
+                    "type": "string"
+                  },
+                  {
+                    "const": "cancelled",
+                    "type": "string"
+                  },
+                  {
+                    "const": "interview",
+                    "type": "string"
+                  },
+                  {
+                    "const": "rejected",
+                    "type": "string"
+                  },
+                  {
+                    "const": "offer",
+                    "type": "string"
+                  },
+                  {
+                    "const": "withdrawn",
+                    "type": "string"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status_after": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "const": "draft",
+                    "type": "string"
+                  },
+                  {
+                    "const": "preparing",
+                    "type": "string"
+                  },
+                  {
+                    "const": "needs_input",
+                    "type": "string"
+                  },
+                  {
+                    "const": "ready_for_review",
+                    "type": "string"
+                  },
+                  {
+                    "const": "approved",
+                    "type": "string"
+                  },
+                  {
+                    "const": "filling",
+                    "type": "string"
+                  },
+                  {
+                    "const": "awaiting_user_submit",
+                    "type": "string"
+                  },
+                  {
+                    "const": "submitted",
+                    "type": "string"
+                  },
+                  {
+                    "const": "outcome_unknown",
+                    "type": "string"
+                  },
+                  {
+                    "const": "failed",
+                    "type": "string"
+                  },
+                  {
+                    "const": "cancelled",
+                    "type": "string"
+                  },
+                  {
+                    "const": "interview",
+                    "type": "string"
+                  },
+                  {
+                    "const": "rejected",
+                    "type": "string"
+                  },
+                  {
+                    "const": "offer",
+                    "type": "string"
+                  },
+                  {
+                    "const": "withdrawn",
+                    "type": "string"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "data": {
+            "type": "object",
+            "patternProperties": {
+              "^(.*)$": {}
+            }
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "type": "string"
+          }
+        }
+      },
+      "ApplicationOutcomeRequest": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "outcome",
+          "evidence_type"
+        ],
+        "properties": {
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "const": "submitted",
+                "type": "string"
+              },
+              {
+                "const": "not_submitted",
+                "type": "string"
+              },
+              {
+                "const": "outcome_unknown",
+                "type": "string"
+              },
+              {
+                "const": "interview",
+                "type": "string"
+              },
+              {
+                "const": "rejected",
+                "type": "string"
+              },
+              {
+                "const": "offer",
+                "type": "string"
+              },
+              {
+                "const": "withdrawn",
+                "type": "string"
+              },
+              {
+                "const": "cancelled",
+                "type": "string"
+              }
+            ]
+          },
+          "evidence_type": {
+            "anyOf": [
+              {
+                "const": "adapter_observed",
+                "type": "string"
+              },
+              {
+                "const": "user_report",
+                "type": "string"
+              },
+              {
+                "const": "none",
+                "type": "string"
+              }
+            ]
+          },
+          "evidence": {
+            "additionalProperties": false,
+            "type": "object",
+            "properties": {
+              "confirmation_text": {
+                "anyOf": [
+                  {
+                    "maxLength": 2000,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "reference": {
+                "anyOf": [
+                  {
+                    "maxLength": 200,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "maxLength": 2000,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "observed_at": {
+                "anyOf": [
+                  {
+                    "format": "date-time",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "screenshot_file_id": {
+                "anyOf": [
+                  {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "note": {
+                "anyOf": [
+                  {
+                    "maxLength": 2000,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "ApplicationPacketView": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "application_id",
+          "revision",
+          "profile_revision",
+          "job_revision",
+          "resume_id",
+          "resume_sha256",
+          "destination",
+          "answers",
+          "form_fingerprint",
+          "content_hash",
+          "approved_hash",
+          "approved_at",
+          "expires_at",
+          "unresolved_question_keys",
+          "staleness",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "application_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "profile_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "job_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "resume_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "resume_sha256": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "destination": {
+            "$ref": "#/components/schemas/PacketDestination"
+          },
+          "answers": {
+            "maxItems": 200,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PacketAnswer"
+            }
+          },
+          "form_fingerprint": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "content_hash": {
+            "maxLength": 64,
+            "type": "string"
+          },
+          "approved_hash": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "approved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "unresolved_question_keys": {
+            "maxItems": 200,
+            "type": "array",
+            "items": {
+              "minLength": 1,
+              "maxLength": 120,
+              "pattern": "^[a-z0-9_.:-]+$",
+              "type": "string"
+            }
+          },
+          "staleness": {
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "const": "profile_revision_changed",
+                  "type": "string"
+                },
+                {
+                  "const": "job_revision_changed",
+                  "type": "string"
+                },
+                {
+                  "const": "resume_changed",
+                  "type": "string"
+                },
+                {
+                  "const": "destination_changed",
+                  "type": "string"
+                },
+                {
+                  "const": "form_schema_changed",
+                  "type": "string"
+                },
+                {
+                  "const": "approval_expired",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          }
+        }
+      },
+      "ApplicationView": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "job_id",
+          "company",
+          "title",
+          "status",
+          "revision",
+          "current_packet",
+          "submission_evidence",
+          "submitted_at",
+          "possible_duplicate_application_ids",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "job_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "company": {
+            "maxLength": 200,
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 300,
+            "type": "string"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "const": "draft",
+                "type": "string"
+              },
+              {
+                "const": "preparing",
+                "type": "string"
+              },
+              {
+                "const": "needs_input",
+                "type": "string"
+              },
+              {
+                "const": "ready_for_review",
+                "type": "string"
+              },
+              {
+                "const": "approved",
+                "type": "string"
+              },
+              {
+                "const": "filling",
+                "type": "string"
+              },
+              {
+                "const": "awaiting_user_submit",
+                "type": "string"
+              },
+              {
+                "const": "submitted",
+                "type": "string"
+              },
+              {
+                "const": "outcome_unknown",
+                "type": "string"
+              },
+              {
+                "const": "failed",
+                "type": "string"
+              },
+              {
+                "const": "cancelled",
+                "type": "string"
+              },
+              {
+                "const": "interview",
+                "type": "string"
+              },
+              {
+                "const": "rejected",
+                "type": "string"
+              },
+              {
+                "const": "offer",
+                "type": "string"
+              },
+              {
+                "const": "withdrawn",
+                "type": "string"
+              }
+            ]
+          },
+          "revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "current_packet": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ApplicationPacketView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "submission_evidence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SubmissionEvidence"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "submitted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "possible_duplicate_application_ids": {
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          }
+        }
+      },
+      "ApplicationsListQuery": {
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "status": {
+            "anyOf": [
+              {
+                "const": "draft",
+                "type": "string"
+              },
+              {
+                "const": "preparing",
+                "type": "string"
+              },
+              {
+                "const": "needs_input",
+                "type": "string"
+              },
+              {
+                "const": "ready_for_review",
+                "type": "string"
+              },
+              {
+                "const": "approved",
+                "type": "string"
+              },
+              {
+                "const": "filling",
+                "type": "string"
+              },
+              {
+                "const": "awaiting_user_submit",
+                "type": "string"
+              },
+              {
+                "const": "submitted",
+                "type": "string"
+              },
+              {
+                "const": "outcome_unknown",
+                "type": "string"
+              },
+              {
+                "const": "failed",
+                "type": "string"
+              },
+              {
+                "const": "cancelled",
+                "type": "string"
+              },
+              {
+                "const": "interview",
+                "type": "string"
+              },
+              {
+                "const": "rejected",
+                "type": "string"
+              },
+              {
+                "const": "offer",
+                "type": "string"
+              },
+              {
+                "const": "withdrawn",
+                "type": "string"
+              }
+            ]
+          },
+          "job_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "cursor": {
+            "type": "string"
+          },
+          "limit": {
+            "minimum": 1,
+            "maximum": 100,
+            "type": "integer"
+          }
+        }
+      },
+      "ApproveApplicationRequest": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "packet_id",
+          "content_hash"
+        ],
+        "properties": {
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "packet_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "content_hash": {
+            "minLength": 64,
+            "maxLength": 64,
             "type": "string"
           }
         }
@@ -579,6 +1678,56 @@
                 }
               }
             }
+          }
+        }
+      },
+      "CreateApplicationRequest": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "job_id"
+        ],
+        "properties": {
+          "job_id": {
+            "format": "uuid",
+            "type": "string"
+          }
+        }
+      },
+      "CreatePacketRequest": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "resume_id",
+          "answers"
+        ],
+        "properties": {
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "resume_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "answers": {
+            "maxItems": 200,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PacketAnswer"
+            }
+          },
+          "form_fingerprint": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },
@@ -4100,6 +5249,291 @@
           }
         }
       },
+      "PacketAnswer": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "question_key",
+          "label",
+          "answer",
+          "required",
+          "sensitivity",
+          "provenance",
+          "source_id"
+        ],
+        "properties": {
+          "question_key": {
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[a-z0-9_.:-]+$",
+            "type": "string"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "answer": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "maxLength": 5000,
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "maxItems": 50,
+                    "type": "array",
+                    "items": {
+                      "maxLength": 500,
+                      "type": "string"
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "sensitivity": {
+            "anyOf": [
+              {
+                "const": "standard",
+                "type": "string"
+              },
+              {
+                "const": "sensitive",
+                "type": "string"
+              },
+              {
+                "const": "never_reuse",
+                "type": "string"
+              }
+            ]
+          },
+          "provenance": {
+            "anyOf": [
+              {
+                "const": "user_entered",
+                "type": "string"
+              },
+              {
+                "const": "answer_bank",
+                "type": "string"
+              },
+              {
+                "const": "profile_fact",
+                "type": "string"
+              },
+              {
+                "const": "preference",
+                "type": "string"
+              }
+            ]
+          },
+          "source_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "PacketDestination": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "url",
+          "origin",
+          "connector",
+          "connector_version"
+        ],
+        "properties": {
+          "url": {
+            "maxLength": 2000,
+            "type": "string"
+          },
+          "origin": {
+            "maxLength": 500,
+            "type": "string"
+          },
+          "connector": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "connector_version": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "PacketHashMaterial": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "hash_version",
+          "profile_revision",
+          "job_id",
+          "job_revision",
+          "resume_id",
+          "resume_sha256",
+          "destination",
+          "form_fingerprint",
+          "answers"
+        ],
+        "properties": {
+          "hash_version": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "profile_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "job_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "job_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "resume_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "resume_sha256": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "destination": {
+            "$ref": "#/components/schemas/PacketDestination"
+          },
+          "form_fingerprint": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "answers": {
+            "maxItems": 200,
+            "type": "array",
+            "items": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "question_key",
+                "answer",
+                "provenance"
+              ],
+              "properties": {
+                "question_key": {
+                  "minLength": 1,
+                  "maxLength": 120,
+                  "pattern": "^[a-z0-9_.:-]+$",
+                  "type": "string"
+                },
+                "answer": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "maxLength": 5000,
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "maxItems": 50,
+                          "type": "array",
+                          "items": {
+                            "maxLength": 500,
+                            "type": "string"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "provenance": {
+                  "anyOf": [
+                    {
+                      "const": "user_entered",
+                      "type": "string"
+                    },
+                    {
+                      "const": "answer_bank",
+                      "type": "string"
+                    },
+                    {
+                      "const": "profile_fact",
+                      "type": "string"
+                    },
+                    {
+                      "const": "preference",
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
       "ParseProfileInput": {
         "additionalProperties": false,
         "type": "object",
@@ -6924,6 +8358,103 @@
           "updated_at": {
             "format": "date-time",
             "type": "string"
+          }
+        }
+      },
+      "SubmissionEvidence": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "evidence_type",
+          "confirmation_text",
+          "reference",
+          "url",
+          "observed_at",
+          "screenshot_file_id",
+          "note"
+        ],
+        "properties": {
+          "evidence_type": {
+            "anyOf": [
+              {
+                "const": "adapter_observed",
+                "type": "string"
+              },
+              {
+                "const": "user_report",
+                "type": "string"
+              },
+              {
+                "const": "none",
+                "type": "string"
+              }
+            ]
+          },
+          "confirmation_text": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "url": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "observed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "screenshot_file_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },
@@ -12382,6 +13913,1490 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/applications": {
+      "post": {
+        "operationId": "createApplication",
+        "summary": "Start tracking an application, or return the existing one.",
+        "tags": [
+          "applications"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Start tracking an application, or return the existing one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body, query or header.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated: no valid session, device token or worker credential.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted for this workspace resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or not accessible from the authenticated workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale revision, duplicate command or idempotency key reuse with a different body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload exceeds the configured upload limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Structurally valid but invalid domain input.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota or rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "description": "Anti-CSRF token for cookie-authenticated mutations; origin is verified too.",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 200
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApplicationRequest"
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "listApplications",
+        "summary": "Tracked applications with their current packet and staleness.",
+        "tags": [
+          "applications"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tracked applications with their current packet and staleness.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "items",
+                    "next_cursor"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ApplicationView"
+                      }
+                    },
+                    "next_cursor": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body, query or header.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated: no valid session, device token or worker credential.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted for this workspace resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or not accessible from the authenticated workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale revision, duplicate command or idempotency key reuse with a different body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload exceeds the configured upload limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Structurally valid but invalid domain input.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota or rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "const": "draft",
+                  "type": "string"
+                },
+                {
+                  "const": "preparing",
+                  "type": "string"
+                },
+                {
+                  "const": "needs_input",
+                  "type": "string"
+                },
+                {
+                  "const": "ready_for_review",
+                  "type": "string"
+                },
+                {
+                  "const": "approved",
+                  "type": "string"
+                },
+                {
+                  "const": "filling",
+                  "type": "string"
+                },
+                {
+                  "const": "awaiting_user_submit",
+                  "type": "string"
+                },
+                {
+                  "const": "submitted",
+                  "type": "string"
+                },
+                {
+                  "const": "outcome_unknown",
+                  "type": "string"
+                },
+                {
+                  "const": "failed",
+                  "type": "string"
+                },
+                {
+                  "const": "cancelled",
+                  "type": "string"
+                },
+                {
+                  "const": "interview",
+                  "type": "string"
+                },
+                {
+                  "const": "rejected",
+                  "type": "string"
+                },
+                {
+                  "const": "offer",
+                  "type": "string"
+                },
+                {
+                  "const": "withdrawn",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          {
+            "name": "job_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/applications/{id}": {
+      "get": {
+        "operationId": "getApplication",
+        "summary": "One application, its current packet and any duplicate warning.",
+        "tags": [
+          "applications"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One application, its current packet and any duplicate warning.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body, query or header.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated: no valid session, device token or worker credential.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted for this workspace resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or not accessible from the authenticated workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale revision, duplicate command or idempotency key reuse with a different body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload exceeds the configured upload limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Structurally valid but invalid domain input.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota or rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/applications/{id}/packets": {
+      "post": {
+        "operationId": "createApplicationPacket",
+        "summary": "Snapshot CV, answers, revisions and destination as a new packet.",
+        "tags": [
+          "applications"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Snapshot CV, answers, revisions and destination as a new packet.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body, query or header.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated: no valid session, device token or worker credential.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted for this workspace resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or not accessible from the authenticated workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale revision, duplicate command or idempotency key reuse with a different body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload exceeds the configured upload limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Structurally valid but invalid domain input.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota or rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "Mandatory for this command. Replaying the same key returns the stored response for 24 hours; reusing it with a different body returns 409.",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "description": "Anti-CSRF token for cookie-authenticated mutations; origin is verified too.",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 200
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePacketRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{id}/approve": {
+      "post": {
+        "operationId": "approveApplication",
+        "summary": "Bind the user approval to an exact packet content hash.",
+        "tags": [
+          "applications"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bind the user approval to an exact packet content hash.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body, query or header.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated: no valid session, device token or worker credential.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted for this workspace resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or not accessible from the authenticated workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale revision, duplicate command or idempotency key reuse with a different body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload exceeds the configured upload limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Structurally valid but invalid domain input.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota or rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "description": "Anti-CSRF token for cookie-authenticated mutations; origin is verified too.",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 200
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveApplicationRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{id}/outcome": {
+      "post": {
+        "operationId": "recordApplicationOutcome",
+        "summary": "Record what happened, with its evidence type, and transition.",
+        "tags": [
+          "applications"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Record what happened, with its evidence type, and transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body, query or header.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated: no valid session, device token or worker credential.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted for this workspace resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or not accessible from the authenticated workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale revision, duplicate command or idempotency key reuse with a different body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload exceeds the configured upload limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Structurally valid but invalid domain input.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota or rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "description": "Anti-CSRF token for cookie-authenticated mutations; origin is verified too.",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 200
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationOutcomeRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{id}/events": {
+      "get": {
+        "operationId": "listApplicationEvents",
+        "summary": "The append-only history: who changed what, when and why.",
+        "tags": [
+          "applications"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The append-only history: who changed what, when and why.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "items",
+                    "next_cursor"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ApplicationEventView"
+                      }
+                    },
+                    "next_cursor": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body, query or header.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated: no valid session, device token or worker credential.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted for this workspace resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or not accessible from the authenticated workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale revision, duplicate command or idempotency key reuse with a different body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload exceeds the configured upload limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Structurally valid but invalid domain input.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota or rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25,
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/answer-bank": {
+      "get": {
+        "operationId": "listAnswerBank",
+        "summary": "Stored answers with their reuse scope and sensitivity.",
+        "tags": [
+          "answer-bank"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stored answers with their reuse scope and sensitivity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "items",
+                    "next_cursor"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AnswerBankEntry"
+                      }
+                    },
+                    "next_cursor": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body, query or header.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated: no valid session, device token or worker credential.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted for this workspace resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or not accessible from the authenticated workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale revision, duplicate command or idempotency key reuse with a different body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload exceeds the configured upload limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Structurally valid but invalid domain input.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota or rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "question_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minLength": 1,
+              "maxLength": 120,
+              "pattern": "^[a-z0-9_.:-]+$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "const": "general",
+                  "type": "string"
+                },
+                {
+                  "const": "company",
+                  "type": "string"
+                },
+                {
+                  "const": "job",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "integer"
+            }
+          }
+        ]
+      },
+      "put": {
+        "operationId": "putAnswerBankEntry",
+        "summary": "Store or replace one answer for a question within a scope.",
+        "tags": [
+          "answer-bank"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Store or replace one answer for a question within a scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnswerBankEntry"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body, query or header.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated: no valid session, device token or worker credential.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted for this workspace resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or not accessible from the authenticated workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale revision, duplicate command or idempotency key reuse with a different body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload exceeds the configured upload limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Structurally valid but invalid domain input.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota or rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "description": "Anti-CSRF token for cookie-authenticated mutations; origin is verified too.",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 200
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerBankPutRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/answer-bank/{id}": {
+      "delete": {
+        "operationId": "deleteAnswerBankEntry",
+        "summary": "Forget a stored answer.",
+        "tags": [
+          "answer-bank"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Forget a stored answer. Returns no content."
+          },
+          "400": {
+            "description": "Malformed request body, query or header.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated: no valid session, device token or worker credential.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted for this workspace resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or not accessible from the authenticated workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale revision, duplicate command or idempotency key reuse with a different body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload exceeds the configured upload limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Structurally valid but invalid domain input.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota or rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "description": "Anti-CSRF token for cookie-authenticated mutations; origin is verified too.",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 200
+            }
+          }
+        ]
       }
     },
     "/internal/v1/tasks/claim": {

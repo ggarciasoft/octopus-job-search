@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ApplicationOutcomeRequest.schema.json",
+  "title": "ApplicationOutcomeRequest",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "expected_revision",
+    "outcome",
+    "evidence_type"
+  ],
+  "properties": {
+    "expected_revision": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "outcome": {
+      "anyOf": [
+        {
+          "const": "submitted",
+          "type": "string"
+        },
+        {
+          "const": "not_submitted",
+          "type": "string"
+        },
+        {
+          "const": "outcome_unknown",
+          "type": "string"
+        },
+        {
+          "const": "interview",
+          "type": "string"
+        },
+        {
+          "const": "rejected",
+          "type": "string"
+        },
+        {
+          "const": "offer",
+          "type": "string"
+        },
+        {
+          "const": "withdrawn",
+          "type": "string"
+        },
+        {
+          "const": "cancelled",
+          "type": "string"
+        }
+      ]
+    },
+    "evidence_type": {
+      "anyOf": [
+        {
+          "const": "adapter_observed",
+          "type": "string"
+        },
+        {
+          "const": "user_report",
+          "type": "string"
+        },
+        {
+          "const": "none",
+          "type": "string"
+        }
+      ]
+    },
+    "evidence": {
+      "additionalProperties": false,
+      "type": "object",
+      "properties": {
+        "confirmation_text": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reference": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "url": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "observed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "screenshot_file_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "note": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

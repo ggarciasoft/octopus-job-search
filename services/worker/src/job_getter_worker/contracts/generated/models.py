@@ -1575,3 +1575,325 @@ class RenderCvResult(BaseModel):
     pdf_file_id: UuidString | None
     docx_file_id: UuidString | None
     fact_ids: Annotated[list[UuidString], Field(max_length=500)]
+
+
+class AnswerBankEntry(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: UuidString
+    question_key: Annotated[str, Field(min_length=1, max_length=120, pattern=r"^[a-z0-9_.:-]+$")]
+    label: Annotated[str, Field(max_length=500)] | None
+    answer: Union[
+        Annotated[str, Field(max_length=5000)],
+        float,
+        bool,
+        Annotated[list[Annotated[str, Field(max_length=500)]], Field(max_length=50)]
+    ]
+    sensitivity: Literal["standard", "sensitive", "never_reuse"]
+    scope: Literal["general", "company", "job"]
+    scope_id: Annotated[str, Field(max_length=200)] | None
+    confirmed_at: TimestampString | None
+    expires_at: TimestampString | None
+    created_at: TimestampString
+    updated_at: TimestampString
+
+
+class AnswerBankPutRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    question_key: Annotated[str, Field(min_length=1, max_length=120, pattern=r"^[a-z0-9_.:-]+$")]
+    label: Annotated[str, Field(max_length=500)] | None = None
+    answer: Union[
+        Annotated[str, Field(max_length=5000)],
+        float,
+        bool,
+        Annotated[list[Annotated[str, Field(max_length=500)]], Field(max_length=50)]
+    ]
+    sensitivity: Literal["standard", "sensitive", "never_reuse"] | None = None
+    scope: Literal["general", "company", "job"] | None = None
+    scope_id: Annotated[str, Field(max_length=200)] | None = None
+    confirmed: bool | None = None
+    expires_at: TimestampString | None = None
+
+
+class AnswerBankListQuery(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    question_key: Annotated[
+        str,
+        Field(min_length=1, max_length=120, pattern=r"^[a-z0-9_.:-]+$")
+    ] | None = None
+    scope: Literal["general", "company", "job"] | None = None
+    cursor: str | None = None
+    limit: Annotated[int, Field(ge=1, le=100)] | None = None
+
+
+class PacketAnswer(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    question_key: Annotated[str, Field(min_length=1, max_length=120, pattern=r"^[a-z0-9_.:-]+$")]
+    label: Annotated[str, Field(max_length=500)] | None
+    answer: Union[
+        Annotated[str, Field(max_length=5000)],
+        float,
+        bool,
+        Annotated[list[Annotated[str, Field(max_length=500)]], Field(max_length=50)]
+    ] | None
+    required: bool
+    sensitivity: Literal["standard", "sensitive", "never_reuse"]
+    provenance: Literal["user_entered", "answer_bank", "profile_fact", "preference"]
+    source_id: UuidString | None
+
+
+class PacketDestination(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    url: Annotated[str, Field(max_length=2000)]
+    origin: Annotated[str, Field(max_length=500)]
+    connector: Annotated[str, Field(max_length=40)] | None
+    connector_version: Annotated[str, Field(max_length=40)] | None
+
+
+class PacketHashMaterialAnswersItem(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    question_key: Annotated[str, Field(min_length=1, max_length=120, pattern=r"^[a-z0-9_.:-]+$")]
+    answer: Union[
+        Annotated[str, Field(max_length=5000)],
+        float,
+        bool,
+        Annotated[list[Annotated[str, Field(max_length=500)]], Field(max_length=50)]
+    ] | None
+    provenance: Literal["user_entered", "answer_bank", "profile_fact", "preference"]
+
+
+class PacketHashMaterial(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    hash_version: Annotated[int, Field(ge=1)]
+    profile_revision: Annotated[int, Field(ge=1)]
+    job_id: UuidString
+    job_revision: Annotated[int, Field(ge=1)]
+    resume_id: UuidString
+    resume_sha256: Annotated[str, Field(max_length=64)] | None
+    destination: PacketDestination
+    form_fingerprint: Annotated[str, Field(max_length=128)] | None
+    answers: Annotated[list[PacketHashMaterialAnswersItem], Field(max_length=200)]
+
+
+class ApplicationPacketView(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: UuidString
+    application_id: UuidString
+    revision: Annotated[int, Field(ge=1)]
+    profile_revision: Annotated[int, Field(ge=1)]
+    job_revision: Annotated[int, Field(ge=1)]
+    resume_id: UuidString
+    resume_sha256: Annotated[str, Field(max_length=64)] | None
+    destination: PacketDestination
+    answers: Annotated[list[PacketAnswer], Field(max_length=200)]
+    form_fingerprint: Annotated[str, Field(max_length=128)] | None
+    content_hash: Annotated[str, Field(max_length=64)]
+    approved_hash: Annotated[str, Field(max_length=64)] | None
+    approved_at: TimestampString | None
+    expires_at: TimestampString | None
+    unresolved_question_keys: Annotated[
+        list[Annotated[str, Field(min_length=1, max_length=120, pattern=r"^[a-z0-9_.:-]+$")]],
+        Field(max_length=200)
+    ]
+    staleness: Annotated[
+        list[
+            Literal[
+                "profile_revision_changed",
+                "job_revision_changed",
+                "resume_changed",
+                "destination_changed",
+                "form_schema_changed",
+                "approval_expired"
+            ]
+        ],
+        Field(max_length=10)
+    ]
+    created_at: TimestampString
+
+
+class ApplicationEventView(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: UuidString
+    sequence: Annotated[int, Field(ge=1)]
+    type: Literal[
+        "created",
+        "packet_created",
+        "packet_approved",
+        "approval_invalidated",
+        "approval_expired",
+        "fill_requested",
+        "fill_paused",
+        "fill_failed",
+        "submitted",
+        "outcome_recorded",
+        "cancelled",
+        "note"
+    ]
+    actor: Literal["user", "system", "runner"]
+    status_before: Literal[
+        "draft",
+        "preparing",
+        "needs_input",
+        "ready_for_review",
+        "approved",
+        "filling",
+        "awaiting_user_submit",
+        "submitted",
+        "outcome_unknown",
+        "failed",
+        "cancelled",
+        "interview",
+        "rejected",
+        "offer",
+        "withdrawn"
+    ] | None
+    status_after: Literal[
+        "draft",
+        "preparing",
+        "needs_input",
+        "ready_for_review",
+        "approved",
+        "filling",
+        "awaiting_user_submit",
+        "submitted",
+        "outcome_unknown",
+        "failed",
+        "cancelled",
+        "interview",
+        "rejected",
+        "offer",
+        "withdrawn"
+    ] | None
+    reason: Annotated[str, Field(max_length=120)] | None
+    data: dict[str, Any]
+    occurred_at: TimestampString
+
+
+class SubmissionEvidence(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    evidence_type: Literal["adapter_observed", "user_report", "none"]
+    confirmation_text: Annotated[str, Field(max_length=2000)] | None
+    reference: Annotated[str, Field(max_length=200)] | None
+    url: Annotated[str, Field(max_length=2000)] | None
+    observed_at: TimestampString | None
+    screenshot_file_id: UuidString | None
+    note: Annotated[str, Field(max_length=2000)] | None
+
+
+class ApplicationView(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: UuidString
+    job_id: UuidString
+    company: Annotated[str, Field(max_length=200)]
+    title: Annotated[str, Field(max_length=300)]
+    status: Literal[
+        "draft",
+        "preparing",
+        "needs_input",
+        "ready_for_review",
+        "approved",
+        "filling",
+        "awaiting_user_submit",
+        "submitted",
+        "outcome_unknown",
+        "failed",
+        "cancelled",
+        "interview",
+        "rejected",
+        "offer",
+        "withdrawn"
+    ]
+    revision: Annotated[int, Field(ge=1)]
+    current_packet: ApplicationPacketView | None
+    submission_evidence: SubmissionEvidence | None
+    submitted_at: TimestampString | None
+    possible_duplicate_application_ids: Annotated[list[UuidString], Field(max_length=20)]
+    created_at: TimestampString
+    updated_at: TimestampString
+
+
+class CreateApplicationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    job_id: UuidString
+
+
+class CreatePacketRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    expected_revision: Annotated[int, Field(ge=1)]
+    resume_id: UuidString
+    answers: Annotated[list[PacketAnswer], Field(max_length=200)]
+    form_fingerprint: Annotated[str, Field(max_length=128)] | None = None
+
+
+class ApproveApplicationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    expected_revision: Annotated[int, Field(ge=1)]
+    packet_id: UuidString
+    content_hash: Annotated[str, Field(min_length=64, max_length=64)]
+
+
+class ApplicationOutcomeRequestEvidence(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    confirmation_text: Annotated[str, Field(max_length=2000)] | None = None
+    reference: Annotated[str, Field(max_length=200)] | None = None
+    url: Annotated[str, Field(max_length=2000)] | None = None
+    observed_at: TimestampString | None = None
+    screenshot_file_id: UuidString | None = None
+    note: Annotated[str, Field(max_length=2000)] | None = None
+
+
+class ApplicationOutcomeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    expected_revision: Annotated[int, Field(ge=1)]
+    outcome: Literal[
+        "submitted",
+        "not_submitted",
+        "outcome_unknown",
+        "interview",
+        "rejected",
+        "offer",
+        "withdrawn",
+        "cancelled"
+    ]
+    evidence_type: Literal["adapter_observed", "user_report", "none"]
+    evidence: ApplicationOutcomeRequestEvidence | None = None
+
+
+class ApplicationsListQuery(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    status: Literal[
+        "draft",
+        "preparing",
+        "needs_input",
+        "ready_for_review",
+        "approved",
+        "filling",
+        "awaiting_user_submit",
+        "submitted",
+        "outcome_unknown",
+        "failed",
+        "cancelled",
+        "interview",
+        "rejected",
+        "offer",
+        "withdrawn"
+    ] | None = None
+    job_id: UuidString | None = None
+    cursor: str | None = None
+    limit: Annotated[int, Field(ge=1, le=100)] | None = None

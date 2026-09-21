@@ -1,0 +1,259 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ApplicationEventView.schema.json",
+  "title": "ApplicationEventView",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "id",
+    "sequence",
+    "type",
+    "actor",
+    "status_before",
+    "status_after",
+    "reason",
+    "data",
+    "occurred_at"
+  ],
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "sequence": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "type": {
+      "anyOf": [
+        {
+          "const": "created",
+          "type": "string"
+        },
+        {
+          "const": "packet_created",
+          "type": "string"
+        },
+        {
+          "const": "packet_approved",
+          "type": "string"
+        },
+        {
+          "const": "approval_invalidated",
+          "type": "string"
+        },
+        {
+          "const": "approval_expired",
+          "type": "string"
+        },
+        {
+          "const": "fill_requested",
+          "type": "string"
+        },
+        {
+          "const": "fill_paused",
+          "type": "string"
+        },
+        {
+          "const": "fill_failed",
+          "type": "string"
+        },
+        {
+          "const": "submitted",
+          "type": "string"
+        },
+        {
+          "const": "outcome_recorded",
+          "type": "string"
+        },
+        {
+          "const": "cancelled",
+          "type": "string"
+        },
+        {
+          "const": "note",
+          "type": "string"
+        }
+      ]
+    },
+    "actor": {
+      "anyOf": [
+        {
+          "const": "user",
+          "type": "string"
+        },
+        {
+          "const": "system",
+          "type": "string"
+        },
+        {
+          "const": "runner",
+          "type": "string"
+        }
+      ]
+    },
+    "status_before": {
+      "anyOf": [
+        {
+          "anyOf": [
+            {
+              "const": "draft",
+              "type": "string"
+            },
+            {
+              "const": "preparing",
+              "type": "string"
+            },
+            {
+              "const": "needs_input",
+              "type": "string"
+            },
+            {
+              "const": "ready_for_review",
+              "type": "string"
+            },
+            {
+              "const": "approved",
+              "type": "string"
+            },
+            {
+              "const": "filling",
+              "type": "string"
+            },
+            {
+              "const": "awaiting_user_submit",
+              "type": "string"
+            },
+            {
+              "const": "submitted",
+              "type": "string"
+            },
+            {
+              "const": "outcome_unknown",
+              "type": "string"
+            },
+            {
+              "const": "failed",
+              "type": "string"
+            },
+            {
+              "const": "cancelled",
+              "type": "string"
+            },
+            {
+              "const": "interview",
+              "type": "string"
+            },
+            {
+              "const": "rejected",
+              "type": "string"
+            },
+            {
+              "const": "offer",
+              "type": "string"
+            },
+            {
+              "const": "withdrawn",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "status_after": {
+      "anyOf": [
+        {
+          "anyOf": [
+            {
+              "const": "draft",
+              "type": "string"
+            },
+            {
+              "const": "preparing",
+              "type": "string"
+            },
+            {
+              "const": "needs_input",
+              "type": "string"
+            },
+            {
+              "const": "ready_for_review",
+              "type": "string"
+            },
+            {
+              "const": "approved",
+              "type": "string"
+            },
+            {
+              "const": "filling",
+              "type": "string"
+            },
+            {
+              "const": "awaiting_user_submit",
+              "type": "string"
+            },
+            {
+              "const": "submitted",
+              "type": "string"
+            },
+            {
+              "const": "outcome_unknown",
+              "type": "string"
+            },
+            {
+              "const": "failed",
+              "type": "string"
+            },
+            {
+              "const": "cancelled",
+              "type": "string"
+            },
+            {
+              "const": "interview",
+              "type": "string"
+            },
+            {
+              "const": "rejected",
+              "type": "string"
+            },
+            {
+              "const": "offer",
+              "type": "string"
+            },
+            {
+              "const": "withdrawn",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "reason": {
+      "anyOf": [
+        {
+          "maxLength": 120,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "data": {
+      "type": "object",
+      "patternProperties": {
+        "^(.*)$": {}
+      }
+    },
+    "occurred_at": {
+      "format": "date-time",
+      "type": "string"
+    }
+  }
+}

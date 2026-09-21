@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/CreateApplicationRequest.schema.json",
+  "title": "CreateApplicationRequest",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "job_id"
+  ],
+  "properties": {
+    "job_id": {
+      "format": "uuid",
+      "type": "string"
+    }
+  }
+}

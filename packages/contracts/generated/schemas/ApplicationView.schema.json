@@ -1,0 +1,556 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ApplicationView.schema.json",
+  "title": "ApplicationView",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "id",
+    "job_id",
+    "company",
+    "title",
+    "status",
+    "revision",
+    "current_packet",
+    "submission_evidence",
+    "submitted_at",
+    "possible_duplicate_application_ids",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "job_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "company": {
+      "maxLength": 200,
+      "type": "string"
+    },
+    "title": {
+      "maxLength": 300,
+      "type": "string"
+    },
+    "status": {
+      "anyOf": [
+        {
+          "const": "draft",
+          "type": "string"
+        },
+        {
+          "const": "preparing",
+          "type": "string"
+        },
+        {
+          "const": "needs_input",
+          "type": "string"
+        },
+        {
+          "const": "ready_for_review",
+          "type": "string"
+        },
+        {
+          "const": "approved",
+          "type": "string"
+        },
+        {
+          "const": "filling",
+          "type": "string"
+        },
+        {
+          "const": "awaiting_user_submit",
+          "type": "string"
+        },
+        {
+          "const": "submitted",
+          "type": "string"
+        },
+        {
+          "const": "outcome_unknown",
+          "type": "string"
+        },
+        {
+          "const": "failed",
+          "type": "string"
+        },
+        {
+          "const": "cancelled",
+          "type": "string"
+        },
+        {
+          "const": "interview",
+          "type": "string"
+        },
+        {
+          "const": "rejected",
+          "type": "string"
+        },
+        {
+          "const": "offer",
+          "type": "string"
+        },
+        {
+          "const": "withdrawn",
+          "type": "string"
+        }
+      ]
+    },
+    "revision": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "current_packet": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "id",
+            "application_id",
+            "revision",
+            "profile_revision",
+            "job_revision",
+            "resume_id",
+            "resume_sha256",
+            "destination",
+            "answers",
+            "form_fingerprint",
+            "content_hash",
+            "approved_hash",
+            "approved_at",
+            "expires_at",
+            "unresolved_question_keys",
+            "staleness",
+            "created_at"
+          ],
+          "properties": {
+            "id": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "application_id": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "profile_revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "job_revision": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "resume_id": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "resume_sha256": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "destination": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "url",
+                "origin",
+                "connector",
+                "connector_version"
+              ],
+              "properties": {
+                "url": {
+                  "maxLength": 2000,
+                  "type": "string"
+                },
+                "origin": {
+                  "maxLength": 500,
+                  "type": "string"
+                },
+                "connector": {
+                  "anyOf": [
+                    {
+                      "maxLength": 40,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "connector_version": {
+                  "anyOf": [
+                    {
+                      "maxLength": 40,
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            "answers": {
+              "maxItems": 200,
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "question_key",
+                  "label",
+                  "answer",
+                  "required",
+                  "sensitivity",
+                  "provenance",
+                  "source_id"
+                ],
+                "properties": {
+                  "question_key": {
+                    "minLength": 1,
+                    "maxLength": 120,
+                    "pattern": "^[a-z0-9_.:-]+$",
+                    "type": "string"
+                  },
+                  "label": {
+                    "anyOf": [
+                      {
+                        "maxLength": 500,
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "answer": {
+                    "anyOf": [
+                      {
+                        "anyOf": [
+                          {
+                            "maxLength": 5000,
+                            "type": "string"
+                          },
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "boolean"
+                          },
+                          {
+                            "maxItems": 50,
+                            "type": "array",
+                            "items": {
+                              "maxLength": 500,
+                              "type": "string"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "required": {
+                    "type": "boolean"
+                  },
+                  "sensitivity": {
+                    "anyOf": [
+                      {
+                        "const": "standard",
+                        "type": "string"
+                      },
+                      {
+                        "const": "sensitive",
+                        "type": "string"
+                      },
+                      {
+                        "const": "never_reuse",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "provenance": {
+                    "anyOf": [
+                      {
+                        "const": "user_entered",
+                        "type": "string"
+                      },
+                      {
+                        "const": "answer_bank",
+                        "type": "string"
+                      },
+                      {
+                        "const": "profile_fact",
+                        "type": "string"
+                      },
+                      {
+                        "const": "preference",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "source_id": {
+                    "anyOf": [
+                      {
+                        "format": "uuid",
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            "form_fingerprint": {
+              "anyOf": [
+                {
+                  "maxLength": 128,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "content_hash": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "approved_hash": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "approved_at": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "expires_at": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "unresolved_question_keys": {
+              "maxItems": 200,
+              "type": "array",
+              "items": {
+                "minLength": 1,
+                "maxLength": 120,
+                "pattern": "^[a-z0-9_.:-]+$",
+                "type": "string"
+              }
+            },
+            "staleness": {
+              "maxItems": 10,
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "const": "profile_revision_changed",
+                    "type": "string"
+                  },
+                  {
+                    "const": "job_revision_changed",
+                    "type": "string"
+                  },
+                  {
+                    "const": "resume_changed",
+                    "type": "string"
+                  },
+                  {
+                    "const": "destination_changed",
+                    "type": "string"
+                  },
+                  {
+                    "const": "form_schema_changed",
+                    "type": "string"
+                  },
+                  {
+                    "const": "approval_expired",
+                    "type": "string"
+                  }
+                ]
+              }
+            },
+            "created_at": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "submission_evidence": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "evidence_type",
+            "confirmation_text",
+            "reference",
+            "url",
+            "observed_at",
+            "screenshot_file_id",
+            "note"
+          ],
+          "properties": {
+            "evidence_type": {
+              "anyOf": [
+                {
+                  "const": "adapter_observed",
+                  "type": "string"
+                },
+                {
+                  "const": "user_report",
+                  "type": "string"
+                },
+                {
+                  "const": "none",
+                  "type": "string"
+                }
+              ]
+            },
+            "confirmation_text": {
+              "anyOf": [
+                {
+                  "maxLength": 2000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "reference": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "url": {
+              "anyOf": [
+                {
+                  "maxLength": 2000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "observed_at": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "screenshot_file_id": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "note": {
+              "anyOf": [
+                {
+                  "maxLength": 2000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "submitted_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "possible_duplicate_application_ids": {
+      "maxItems": 20,
+      "type": "array",
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      }
+    },
+    "created_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "type": "string"
+    }
+  }
+}

@@ -31,6 +31,16 @@ import { createSource, deleteSource, listSources, patchSource, scanSource } from
 import { getScan } from './scans.js';
 import { getJob, importJob, listJobs, matchJob, patchJob } from './jobs.js';
 import { approveResume, createResume, getResume } from './resumes.js';
+import {
+  approveApplication,
+  createApplication,
+  createApplicationPacket,
+  getApplication,
+  listApplicationEvents,
+  listApplications,
+  recordApplicationOutcome,
+} from './applications.js';
+import { deleteAnswerBankEntry, listAnswerBank, putAnswerBankEntry } from './answers.js';
 import type { RouteContext, RouteHandler } from './context.js';
 
 /**
@@ -44,7 +54,7 @@ import type { RouteContext, RouteHandler } from './context.js';
  *
  * `tests/routes/manifest.test.ts` asserts this list exactly, so an agent
  * that implements a deferred route must delete its entry here for the suite
- * to pass — the list cannot rot silently. M1 and M2 have done so; only the
+ * to pass — the list cannot rot silently. M1 through M4 have done so; only the
  * three routes that need an email service remain.
  */
 export const DEFERRED_OPERATIONS: Readonly<Record<string, string>> = {
@@ -109,6 +119,16 @@ function handlers(): Readonly<Record<string, RouteHandler>> {
     createResume,
     getResume,
     approveResume,
+    createApplication,
+    listApplications,
+    getApplication,
+    createApplicationPacket,
+    approveApplication,
+    recordApplicationOutcome,
+    listApplicationEvents,
+    listAnswerBank,
+    putAnswerBankEntry,
+    deleteAnswerBankEntry,
   };
 }
 

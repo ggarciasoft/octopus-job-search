@@ -1,6 +1,6 @@
 /**
- * Hand-written Kysely database interface mirroring
- * `src/db/migrations/0001_foundation.sql` and `0002_discovery.sql`.
+ * Hand-written Kysely database interface mirroring the `.sql` files in
+ * `src/db/migrations/`.
  *
  * kysely-codegen is deliberately not used (it is not a dependency); the price
  * is that this file must be updated alongside every migration. The integration
@@ -14,6 +14,12 @@
  */
 import type { ColumnType, Generated, Insertable, Selectable, Updateable } from 'kysely';
 import type {
+  AnswerScope,
+  AnswerSensitivity,
+  AnswerValue,
+  ApplicationActor,
+  ApplicationEventType,
+  ApplicationStatus,
   ConnectorId,
   JobEmploymentType,
   JobStatus,
@@ -24,8 +30,10 @@ import type {
   TaskType,
   TriState,
   Locale,
+  PacketAnswer,
   ResumeMode,
   ResumeStatus,
+  SubmissionEvidence,
 } from '@job-getter/contracts';
 
 /** jsonb: select as parsed value, insert/update as a JSON string. */
@@ -421,6 +429,76 @@ export interface ResumesTable {
   updated_at: TimestampColumn;
 }
 
+export interface AnswerBankTable {
+  id: Generated<string>;
+  workspace_id: string;
+  question_key: string;
+  label: string | null;
+  answer: JsonColumn<AnswerValue>;
+  sensitivity: Generated<AnswerSensitivity>;
+  scope: Generated<AnswerScope>;
+  /** '' for general scope; the empty-string sentinel keeps the UNIQUE honest. */
+  scope_id: Generated<string>;
+  confirmed_at: NullableTimestampColumn;
+  expires_at: NullableTimestampColumn;
+  created_at: TimestampColumn;
+  updated_at: TimestampColumn;
+}
+
+export interface ApplicationsTable {
+  id: Generated<string>;
+  workspace_id: string;
+  job_id: string;
+  status: Generated<ApplicationStatus>;
+  revision: Generated<number>;
+  current_packet_id: string | null;
+  submission_evidence: NullableJsonColumn<SubmissionEvidence>;
+  submitted_at: NullableTimestampColumn;
+  created_at: TimestampColumn;
+  updated_at: TimestampColumn;
+}
+
+/**
+ * Written once, then only ever stamped with an approval. There is no
+ * `updated_at` because there is no edit: a changed packet is a new revision.
+ */
+export interface ApplicationPacketsTable {
+  id: Generated<string>;
+  workspace_id: string;
+  application_id: string;
+  revision: number;
+  profile_revision: number;
+  job_revision: number;
+  resume_id: string;
+  resume_sha256: string | null;
+  destination_url: string;
+  destination_origin: string;
+  connector: string | null;
+  connector_version: string | null;
+  answers: DefaultedJsonColumn<PacketAnswer[]>;
+  form_fingerprint: string | null;
+  content_hash: string;
+  approved_hash: string | null;
+  approved_at: NullableTimestampColumn;
+  expires_at: NullableTimestampColumn;
+  created_at: TimestampColumn;
+}
+
+/** Append-only; an UPDATE is refused by a trigger, not by convention. */
+export interface ApplicationEventsTable {
+  id: Generated<string>;
+  workspace_id: string;
+  application_id: string;
+  sequence: number;
+  type: ApplicationEventType;
+  actor: ApplicationActor;
+  status_before: ApplicationStatus | null;
+  status_after: ApplicationStatus | null;
+  reason: string | null;
+  data: DefaultedJsonColumn<Record<string, unknown>>;
+  occurred_at: TimestampColumn;
+}
+
 export interface SchemaMigrationsTable {
   name: string;
   checksum: string;
@@ -450,6 +528,10 @@ export interface Database {
   jobs: JobsTable;
   matches: MatchesTable;
   resumes: ResumesTable;
+  answer_bank: AnswerBankTable;
+  applications: ApplicationsTable;
+  application_packets: ApplicationPacketsTable;
+  application_events: ApplicationEventsTable;
   job_sources: JobSourcesTable;
   job_imports: JobImportsTable;
   schema_migrations: SchemaMigrationsTable;
@@ -485,6 +567,10 @@ export const WORKSPACE_SCOPED_TABLES = [
   'job_imports',
   'matches',
   'resumes',
+  'answer_bank',
+  'applications',
+  'application_packets',
+  'application_events',
 ] as const;
 
 export type WorkspaceScopedTable = (typeof WORKSPACE_SCOPED_TABLES)[number];
@@ -528,3 +614,7 @@ export type MatchRow = Selectable<MatchesTable>;
 export type NewMatchRow = Insertable<MatchesTable>;
 export type ResumeRow = Selectable<ResumesTable>;
 export type NewResumeRow = Insertable<ResumesTable>;
+export type AnswerBankRow = Selectable<AnswerBankTable>;
+export type ApplicationRow = Selectable<ApplicationsTable>;
+export type ApplicationPacketRow = Selectable<ApplicationPacketsTable>;
+export type ApplicationEventRow = Selectable<ApplicationEventsTable>;

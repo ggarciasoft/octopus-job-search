@@ -163,3 +163,87 @@ class ResumeStatus(StrEnum):
     QUEUED = "queued"
     READY = "ready"
     FAILED = "failed"
+
+
+class AnswerScope(StrEnum):
+    GENERAL = "general"
+    COMPANY = "company"
+    JOB = "job"
+
+
+class AnswerSensitivity(StrEnum):
+    STANDARD = "standard"
+    SENSITIVE = "sensitive"
+    NEVER_REUSE = "never_reuse"
+
+
+class ApplicationStatus(StrEnum):
+    DRAFT = "draft"
+    PREPARING = "preparing"
+    NEEDS_INPUT = "needs_input"
+    READY_FOR_REVIEW = "ready_for_review"
+    APPROVED = "approved"
+    FILLING = "filling"
+    AWAITING_USER_SUBMIT = "awaiting_user_submit"
+    SUBMITTED = "submitted"
+    OUTCOME_UNKNOWN = "outcome_unknown"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+    INTERVIEW = "interview"
+    REJECTED = "rejected"
+    OFFER = "offer"
+    WITHDRAWN = "withdrawn"
+
+
+class ApplicationActor(StrEnum):
+    USER = "user"
+    SYSTEM = "system"
+    RUNNER = "runner"
+
+
+class ApplicationEventType(StrEnum):
+    CREATED = "created"
+    PACKET_CREATED = "packet_created"
+    PACKET_APPROVED = "packet_approved"
+    APPROVAL_INVALIDATED = "approval_invalidated"
+    APPROVAL_EXPIRED = "approval_expired"
+    FILL_REQUESTED = "fill_requested"
+    FILL_PAUSED = "fill_paused"
+    FILL_FAILED = "fill_failed"
+    SUBMITTED = "submitted"
+    OUTCOME_RECORDED = "outcome_recorded"
+    CANCELLED = "cancelled"
+    NOTE = "note"
+
+
+class PacketAnswerProvenance(StrEnum):
+    USER_ENTERED = "user_entered"
+    ANSWER_BANK = "answer_bank"
+    PROFILE_FACT = "profile_fact"
+    PREFERENCE = "preference"
+
+
+class PacketStalenessReason(StrEnum):
+    PROFILE_REVISION_CHANGED = "profile_revision_changed"
+    JOB_REVISION_CHANGED = "job_revision_changed"
+    RESUME_CHANGED = "resume_changed"
+    DESTINATION_CHANGED = "destination_changed"
+    FORM_SCHEMA_CHANGED = "form_schema_changed"
+    APPROVAL_EXPIRED = "approval_expired"
+
+
+class EvidenceType(StrEnum):
+    ADAPTER_OBSERVED = "adapter_observed"
+    USER_REPORT = "user_report"
+    NONE = "none"
+
+
+class ApplicationOutcome(StrEnum):
+    SUBMITTED = "submitted"
+    NOT_SUBMITTED = "not_submitted"
+    OUTCOME_UNKNOWN = "outcome_unknown"
+    INTERVIEW = "interview"
+    REJECTED = "rejected"
+    OFFER = "offer"
+    WITHDRAWN = "withdrawn"
+    CANCELLED = "cancelled"
