@@ -1,16 +1,17 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { PLACEHOLDER_SCREENS } from '../src/navigation';
+import { NAV_ITEMS, PLACEHOLDER_SCREENS } from '../src/navigation';
 import { renderApp } from './helpers';
 
 describe('screens for milestones that do not exist yet', () => {
-  it('registers every unavailable navigation entry as an explanation', () => {
-    // Profile and Settings became real in M1, Discover and Jobs in M2, and
-    // CV studio in M3; the rest still wait.
-    expect(PLACEHOLDER_SCREENS.map((screenDef) => screenDef.path)).toEqual([
-      '/applications',
-      '/tracker',
-    ]);
+  it('has no unavailable navigation entry left, and says so explicitly', () => {
+    // Profile and Settings became real in M1, Discover and Jobs in M2, CV
+    // studio in M3, Applications and Tracker in M4. The list is empty, and
+    // asserting that is the point: the moment a screen is added to the
+    // navigation before it works, this fails. The per-screen cases below still
+    // run for whatever the next milestone adds.
+    expect(PLACEHOLDER_SCREENS.map((screenDef) => screenDef.path)).toEqual([]);
+    expect(NAV_ITEMS.filter((item) => !item.available)).toEqual([]);
   });
 
   for (const placeholder of PLACEHOLDER_SCREENS) {

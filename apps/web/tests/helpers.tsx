@@ -2,7 +2,11 @@ import { ApiError } from '@job-getter/api-client';
 import {
   DEFAULT_PREFERENCES,
   DEFAULT_PROVIDER_LIMITS,
+  type ApplicationEventView,
+  type ApplicationPacketView,
+  type ApplicationView,
   type Capabilities,
+  type DeviceView,
   type DraftFact,
   type JobDetailView,
   type JobView,
@@ -384,6 +388,99 @@ export function makeResume(overrides: Partial<ResumeView> = {}): ResumeView {
   };
 }
 
+export const APPLICATION_ID = '77777777-7777-4777-8777-777777777777';
+export const PACKET_ID = '66666666-6666-4666-8666-666666666666';
+export const DEVICE_ID = '55555555-5555-4555-8555-555555555555';
+
+export function makePacket(overrides: Partial<ApplicationPacketView> = {}): ApplicationPacketView {
+  return {
+    id: PACKET_ID,
+    application_id: APPLICATION_ID,
+    revision: 1,
+    profile_revision: 3,
+    job_revision: 1,
+    resume_id: RESUME_ID,
+    resume_sha256: 'b'.repeat(64),
+    destination: {
+      url: 'https://boards.greenhouse.io/acme/jobs/1#app',
+      origin: 'https://boards.greenhouse.io',
+      connector: 'greenhouse',
+      connector_version: 'greenhouse/v1',
+    },
+    answers: [
+      {
+        question_key: 'why_this_role',
+        label: 'Why do you want this role?',
+        answer: 'Because the work is interesting.',
+        required: true,
+        sensitivity: 'standard',
+        provenance: 'user_entered',
+        source_id: null,
+      },
+    ],
+    form_fingerprint: null,
+    content_hash: 'c'.repeat(64),
+    approved_hash: null,
+    approved_at: null,
+    expires_at: null,
+    unresolved_question_keys: [],
+    staleness: [],
+    created_at: '2026-09-21T10:00:00.000Z',
+    ...overrides,
+  };
+}
+
+export function makeApplication(overrides: Partial<ApplicationView> = {}): ApplicationView {
+  return {
+    id: APPLICATION_ID,
+    job_id: JOB_ID,
+    company: 'Acme Robotics',
+    title: 'Senior Backend Engineer',
+    status: 'ready_for_review',
+    revision: 2,
+    current_packet: makePacket(),
+    submission_evidence: null,
+    submitted_at: null,
+    possible_duplicate_application_ids: [],
+    created_at: '2026-09-21T09:00:00.000Z',
+    updated_at: '2026-09-21T10:00:00.000Z',
+    ...overrides,
+  };
+}
+
+export function makeApplicationEvent(
+  overrides: Partial<ApplicationEventView> = {},
+): ApplicationEventView {
+  return {
+    id: '99999999-9999-4999-8999-999999999991',
+    sequence: 1,
+    type: 'created',
+    actor: 'user',
+    status_before: null,
+    status_after: 'draft',
+    reason: null,
+    data: {},
+    occurred_at: '2026-09-21T09:00:00.000Z',
+    ...overrides,
+  };
+}
+
+export function makeDevice(overrides: Partial<DeviceView> = {}): DeviceView {
+  return {
+    id: DEVICE_ID,
+    kind: 'local_runner',
+    label: 'Work laptop',
+    status: 'paired',
+    device_public_id: 'linux-testbox',
+    allowed_origins: ['https://boards.greenhouse.io'],
+    expires_at: '2026-10-21T09:00:00.000Z',
+    revoked_at: null,
+    last_seen_at: null,
+    created_at: '2026-09-21T09:00:00.000Z',
+    ...overrides,
+  };
+}
+
 /**
  * A fake that satisfies the same `JobGetterApi` type the real generated client
  * satisfies, so a contract change breaks these tests instead of letting them
@@ -462,8 +559,44 @@ export function createFakeApi(overrides: Partial<JobGetterApi> = {}): JobGetterA
       task_id: RESUME_ID,
       status: 'queued' as const,
     })),
+    listResumes: vi.fn(async () => ({ items: [makeResume()], next_cursor: null })),
     getResume: vi.fn(async () => makeResume()),
     approveResume: vi.fn(async () => makeResume({ approved_at: '2026-09-21T12:00:00.000Z' })),
+    // M4. Nothing is tracked and nothing is paired by default: a screen that
+    // shows rows here must have been given them by the test.
+    createApplication: vi.fn(async () =>
+      makeApplication({ status: 'draft', current_packet: null }),
+    ),
+    listApplications: vi.fn(async () => ({ items: [], next_cursor: null })),
+    getApplication: vi.fn(async () => makeApplication()),
+    createApplicationPacket: vi.fn(async () => ({ task_id: PACKET_ID, status: 'queued' as const })),
+    approveApplication: vi.fn(async () => makeApplication({ status: 'approved' })),
+    recordApplicationOutcome: vi.fn(async () => makeApplication({ status: 'submitted' })),
+    listApplicationEvents: vi.fn(async () => ({ items: [], next_cursor: null })),
+    fillApplication: vi.fn(async () => ({ task_id: TASK_ID, status: 'queued' as const })),
+    listAnswerBank: vi.fn(async () => ({ items: [], next_cursor: null })),
+    putAnswerBankEntry: vi.fn(async () => ({
+      id: '44444444-4444-4444-8444-444444444444',
+      question_key: 'why_this_role',
+      label: 'Why do you want this role?',
+      answer: 'Because the work is interesting.',
+      sensitivity: 'standard' as const,
+      scope: 'general' as const,
+      scope_id: null,
+      confirmed_at: '2026-09-21T10:00:00.000Z',
+      expires_at: null,
+      created_at: '2026-09-21T10:00:00.000Z',
+      updated_at: '2026-09-21T10:00:00.000Z',
+    })),
+    deleteAnswerBankEntry: vi.fn(async () => undefined),
+    listDevices: vi.fn(async () => ({ items: [], next_cursor: null })),
+    createDevicePairing: vi.fn(async () => ({
+      device_id: DEVICE_ID,
+      pairing_code: 'pairing-code-for-tests',
+      expires_in: 300,
+    })),
+    getDevice: vi.fn(async () => makeDevice()),
+    revokeDevice: vi.fn(async () => undefined),
     ...overrides,
   };
 }

@@ -281,10 +281,6 @@ export const es: Record<MessageKey, string> = {
     'Registros de empleo normalizados, filtros, puntuaciones de coincidencia con su cobertura, distintivos de elegibilidad y actualidad, y las vistas de guardados y excluidos.',
   'notImplemented.cvStudio.missing':
     'Los modos de CV original y adaptado, las plantillas, la selección de idioma, la revisión de datos y cambios, y las descargas en PDF y DOCX.',
-  'notImplemented.applications.missing':
-    'Los paquetes de postulación, el banco de respuestas, las preguntas obligatorias sin resolver y la instantánea de aprobación con su hash de contenido.',
-  'notImplemented.tracker.missing':
-    'La lista de estados, las pruebas del resultado, la cronología de eventos y la prevención de postulaciones duplicadas.',
   'notImplemented.settings.missing':
     'La configuración de proveedores y modelos, los presupuestos, las opciones de prompts y plantillas, los horarios de escaneo, los dispositivos emparejados y la exportación y eliminación de datos.',
 
@@ -656,7 +652,7 @@ export const es: Record<MessageKey, string> = {
   'settings.providerTab': 'Proveedor de IA',
   'settings.missingTitle': 'Todavía no está en esta pantalla',
   'settings.missingBody':
-    'Los horarios de rastreo, los dispositivos emparejados, más opciones de prompts y plantillas, y la exportación y el borrado de datos llegan con hitos posteriores. Están ausentes en lugar de mostrarse como controles que no hacen nada.',
+    'Los horarios de rastreo, más opciones de prompts y plantillas, y la exportación y el borrado de datos llegan con hitos posteriores. Están ausentes en lugar de mostrarse como controles que no hacen nada.',
 
   'preferences.loading': 'Cargando preferencias…',
   'preferences.loadFailed': 'No se pudieron cargar las preferencias.',
@@ -1429,4 +1425,235 @@ export const es: Record<MessageKey, string> = {
   'resumeSection.education': 'Formacion',
   'resumeSection.certifications': 'Certificaciones',
   'resumeSection.languages': 'Idiomas',
+
+  // --- M4: postulaciones, paquetes, el ejecutor local y el seguimiento -----
+  'applications.title': 'Postulaciones',
+  'applications.intro':
+    'Cada postulación es un intento para un empleo. Iniciarla solo registra la intención: el CV, las respuestas y la aprobación son decisiones aparte en la pantalla de revisión.',
+  'applications.startFor': 'Iniciar una postulación para',
+  'applications.chooseJob': 'Elige un empleo',
+  'applications.start': 'Empezar a seguir',
+  'applications.starting': 'Iniciando…',
+  'applications.allTracked': 'Todos los empleos que descubriste ya tienen una postulación.',
+  'applications.tableCaption': 'Postulaciones en curso',
+  'applications.columnRole': 'Puesto',
+  'applications.columnStatus': 'Estado',
+  'applications.columnUpdated': 'Último cambio',
+  'applications.emptyTitle': 'Todavía no hay postulaciones',
+  'applications.emptyBody':
+    'No se ha preparado nada. Descubre un empleo y luego inicia una postulación para él.',
+  'applications.emptySuggestion': 'Ver los empleos que descubriste',
+
+  'application.status.draft': 'Borrador',
+  'application.status.draft.description': 'Iniciada, sin nada preparado todavía.',
+  'application.status.preparing': 'Preparando',
+  'application.status.preparing.description': 'Se está armando un paquete.',
+  'application.status.needsInput': 'Necesita tu respuesta',
+  'application.status.needsInput.description':
+    'Una pregunta obligatoria no tiene respuesta. No se adivinará ninguna.',
+  'application.status.readyForReview': 'Lista para revisar',
+  'application.status.readyForReview.description':
+    'Todo está respondido. Lee el paquete y apruébalo si es correcto.',
+  'application.status.approved': 'Aprobada',
+  'application.status.approved.description':
+    'Aprobaste exactamente este contenido. La aprobación caduca, y cualquier cambio en tu perfil, el empleo, el CV o el destino la retira.',
+  'application.status.filling': 'Rellenando',
+  'application.status.filling.description': 'Un ejecutor emparejado tiene el formulario abierto.',
+  'application.status.awaitingUserSubmit': 'Esperando el envío',
+  'application.status.awaitingUserSubmit.description':
+    'El formulario está relleno y te espera. No se ha enviado nada.',
+  'application.status.submitted': 'Enviada',
+  'application.status.submitted.description': 'Registrada como enviada.',
+  'application.status.outcomeUnknown': 'Resultado desconocido',
+  'application.status.outcomeUnknown.description':
+    'No pudimos saber si llegó. Eso no es un fallo ni un éxito, y nada se reintentará por su cuenta.',
+  'application.status.failed': 'Fallida',
+  'application.status.failed.description': 'Algo salió mal antes del envío.',
+  'application.status.cancelled': 'Cancelada',
+  'application.status.cancelled.description': 'La detuviste antes de enviarla.',
+  'application.status.interview': 'Entrevista',
+  'application.status.interview.description': 'Te respondieron y avanza.',
+  'application.status.rejected': 'Rechazada',
+  'application.status.rejected.description': 'Dijeron que no.',
+  'application.status.offer': 'Oferta',
+  'application.status.offer.description': 'Te hicieron una oferta.',
+  'application.status.withdrawn': 'Retirada',
+  'application.status.withdrawn.description': 'La retiraste.',
+
+  'application.submitted.verified': 'Enviada — verificada',
+  'application.submitted.reported': 'Enviada — según tu informe',
+  'application.submitted.unevidenced': 'Enviada — sin pruebas registradas',
+
+  'evidence.adapterObserved': 'Vista en la página de confirmación',
+  'evidence.userReport': 'Informada por ti',
+  'evidence.none': 'Sin pruebas',
+
+  'applicationEvent.created': 'Postulación iniciada',
+  'applicationEvent.packetCreated': 'Paquete preparado',
+  'applicationEvent.packetApproved': 'Paquete aprobado',
+  'applicationEvent.approvalInvalidated': 'Aprobación retirada: el contenido cambió',
+  'applicationEvent.approvalExpired': 'La aprobación caducó',
+  'applicationEvent.fillRequested': 'Relleno solicitado',
+  'applicationEvent.fillPaused': 'El ejecutor se detuvo',
+  'applicationEvent.fillFailed': 'El relleno falló',
+  'applicationEvent.submitted': 'Registrada como enviada',
+  'applicationEvent.outcomeRecorded': 'Resultado registrado',
+  'applicationEvent.cancelled': 'Cancelada',
+  'applicationEvent.note': 'Nota',
+
+  'timeline.empty': 'Todavía no ha pasado nada.',
+  'timeline.actor.user': 'Tú',
+  'timeline.actor.system': 'Sistema',
+  'timeline.actor.runner': 'Ejecutor',
+  'timeline.transition': '{from} → {to}',
+
+  'staleness.profileRevisionChanged': 'Tu perfil cambió después de armar este paquete.',
+  'staleness.jobRevisionChanged': 'La oferta cambió después de armar este paquete.',
+  'staleness.resumeChanged': 'El archivo del CV cambió después de armar este paquete.',
+  'staleness.destinationChanged': 'La URL de postulación de este empleo cambió.',
+  'staleness.formSchemaChanged': 'El formulario cambió desde que se aprobó este paquete.',
+  'staleness.approvalExpired': 'La aprobación caducó.',
+
+  'answerProvenance.userEntered': 'Escrita por ti',
+  'answerProvenance.answerBank': 'Respuesta guardada',
+  'answerProvenance.profileFact': 'De tu perfil',
+  'answerProvenance.preference': 'De tus preferencias',
+
+  'unresolved.noAnswer': 'No has respondido esta pregunta.',
+  'unresolved.newQuestion': 'El formulario preguntó algo que este paquete no cubre.',
+  'unresolved.unsupportedWidget': 'Es un control que el ejecutor no sabe manejar.',
+  'unresolved.needsExactMapping':
+    'Tu respuesta no coincide exactamente con ninguna opción ofrecida.',
+  'unresolved.neverInferable':
+    'Una pregunta de evaluación, identidad o demografía. Estas nunca se responden con un valor guardado.',
+  'unresolved.fileUploadBlocked': 'No se pudo adjuntar el CV.',
+
+  'packet.heading': 'Lo que se enviará',
+  'packet.revision': 'Revisión {revision} del paquete',
+  'packet.destination': 'Destino',
+  'packet.connector': 'Adaptador {connector} ({version})',
+  'packet.staleTitle': 'Este paquete está desactualizado',
+  'packet.unresolvedTitle': 'Preguntas obligatorias sin responder',
+  'packet.unresolvedBody': 'Faltan {count} respuesta(s) obligatoria(s).',
+  'packet.answersHeading': 'Respuestas',
+  'packet.noAnswers': 'Este paquete todavía no lleva respuestas.',
+  'packet.answerMissing': 'Sin responder',
+  'packet.required': 'Obligatoria',
+  'packet.neverReuse': 'Nunca se reutiliza',
+  'packet.contentHash': 'Hash del contenido',
+  'packet.approval': 'Aprobación',
+  'packet.notApproved': 'Sin aprobar',
+  'packet.approvedUntil': 'Aprobado hasta {expires}',
+
+  'answers.heading': 'Respuestas para esta postulación',
+  'answers.empty': 'Todavía no hay preguntas. Añade las que pida el formulario.',
+  'answers.useStored': 'Usar respuesta guardada',
+  'answers.remember': 'Recordar esta respuesta',
+  'answers.rememberDescription': 'Se guarda para reutilizarla, solo donde la aprobaste.',
+  'answers.neverReuseNotice':
+    'Esta pregunta nunca se responde con un valor guardado; respóndela en el propio formulario.',
+  'answers.addLabel': 'Añadir una pregunta',
+  'answers.addDescription': 'Escribe la pregunta tal como la formula el formulario.',
+  'answers.add': 'Añadir',
+
+  'review.viewJob': 'Ver la oferta',
+  'review.duplicateTitle': 'Puede ser la misma oferta que otra postulación',
+  'review.duplicateBody':
+    'Hay {count} postulación(es) para un empleo con el mismo empleador y puesto. Se mantienen separadas; revísalo antes de enviar ambas.',
+  'review.noPacketTitle': 'Todavía no hay nada preparado',
+  'review.noPacketBody':
+    'Elige un CV y responde las preguntas del formulario, y guarda el paquete.',
+  'review.buildHeading': 'Preparar el paquete',
+  'review.buildIntro':
+    'Guardar crea una nueva revisión del paquete. Cualquier aprobación de la anterior se retira, porque aprobaba otro contenido.',
+  'review.resume': 'CV a enviar',
+  'review.resumeDescription': 'Solo se listan los CV terminados que este empleo puede usar.',
+  'review.resumeChoose': 'Elige un CV',
+  'review.resumeOriginal': 'Tu propio archivo, sin cambios ({created})',
+  'review.resumeTailored': 'Generado para este empleo ({created})',
+  'review.noResumeTitle': 'No hay ningún CV listo',
+  'review.noResumeBody': 'Genera uno o sube el tuyo antes de preparar un paquete.',
+  'review.cvStudioLink': 'Abrir el estudio de CV',
+  'review.savePacket': 'Guardar paquete',
+  'review.saving': 'Guardando…',
+  'review.approve': 'Aprobar este paquete',
+  'review.approving': 'Aprobando…',
+  'review.approveNotice':
+    'Aprobar registra que leíste exactamente este contenido. Caduca, y cambiar tu perfil, el empleo, el CV o el destino la retira.',
+  'review.historyHeading': 'Historial',
+
+  'fill.heading': 'Asistente de relleno',
+  'fill.device': 'Ejecutor emparejado',
+  'fill.start': 'Abrir el formulario y rellenarlo',
+  'fill.starting': 'Iniciando…',
+  'fill.noRunnerTitle': 'Sin ejecutor emparejado',
+  'fill.noRunnerBody':
+    'El relleno ocurre en tu propia máquina, en un navegador que puedes ver. Empareja el ejecutor de escritorio para usarlo; también puedes postularte a mano y registrar el resultado.',
+  'fill.pairLink': 'Emparejar un dispositivo',
+  'fill.inProgressTitle': 'El ejecutor tiene el formulario abierto',
+  'fill.inProgressBody': 'Observa la ventana que abrió. Se detendrá antes de enviar.',
+  'fill.awaitingSubmitTitle': 'El formulario está relleno y te espera',
+  'fill.awaitingSubmitBody':
+    'No se ha enviado nada. Revisa cada campo en la ventana del navegador y envíalo tú.',
+  'fill.pausedTitle': 'El ejecutor se detuvo',
+  'fill.pausedBody': 'El formulario preguntó algo que este paquete no responde:',
+  'fill.neverSubmits':
+    'El ejecutor nunca pulsa enviar. Es una decisión de diseño permanente, no una función que falte.',
+  'fill.reasonsSummary': 'Por qué un campo puede quedar para ti',
+
+  'devices.title': 'Dispositivos emparejados',
+  'devices.intro':
+    'Un token de dispositivo permite que un proceso fuera de este navegador actúe sobre tus datos. Empareja solo máquinas que controles y revoca lo que ya no uses.',
+  'devices.pairHeading': 'Emparejar un ejecutor local',
+  'devices.label': 'Nombra este dispositivo',
+  'devices.labelDescription': 'Para distinguir dos máquinas antes de revocar una.',
+  'devices.origins': 'Orígenes que puede rellenar (opcional)',
+  'devices.originsDescription':
+    'Separados por comas, por ejemplo https://boards.greenhouse.io. Déjalo vacío para permitir solo el destino exacto de cada paquete aprobado.',
+  'devices.pair': 'Crear un código de emparejamiento',
+  'devices.pairing': 'Creando…',
+  'devices.codeTitle': 'Tu código de emparejamiento',
+  'devices.codeBody':
+    'Se muestra una vez. Solo se guarda un resumen criptográfico, así que no puede mostrarse de nuevo; crea otro si lo pierdes. Caduca en cinco minutos.',
+  'devices.codeCommand':
+    'Ejecuta job-getter-runner pair en la máquina y escribe el código cuando lo pida.',
+  'devices.listHeading': 'Dispositivos',
+  'devices.emptyTitle': 'Sin dispositivos',
+  'devices.emptyBody': 'Nada fuera de este navegador puede actuar sobre tus datos.',
+  'devices.notYetPaired': 'Todavía no ha canjeado su código',
+  'devices.expires': 'Caduca el {when}',
+  'devices.revoke': 'Revocar',
+  'device.status.pending': 'Esperando emparejar',
+  'device.status.paired': 'Emparejado',
+  'device.status.revoked': 'Revocado',
+  'device.status.expired': 'Caducado',
+
+  'tracker.title': 'Seguimiento',
+  'tracker.intro': 'En qué punto está cada postulación, y en qué se basa eso.',
+  'tracker.evidenceTitle': 'Verificado e informado no son lo mismo',
+  'tracker.evidenceBody':
+    'Un envío que un ejecutor vio llegar se marca como verificado. Uno que nos contaste se marca como informado por ti. La ausencia de pruebas no es fallo ni éxito.',
+  'tracker.emptyTitle': 'Todavía no hay seguimiento',
+  'tracker.emptyBody': 'Las postulaciones aparecen aquí en cuanto inicias una.',
+  'tracker.emptySuggestion': 'Iniciar una postulación',
+  'tracker.submittedAt': 'Enviada el {when}',
+  'tracker.evidenceKind': 'Pruebas',
+  'tracker.outcomeLabel': 'Qué pasó',
+  'tracker.reference': 'Referencia',
+  'tracker.referenceDescription': 'Cualquier número de confirmación que te mostró el empleador.',
+  'tracker.note': 'Nota',
+  'tracker.record': 'Registrarlo',
+  'tracker.recording': 'Registrando…',
+  'tracker.evidenceNotice': 'Se registrará como: {evidence}.',
+
+  'outcome.submitted': 'La envié',
+  'outcome.notSubmitted': 'Nunca se envió',
+  'outcome.unknown': 'No sé si llegó',
+  'outcome.interview': 'Me invitaron a una entrevista',
+  'outcome.rejected': 'La rechazaron',
+  'outcome.offer': 'Me hicieron una oferta',
+  'outcome.withdrawn': 'La retiré',
+  'outcome.cancelled': 'Cancelar esta postulación',
+
+  'settings.devicesTab': 'Dispositivos',
 };

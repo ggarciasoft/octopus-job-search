@@ -82,30 +82,27 @@ describe('dashboard capability panel', () => {
     expect(verified.textContent).not.toBe(reported.textContent);
   });
 
-  it('marks unbuilt screens in the navigation instead of hiding them', async () => {
+  it('marks every navigable screen as built, because they now all are', async () => {
     renderApp({ route: '/' });
     await screen.findByRole('heading', { name: 'Dashboard', level: 1 });
 
-    const trackerLink = screen.getByRole('link', { name: /Tracker/ });
-    expect(trackerLink.textContent).toContain('M4');
-    expect(trackerLink.getAttribute('href')).toBe('/tracker');
-    // The accessible name says it is unavailable, not only the badge colour.
-    expect(trackerLink.textContent).toContain('Not available yet');
-
-    // Discover and Jobs landed in M2, CV studio in M3: no milestone badge and
-    // no "unavailable" on any of them.
-    const discoverLink = screen.getByRole('link', { name: 'Discover' });
-    expect(discoverLink.getAttribute('href')).toBe('/discover');
-    expect(discoverLink.textContent).not.toContain('Not available yet');
-    expect(screen.getByRole('link', { name: 'Jobs' }).getAttribute('href')).toBe('/jobs');
-    const cvStudioLink = screen.getByRole('link', { name: 'CV studio' });
-    expect(cvStudioLink.getAttribute('href')).toBe('/cv-studio');
-    expect(cvStudioLink.textContent).not.toContain('Not available yet');
-
-    // Profile landed in M1: no milestone badge, no "unavailable" in its name.
-    const profileLink = screen.getByRole('link', { name: 'Profile' });
-    expect(profileLink.getAttribute('href')).toBe('/profile');
-    expect(profileLink.textContent).not.toContain('Not available yet');
+    // This test used to assert the opposite for Applications and Tracker: that
+    // they carried an "M4" badge and said "Not available yet". M4 landed, so
+    // the assertion flipped rather than being deleted — the navigation must
+    // never claim a screen exists before it does, and it must stop claiming
+    // the reverse the moment it does.
+    for (const [name, href] of [
+      ['Discover', '/discover'],
+      ['Jobs', '/jobs'],
+      ['CV studio', '/cv-studio'],
+      ['Applications', '/applications'],
+      ['Tracker', '/tracker'],
+      ['Profile', '/profile'],
+    ] as const) {
+      const link = screen.getByRole('link', { name });
+      expect(link.getAttribute('href'), name).toBe(href);
+      expect(link.textContent, name).not.toContain('Not available yet');
+    }
   });
 
   it('shows profile_import as available when the API reports it', async () => {

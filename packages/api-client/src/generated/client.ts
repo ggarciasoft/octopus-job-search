@@ -43,6 +43,7 @@ import type {
   ProviderTestResult,
   RegisterRequest,
   ResumeView,
+  ResumesListQuery,
   ScanView,
   SetupRequest,
   SetupStatus,
@@ -632,6 +633,17 @@ export class JobGetterApiClient {
     });
   }
 
+  /** CVs this workspace holds, newest first. (`GET /api/v1/resumes`) */
+  listResumes(args: ListResumesArgs = {}): Promise<ListResumesResult> {
+    return this.#request<ListResumesResult>({
+      method: 'GET',
+      prefix: API_PREFIX,
+      path: '/resumes',
+      query: args.query,
+      signal: args.signal,
+    });
+  }
+
   /** The document, its validation findings and the generated files. (`GET /api/v1/resumes/:id`) */
   getResume(args: GetResumeArgs): Promise<GetResumeResult> {
     return this.#request<GetResumeResult>({
@@ -1211,6 +1223,16 @@ export interface CreateResumeArgs {
 
 /** Result of `createResume`. */
 export type CreateResumeResult = AcceptedResponse;
+
+/** Arguments for `GET /api/v1/resumes`. */
+export interface ListResumesArgs {
+  /** Query string parameters. */
+  readonly query?: ResumesListQuery;
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `listResumes`. */
+export type ListResumesResult = { items: Array<ResumeView>; next_cursor: string | null };
 
 /** Arguments for `GET /api/v1/resumes/:id`. */
 export interface GetResumeArgs {

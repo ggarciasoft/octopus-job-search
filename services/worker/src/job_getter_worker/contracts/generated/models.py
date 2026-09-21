@@ -1544,6 +1544,15 @@ class CreateResumeRequest(BaseModel):
     page_target: Annotated[int, Field(ge=1, le=3)] | None = None
 
 
+class ResumesListQuery(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    job_id: UuidString | None = None
+    status: Literal["queued", "ready", "failed"] | None = None
+    cursor: str | None = None
+    limit: Annotated[int, Field(ge=1, le=100)] | None = None
+
+
 class RenderCvInputJob(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

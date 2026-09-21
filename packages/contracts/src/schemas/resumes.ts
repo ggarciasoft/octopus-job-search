@@ -308,6 +308,28 @@ export const CreateResumeRequest = Type.Object(
 export type CreateResumeRequest = Static<typeof CreateResumeRequest>;
 
 /**
+ * Listing the CVs a workspace holds.
+ *
+ * 04_API_CONTRACTS.md's route table gives `POST /resumes` and
+ * `GET /resumes/:id` and no listing, which is an omission rather than a
+ * decision: the M4 application-review screen has to let someone choose which
+ * CV to send, and a chooser cannot offer documents it has no way to enumerate.
+ * The alternative was asking the user to paste a UUID, which is not a choice
+ * anybody can make safely about what an employer receives.
+ */
+export const ResumesListQuery = Type.Object(
+  {
+    /** Narrow to the CVs prepared for one job, plus original-mode uploads. */
+    job_id: Type.Optional(Uuid),
+    status: Type.Optional(ResumeStatus),
+    cursor: Type.Optional(Type.String()),
+    limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })),
+  },
+  { additionalProperties: false },
+);
+export type ResumesListQuery = Static<typeof ResumesListQuery>;
+
+/**
  * Approval references the document the user actually read. Editing anything
  * upstream produces a new resume rather than silently re-approving this one.
  */

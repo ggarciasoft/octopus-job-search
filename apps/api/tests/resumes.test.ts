@@ -420,3 +420,54 @@ describe('reading a resume', () => {
     expect(response.statusCode).toBe(404);
   });
 });
+
+describe('GET /resumes', () => {
+  it('lists this workspace CVs newest first', async () => {
+    await seedProfile();
+    const first = await create({ mode: 'tailored' });
+    await runRender(first.json().task_id as string);
+    const second = await create({ mode: 'tailored' }, `resume-${Math.random()}`);
+    await runRender(second.json().task_id as string);
+
+    const response = await harness.app.inject(
+      authed(session, { method: 'GET', url: '/api/v1/resumes' }),
+    );
+    expect(response.statusCode, response.body).toBe(200);
+    const items = response.json().items as ResumeView[];
+    expect(items).toHaveLength(2);
+    expect(Date.parse(items[0]!.created_at)).toBeGreaterThanOrEqual(
+      Date.parse(items[1]!.created_at),
+    );
+  });
+
+  it('keeps an original-mode CV visible when filtering by job', async () => {
+    const fileId = await uploadCv();
+    const original = await create({ mode: 'original', input_file_id: fileId });
+    expect(original.statusCode).toBe(202);
+
+    const response = await harness.app.inject(
+      authed(session, {
+        method: 'GET',
+        // An uploaded file belongs to no job and can be sent anywhere, so
+        // filtering by job must not hide it.
+        url: '/api/v1/resumes?job_id=00000000-0000-4000-8000-000000000000',
+      }),
+    );
+    expect(response.statusCode, response.body).toBe(200);
+    expect(response.json().items as ResumeView[]).toHaveLength(1);
+  });
+
+  it('filters by status so a chooser cannot offer an unfinished CV', async () => {
+    await seedProfile();
+    await create({ mode: 'tailored' });
+
+    const ready = await harness.app.inject(
+      authed(session, { method: 'GET', url: '/api/v1/resumes?status=ready' }),
+    );
+    const queued = await harness.app.inject(
+      authed(session, { method: 'GET', url: '/api/v1/resumes?status=queued' }),
+    );
+    expect(ready.json().items as ResumeView[]).toHaveLength(0);
+    expect(queued.json().items as ResumeView[]).toHaveLength(1);
+  });
+});

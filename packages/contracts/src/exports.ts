@@ -156,6 +156,7 @@ export const EXPORTED_SCHEMAS: Record<string, TSchema> = {
   ResumeValidation: Resumes.ResumeValidation,
   ResumeView: Resumes.ResumeView,
   CreateResumeRequest: Resumes.CreateResumeRequest,
+  ResumesListQuery: Resumes.ResumesListQuery,
   RenderCvInput: RenderCv.RenderCvInput,
   RenderCvResult: RenderCv.RenderCvResult,
 

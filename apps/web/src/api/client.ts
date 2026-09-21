@@ -46,8 +46,25 @@ export type JobGetterApi = Pick<
   // M3: the fit score and the CV studio.
   | 'matchJob'
   | 'createResume'
+  | 'listResumes'
   | 'getResume'
   | 'approveResume'
+  // M4: applications, packets, approval, filling, devices and the tracker.
+  | 'createApplication'
+  | 'listApplications'
+  | 'getApplication'
+  | 'createApplicationPacket'
+  | 'approveApplication'
+  | 'recordApplicationOutcome'
+  | 'listApplicationEvents'
+  | 'fillApplication'
+  | 'listAnswerBank'
+  | 'putAnswerBankEntry'
+  | 'deleteAnswerBankEntry'
+  | 'listDevices'
+  | 'createDevicePairing'
+  | 'getDevice'
+  | 'revokeDevice'
 >;
 
 export interface CreateApiClientOptions {

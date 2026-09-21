@@ -6,12 +6,14 @@ import { useTranslation } from '../../i18n/I18nProvider';
 const SETTINGS_TABS = [
   { path: '/settings/preferences', labelKey: 'settings.preferencesTab' },
   { path: '/settings/provider', labelKey: 'settings.providerTab' },
+  { path: '/settings/devices', labelKey: 'settings.devicesTab' },
 ] as const;
 
 /**
- * Settings shell. M1 delivers preferences and the model provider; the rest of
- * the settings screen from 08_UX_AND_CUSTOMIZATION.md (schedules, devices,
- * export and deletion) is listed as missing rather than shown as controls.
+ * Settings shell. M1 delivers preferences and the model provider and M4 adds
+ * paired devices; the rest of the settings screen from
+ * 08_UX_AND_CUSTOMIZATION.md (schedules, export and deletion) is listed as
+ * missing rather than shown as controls.
  */
 export function SettingsLayout() {
   const { t } = useTranslation();

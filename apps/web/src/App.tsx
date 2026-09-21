@@ -13,6 +13,9 @@ import { PLACEHOLDER_SCREENS } from './navigation';
 import { DashboardPage } from './routes/DashboardPage';
 import { DiagnosticsPage } from './routes/DiagnosticsPage';
 import { CvStudioPage } from './routes/CvStudioPage';
+import { ApplicationsPage } from './routes/ApplicationsPage';
+import { ApplicationReviewPage } from './routes/ApplicationReviewPage';
+import { TrackerPage } from './routes/TrackerPage';
 import { DiscoverPage } from './routes/DiscoverPage';
 import { ImportPage } from './routes/ImportPage';
 import { JobDetailPage } from './routes/JobDetailPage';
@@ -24,6 +27,7 @@ import { SetupPage } from './routes/SetupPage';
 import { TasksPage } from './routes/TasksPage';
 import { PreferencesPage } from './routes/settings/PreferencesPage';
 import { ProviderPage } from './routes/settings/ProviderPage';
+import { DevicesPage } from './routes/settings/DevicesPage';
 import { SettingsLayout } from './routes/settings/SettingsLayout';
 
 export function createQueryClient(): QueryClient {
@@ -83,10 +87,14 @@ export function AppRoutes() {
           <Route path="/jobs" element={<JobsPage />} />
           <Route path="/jobs/:id" element={<JobDetailPage />} />
           <Route path="/cv-studio" element={<CvStudioPage />} />
+          <Route path="/applications" element={<ApplicationsPage />} />
+          <Route path="/applications/:id" element={<ApplicationReviewPage />} />
+          <Route path="/tracker" element={<TrackerPage />} />
           <Route path="/settings" element={<SettingsLayout />}>
             <Route index element={<Navigate to="/settings/preferences" replace />} />
             <Route path="preferences" element={<PreferencesPage />} />
             <Route path="provider" element={<ProviderPage />} />
+            <Route path="devices" element={<DevicesPage />} />
           </Route>
           {PLACEHOLDER_SCREENS.map((screen) => (
             <Route

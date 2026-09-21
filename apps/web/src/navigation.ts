@@ -27,22 +27,13 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { path: '/jobs', labelKey: 'nav.jobs', available: true },
   // M3: tailored generation and original-file mode.
   { path: '/cv-studio', labelKey: 'nav.cvStudio', available: true },
-  {
-    path: '/applications',
-    labelKey: 'nav.applications',
-    available: false,
-    milestone: 'M4',
-    missingKey: 'notImplemented.applications.missing',
-  },
-  {
-    path: '/tracker',
-    labelKey: 'nav.tracker',
-    available: false,
-    milestone: 'M4',
-    missingKey: 'notImplemented.tracker.missing',
-  },
-  // M1 delivers preferences and the provider; the settings layout lists what
-  // the later milestones still owe (devices, schedules, export and deletion).
+  // M4: application packets, content-bound approval, the paired runner and the
+  // tracker. Filling stops before submit, permanently.
+  { path: '/applications', labelKey: 'nav.applications', available: true },
+  { path: '/tracker', labelKey: 'nav.tracker', available: true },
+  // M1 delivers preferences and the provider, M4 adds devices; the settings
+  // layout lists what the later milestones still owe (schedules, export and
+  // deletion).
   { path: '/settings', labelKey: 'nav.settings', available: true },
 ];
 

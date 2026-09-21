@@ -22,7 +22,12 @@ import {
   CreateProfileImportRequest,
   ProfileImportView,
 } from './tasks/parse-profile.js';
-import { ApproveResumeRequest, CreateResumeRequest, ResumeView } from './schemas/resumes.js';
+import {
+  ApproveResumeRequest,
+  CreateResumeRequest,
+  ResumeView,
+  ResumesListQuery,
+} from './schemas/resumes.js';
 import { AnswerBankEntry, AnswerBankListQuery, AnswerBankPutRequest } from './schemas/answers.js';
 import {
   ApplicationEventView,
@@ -527,6 +532,19 @@ export const ROUTES: readonly RouteDefinition[] = [
     successStatus: 202,
     requiresIdempotencyKey: true,
     csrf: true,
+  },
+  {
+    operationId: 'listResumes',
+    method: 'GET',
+    path: '/resumes',
+    auth: 'session',
+    summary: 'CVs this workspace holds, newest first.',
+    query: ResumesListQuery,
+    response: Type.Object(
+      { items: Type.Array(ResumeView), next_cursor: Type.Union([Type.String(), Type.Null()]) },
+      { additionalProperties: false },
+    ),
+    successStatus: 200,
   },
   {
     operationId: 'getResume',

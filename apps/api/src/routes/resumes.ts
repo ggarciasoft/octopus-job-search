@@ -35,6 +35,10 @@ import {
   toResumeView,
 } from '../resumes/service.js';
 import { requireScope, requireSession, type RouteHandler } from './context.js';
+import { decodeCursor, encodeCursor } from './tasks.js';
+
+const DEFAULT_LIMIT = 25;
+const MAX_LIMIT = 100;
 
 export const createResume: RouteHandler = async (context, request, reply) => {
   const scope = requireScope(context, request);
@@ -158,6 +162,65 @@ export const createResume: RouteHandler = async (context, request, reply) => {
   );
 
   return sendOutcome(reply, outcome);
+};
+
+/**
+ * The CVs this workspace holds, newest first.
+ *
+ * The contract's route table has no listing; this one exists because the
+ * application-review screen has to offer a choice between documents, and a
+ * chooser cannot offer what it cannot enumerate. It returns the same
+ * `ResumeView` the single-item route does, so there is one shape to reason
+ * about rather than a thinner summary that drifts from it.
+ */
+export const listResumes: RouteHandler = async (context, request, reply) => {
+  const scope = requireScope(context, request);
+  const query = request.query as {
+    job_id?: string;
+    status?: 'queued' | 'ready' | 'failed';
+    cursor?: string;
+    limit?: number;
+  };
+  const limit = Math.min(Math.max(query.limit ?? DEFAULT_LIMIT, 1), MAX_LIMIT);
+
+  let builder = scope
+    .selectFrom('resumes')
+    .selectAll()
+    .orderBy('created_at', 'desc')
+    .orderBy('id', 'desc')
+    .limit(limit + 1);
+
+  if (query.status !== undefined) builder = builder.where('status', '=', query.status);
+  if (query.job_id !== undefined) {
+    // An original-mode CV has no job and is sendable anywhere, so filtering by
+    // job must not hide the user's own uploaded file.
+    builder = builder.where((eb) =>
+      eb.or([eb('job_id', '=', query.job_id as string), eb('job_id', 'is', null)]),
+    );
+  }
+  if (query.cursor) {
+    const cursor = decodeCursor(query.cursor);
+    if (cursor) {
+      builder = builder.where((eb) =>
+        eb.or([
+          eb('created_at', '<', new Date(cursor.createdAt)),
+          eb.and([eb('created_at', '=', new Date(cursor.createdAt)), eb('id', '<', cursor.id)]),
+        ]),
+      );
+    }
+  }
+
+  const rows = await builder.execute();
+  const page = rows.slice(0, limit);
+  const last = page.at(-1);
+  const nextCursor =
+    rows.length > limit && last
+      ? encodeCursor({ createdAt: (last.created_at as Date).toISOString(), id: last.id })
+      : null;
+
+  return reply
+    .status(200)
+    .send({ items: page.map((row) => toResumeView(row as never)), next_cursor: nextCursor });
 };
 
 export const getResume: RouteHandler = async (context, request, reply) => {
