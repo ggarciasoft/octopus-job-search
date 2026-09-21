@@ -2044,3 +2044,69 @@ class FillApplicationRequest(BaseModel):
     expected_revision: Annotated[int, Field(ge=1)]
     packet_id: UuidString
     device_id: UuidString
+
+
+class ExportedFile(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    path: Annotated[str, Field(max_length=500)]
+    file_id: UuidString
+    original_name: Annotated[str, Field(max_length=260)]
+    mime: Annotated[str, Field(max_length=200)]
+    bytes: Annotated[int, Field(ge=0)]
+    sha256: Annotated[str, Field(max_length=64)]
+    purpose: Annotated[str, Field(max_length=40)]
+
+
+class ExportCounts(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    profile_facts: Annotated[int, Field(ge=0)]
+    jobs: Annotated[int, Field(ge=0)]
+    matches: Annotated[int, Field(ge=0)]
+    resumes: Annotated[int, Field(ge=0)]
+    applications: Annotated[int, Field(ge=0)]
+    application_packets: Annotated[int, Field(ge=0)]
+    application_events: Annotated[int, Field(ge=0)]
+    answer_bank: Annotated[int, Field(ge=0)]
+    files: Annotated[int, Field(ge=0)]
+
+
+class WorkspaceExportManifestWorkspace(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: UuidString
+    mode: Literal["local", "hosted"]
+    locale: Annotated[str, Field(max_length=8)]
+
+
+class WorkspaceExportManifest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: Literal[1]
+    exported_at: TimestampString
+    workspace: WorkspaceExportManifestWorkspace
+    counts: ExportCounts
+    files: Annotated[list[ExportedFile], Field(max_length=10000)]
+    excluded: Annotated[
+        list[
+            Literal[
+                "provider_secrets",
+                "sessions",
+                "device_tokens",
+                "browser_profile",
+                "operator_infrastructure",
+                "staging_files"
+            ]
+        ],
+        Field(max_length=20)
+    ]
+
+
+class ExportWorkspaceResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    file_id: UuidString
+    bytes: Annotated[int, Field(ge=0)]
+    sha256: Annotated[str, Field(max_length=64)]
+    manifest: WorkspaceExportManifest

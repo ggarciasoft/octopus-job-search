@@ -21,6 +21,7 @@ import type {
   ApplicationEventType,
   ApplicationStatus,
   ConnectorId,
+  DeletedObjectKind,
   DeviceKind,
   JobEmploymentType,
   JobStatus,
@@ -525,6 +526,22 @@ export interface ApplicationEventsTable {
   occurred_at: TimestampColumn;
 }
 
+/**
+ * Operator-global on purpose: no workspace scope, no foreign key, and it does
+ * not cascade. The row recording "workspace X was deleted" is worthless if
+ * deleting workspace X deletes it (03_DATA_MODEL.md, "Privacy lifecycle").
+ */
+export interface DeletionLedgerTable {
+  id: Generated<string>;
+  /** An identifier, not a reference. There is deliberately no FK. */
+  workspace_id: string;
+  object_kind: DeletedObjectKind;
+  object_id: string | null;
+  deleted_at: TimestampColumn;
+  reason: string | null;
+  created_at: TimestampColumn;
+}
+
 export interface SchemaMigrationsTable {
   name: string;
   checksum: string;
@@ -559,6 +576,7 @@ export interface Database {
   application_packets: ApplicationPacketsTable;
   application_events: ApplicationEventsTable;
   paired_devices: PairedDevicesTable;
+  deletion_ledger: DeletionLedgerTable;
   job_sources: JobSourcesTable;
   job_imports: JobImportsTable;
   schema_migrations: SchemaMigrationsTable;
@@ -622,6 +640,10 @@ export const OPERATOR_GLOBAL_TABLES = [
   'system_flags',
   'worker_registrations',
   'schema_migrations',
+  // Holds identifiers of deleted rows so a restore cannot resurrect them. It
+  // must outlive the workspace it names, so it is neither exported nor
+  // cascaded (03_DATA_MODEL.md, "Privacy lifecycle").
+  'deletion_ledger',
 ] as const;
 
 export type OperatorGlobalTable = (typeof OPERATOR_GLOBAL_TABLES)[number];
@@ -647,3 +669,4 @@ export type ApplicationRow = Selectable<ApplicationsTable>;
 export type ApplicationPacketRow = Selectable<ApplicationPacketsTable>;
 export type ApplicationEventRow = Selectable<ApplicationEventsTable>;
 export type PairedDeviceRow = Selectable<PairedDevicesTable>;
+export type DeletionLedgerRow = Selectable<DeletionLedgerTable>;

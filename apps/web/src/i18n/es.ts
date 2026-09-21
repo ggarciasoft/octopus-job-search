@@ -1656,4 +1656,31 @@ export const es: Record<MessageKey, string> = {
   'outcome.cancelled': 'Cancelar esta postulación',
 
   'settings.devicesTab': 'Dispositivos',
+
+  'settings.privacyTab': 'Privacidad',
+  'privacy.title': 'Tus datos',
+  'privacy.intro':
+    'Todo lo que esta instalación guarda sobre ti, en un archivo que puedes conservar. Nada se envía a ningún sitio: el archivo se crea en esta máquina y lo descargas tú.',
+  'privacy.exportHeading': 'Exportar',
+  'privacy.exportBody':
+    'Un ZIP con JSON versionado de tu perfil, preferencias, empleos, CV, respuestas e historial de postulaciones, más los propios archivos.',
+  'privacy.excludedHeading': 'Deliberadamente excluido',
+  'privacy.excluded.providerSecrets': 'La clave de API de tu proveedor de IA.',
+  'privacy.excluded.sessions': 'Las sesiones iniciadas.',
+  'privacy.excluded.deviceTokens': 'Los tokens de los dispositivos emparejados.',
+  'privacy.excluded.browserProfile':
+    'El perfil del navegador del ejecutor local y las sesiones de sitios que contenga.',
+  'privacy.excluded.operatorInfrastructure':
+    'Registros del operador: tareas en cola, auditoría, uso.',
+  'privacy.excluded.stagingFiles': 'Subidas a medio terminar.',
+  'privacy.export': 'Crear una exportación',
+  'privacy.exporting': 'Creando el archivo…',
+  'privacy.exportReadyTitle': 'Tu exportación está lista',
+  'privacy.exportReady': '{size}, con {files} archivo(s).',
+  'privacy.download': 'Descargar el archivo',
+  'privacy.exportFailedTitle': 'La exportación no terminó',
+  'privacy.exportFailedBody': 'No se escribió nada. Inténtalo de nuevo.',
+  'privacy.deleteHeading': 'Eliminar tu espacio de trabajo',
+  'privacy.deleteBody':
+    'Todavía no está construido. Cuando lo esté, eliminar revocará el acceso de inmediato y borrará los archivos, y esta página mostrará si el borrado terminó. Mientras tanto no hay ningún botón aquí, porque uno que no hiciera nada sería peor que ninguno. El archivo de estado de implementación registra exactamente en qué punto está esto.',
 };

@@ -24,6 +24,7 @@ import { readIdempotencyKey, sendOutcome, withIdempotency } from '../tasks/idemp
 import { connectorVersion, validateBaseUrl } from '../discovery/connectors.js';
 import { startScan } from '../discovery/scans.js';
 import { loadSource, lockSource, toSourceView } from '../discovery/sources.js';
+import { recordDeletion } from '../privacy/ledger.js';
 import { requireScope, requireSession, type RouteHandler } from './context.js';
 
 export const listSources: RouteHandler = async (context, request, reply) => {
@@ -166,6 +167,13 @@ export const deleteSource: RouteHandler = async (context, request, reply) => {
     // The foreign keys do the work: provenance rows keep the job and lose
     // only the source pointer (ON DELETE SET NULL); scans go with the source.
     await scoped.deleteFrom('sources').where('id', '=', row.id).execute();
+    // Recorded so a restore of an older backup cannot bring the board back
+    // (03_DATA_MODEL.md, "Privacy lifecycle").
+    await recordDeletion(trx, {
+      workspaceId: scope.workspaceId,
+      kind: 'source',
+      objectId: row.id,
+    });
 
     await recordAuditEvent(scoped, {
       action: 'source.deleted',

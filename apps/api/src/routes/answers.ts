@@ -21,6 +21,7 @@ import { notFound } from '../errors.js';
 import { recordAuditEvent } from '../auth/scope.js';
 import type { AnswerBankRow } from '../db/types.js';
 import { normalizeAnswerScope, toAnswerBankEntry } from '../applications/answers.js';
+import { recordDeletion } from '../privacy/ledger.js';
 import { requireScope, requireSession, type RouteHandler } from './context.js';
 import { decodeCursor, encodeCursor } from './tasks.js';
 
@@ -145,6 +146,13 @@ export const deleteAnswerBankEntry: RouteHandler = async (context, request, repl
   await context.db.transaction().execute(async (trx) => {
     const scoped = scope.withExecutor(trx);
     await scoped.deleteFrom('answer_bank').where('id', '=', id).execute();
+    // Recorded so a restore of an older backup cannot bring the answer back
+    // (03_DATA_MODEL.md, "Privacy lifecycle").
+    await recordDeletion(trx, {
+      workspaceId: scope.workspaceId,
+      kind: 'answer_bank',
+      objectId: id,
+    });
     await recordAuditEvent(scoped, {
       action: 'answer_bank.deleted',
       actorId: principal.userId,

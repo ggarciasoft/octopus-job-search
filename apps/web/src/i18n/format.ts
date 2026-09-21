@@ -27,3 +27,21 @@ export function elapsedSeconds(fromIso: string, toMs: number): number {
   if (Number.isNaN(from)) return 0;
   return Math.max(0, Math.floor((toMs - from) / 1000));
 }
+
+/**
+ * A byte count a person can read. Binary units, because that is what a file
+ * manager shows, and one decimal place because two is noise at this scale.
+ */
+export function formatBytes(locale: Locale, bytes: number): string {
+  const units = ['B', 'KiB', 'MiB', 'GiB'];
+  let value = bytes;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  const rendered = new Intl.NumberFormat(locale, {
+    maximumFractionDigits: unit === 0 ? 0 : 1,
+  }).format(value);
+  return `${rendered} ${units[unit]}`;
+}

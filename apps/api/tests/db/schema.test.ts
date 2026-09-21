@@ -153,6 +153,11 @@ async function seedWorkspace(): Promise<string> {
 }
 
 describe('structural invariants (03_DATA_MODEL.md)', () => {
+  // `worker_registrations` and `deletion_ledger` both carry a `workspace_id`
+  // and are both operator-global rather than workspace-scoped, so neither is a
+  // reference target. The ledger's exemption is the load-bearing one: it
+  // records that a workspace was deleted, so it must outlive the workspace,
+  // which rules out the composite foreign key the invariant exists to support.
   it('gives every workspace-scoped table a UNIQUE (workspace_id, id) target', async () => {
     const rows = await pool.query<{ table_name: string }>(`
       SELECT c.relname AS table_name
@@ -164,7 +169,7 @@ describe('structural invariants (03_DATA_MODEL.md)', () => {
           SELECT 1 FROM information_schema.columns col
           WHERE col.table_name = c.relname AND col.column_name = 'workspace_id'
         )
-        AND c.relname <> 'worker_registrations'
+        AND c.relname NOT IN ('worker_registrations', 'deletion_ledger')
     `);
     expect(rows.rows.length).toBeGreaterThan(8);
 
@@ -379,5 +384,65 @@ describe('structural invariants (03_DATA_MODEL.md)', () => {
     const columns = rows.rows.map((row) => row.column_name);
     expect(columns).toContain('occurred_at');
     expect(columns).not.toContain('updated_at');
+  });
+});
+
+describe('the deletion ledger outlives what it records (03_DATA_MODEL.md)', () => {
+  it('survives the workspace it names being deleted', async () => {
+    const workspace = await seedWorkspace();
+    await pool.query(
+      `INSERT INTO deletion_ledger (workspace_id, object_kind, object_id, reason)
+       VALUES ($1, 'answer_bank', gen_random_uuid(), 'user_request')`,
+      [workspace],
+    );
+
+    await pool.query('DELETE FROM memberships WHERE workspace_id = $1', [workspace]);
+    await pool.query('DELETE FROM workspaces WHERE id = $1', [workspace]);
+
+    // Everything else cascaded. This did not, which is the whole point: the
+    // row recording a deletion is worthless if the deletion removes it, and a
+    // restore would then have nothing to replay.
+    const rows = await pool.query('SELECT 1 FROM deletion_ledger WHERE workspace_id = $1', [
+      workspace,
+    ]);
+    expect(rows.rowCount).toBe(1);
+  });
+
+  it('refuses a workspace entry that names a single row, and the reverse', async () => {
+    const workspace = await seedWorkspace();
+    await expect(
+      pool.query(
+        `INSERT INTO deletion_ledger (workspace_id, object_kind, object_id)
+         VALUES ($1, 'workspace', gen_random_uuid())`,
+        [workspace],
+      ),
+    ).rejects.toMatchObject({ code: '23514' });
+    await expect(
+      pool.query(
+        `INSERT INTO deletion_ledger (workspace_id, object_kind, object_id)
+         VALUES ($1, 'answer_bank', NULL)`,
+        [workspace],
+      ),
+    ).rejects.toMatchObject({ code: '23514' });
+  });
+
+  it('refuses free text in the reason, which is where detail would leak', async () => {
+    const workspace = await seedWorkspace();
+    await expect(
+      pool.query(
+        `INSERT INTO deletion_ledger (workspace_id, object_kind, object_id, reason)
+         VALUES ($1, 'answer_bank', gen_random_uuid(), 'deleted the answer about salary')`,
+        [workspace],
+      ),
+    ).rejects.toMatchObject({ code: '23514' });
+  });
+
+  it('is classified as operator-global on both sides', async () => {
+    const comment = await pool.query<{ comment: string | null }>(
+      `SELECT obj_description('public.deletion_ledger'::regclass, 'pg_class') AS comment`,
+    );
+    expect(comment.rows[0]?.comment ?? '').toContain('operator-global');
+    expect(OPERATOR_GLOBAL_TABLES as readonly string[]).toContain('deletion_ledger');
+    expect(WORKSPACE_SCOPED_TABLES as readonly string[]).not.toContain('deletion_ledger');
   });
 });

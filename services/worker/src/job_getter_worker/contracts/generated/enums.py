@@ -280,3 +280,22 @@ class FillOutcome(StrEnum):
     AWAITING_USER_SUBMIT = "awaiting_user_submit"
     NEEDS_INPUT = "needs_input"
     UNSUPPORTED = "unsupported"
+
+
+class ExportExclusion(StrEnum):
+    PROVIDER_SECRETS = "provider_secrets"
+    SESSIONS = "sessions"
+    DEVICE_TOKENS = "device_tokens"
+    BROWSER_PROFILE = "browser_profile"
+    OPERATOR_INFRASTRUCTURE = "operator_infrastructure"
+    STAGING_FILES = "staging_files"
+
+
+class DeletedObjectKind(StrEnum):
+    WORKSPACE = "workspace"
+    FILE = "file"
+    ANSWER_BANK = "answer_bank"
+    SOURCE = "source"
+    APPLICATION = "application"
+    RESUME = "resume"
+    PROFILE_FACT = "profile_fact"

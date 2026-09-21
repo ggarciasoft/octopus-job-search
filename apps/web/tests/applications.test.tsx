@@ -4,6 +4,8 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   APPLICATION_ID,
   createFakeApi,
+  makeTask,
+  TASK_ID,
   makeApplication,
   makeApplicationEvent,
   makeDevice,
@@ -332,5 +334,84 @@ describe('device pairing', () => {
     expect(row.dataset.status).toBe('revoked');
     expect(within(row).getByText('Revoked')).toBeTruthy();
     expect(within(row).queryByRole('button', { name: 'Revoke' })).toBeNull();
+  });
+});
+
+describe('the privacy tab', () => {
+  it('says what the export leaves out before offering the button', async () => {
+    renderApp({ route: '/settings/privacy' });
+
+    const exclusions = await screen.findByTestId('export-exclusions');
+    expect(exclusions.textContent).toContain('AI provider API key');
+    expect(exclusions.textContent).toContain('Paired device tokens');
+    // The order matters: a user reads this before they press anything.
+    expect(
+      exclusions.compareDocumentPosition(screen.getByRole('button', { name: 'Create an export' })) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it('shows the size, the file count and the checksum once it is built', async () => {
+    const client = createFakeApi({
+      getTask: async () =>
+        makeTask({
+          id: TASK_ID,
+          type: 'export_workspace',
+          state: 'succeeded',
+          result: {
+            file_id: '33333333-3333-4333-8333-333333333333',
+            bytes: 2048,
+            sha256: 'd'.repeat(64),
+            manifest: {
+              schema_version: 1,
+              exported_at: '2026-09-21T12:00:00.000Z',
+              workspace: {
+                id: '11111111-1111-4111-8111-111111111111',
+                mode: 'local',
+                locale: 'en',
+              },
+              counts: {
+                profile_facts: 0,
+                jobs: 0,
+                matches: 0,
+                resumes: 0,
+                applications: 0,
+                application_packets: 0,
+                application_events: 0,
+                answer_bank: 0,
+                files: 1,
+              },
+              files: [
+                {
+                  path: 'files/x-cv.pdf',
+                  file_id: '44444444-4444-4444-8444-444444444444',
+                  original_name: 'cv.pdf',
+                  mime: 'application/pdf',
+                  bytes: 10,
+                  sha256: 'e'.repeat(64),
+                  purpose: 'cv_original',
+                },
+              ],
+              excluded: ['provider_secrets', 'sessions'],
+            },
+          },
+        }),
+    });
+    renderApp({ client, route: '/settings/privacy' });
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Create an export' }));
+
+    expect((await screen.findByTestId('export-summary')).textContent).toContain('2 KiB');
+    expect(screen.getByTestId('export-sha256').textContent).toBe('d'.repeat(64));
+    expect(screen.getByTestId('export-download').getAttribute('href')).toBe(
+      '/api/v1/files/33333333-3333-4333-8333-333333333333/download',
+    );
+  });
+
+  it('offers no delete button, because deletion is not built', async () => {
+    renderApp({ route: '/settings/privacy' });
+
+    expect(await screen.findByTestId('delete-not-built')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /delete/i })).toBeNull();
   });
 });

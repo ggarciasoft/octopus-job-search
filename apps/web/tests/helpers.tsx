@@ -597,6 +597,7 @@ export function createFakeApi(overrides: Partial<JobGetterApi> = {}): JobGetterA
     })),
     getDevice: vi.fn(async () => makeDevice()),
     revokeDevice: vi.fn(async () => undefined),
+    exportWorkspace: vi.fn(async () => ({ task_id: TASK_ID, status: 'queued' as const })),
     ...overrides,
   };
 }

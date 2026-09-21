@@ -10,26 +10,29 @@
 # came from, with a different .env and a different ENCRYPTION_KEY.
 #
 # ---------------------------------------------------------------------------
-# HONEST SCOPE LIMIT - READ BEFORE RELYING ON THIS
+# THE DELETION LEDGER, AND WHAT THIS SCRIPT STILL WILL NOT CLAIM
 # ---------------------------------------------------------------------------
 # The specification requires a restore to REAPPLY THE DELETION LEDGER BEFORE
 # REOPENING ACCESS, so that data a user deleted after the backup was taken does
 # not come back to life.
 #
-# The deletion ledger is M4 work (PR14). IT DOES NOT EXIST YET.
+# The ledger exists as of M4 (migration 0007), and this script now does it:
 #
-# This script therefore CANNOT perform a spec-complete restore, and it does not
-# pretend to. It restores the database and files, then refuses to describe the
-# result as verified. It prints an explicit warning that any workspace deletion
-# performed after the backup timestamp may have been undone, and it does not
-# start the API for you - so nothing is served until you have decided that is
-# acceptable.
+#   1. It saves the TARGET's ledger before touching the database - that copy
+#      knows about deletions the backup predates.
+#   2. It restores the dump, which brings the backup's older ledger with it.
+#   3. It merges the saved rows back in, so the ledger holds every deletion
+#      either copy knew about.
+#   4. It runs scripts/reapply-deletions.sql, which re-deletes everything the
+#      merged ledger names.
+#   5. Only then does it hand back control - and it still does not start the
+#      API for you.
 #
-# The spec also requires proving that a restored application can download its
-# ORIGINAL CV byte-identically and that packet hashes and history survive
-# (AT25, AT11). Those checks need M1-M4 features and M4 data. This script
-# verifies what exists now - archive checksums, row counts, file counts - and
-# says so. It will not claim AT25 passes.
+# What it STILL does not verify: that a restored application can download its
+# ORIGINAL CV byte-identically, and that packet hashes and history survive
+# (AT11, AT25). Those need a populated installation and are a pilot exercise,
+# not something a shell script can assert. This script verifies archive
+# checksums, the ledger replay, row counts and file counts, and says so.
 # ---------------------------------------------------------------------------
 # =============================================================================
 set -eu
@@ -79,8 +82,8 @@ WHAT A SUCCESSFUL RUN DOES AND DOES NOT PROVE
             It does not prove AT25 (profile, files, hashes and application
             history restored) - that scenario needs M1-M4 features that are
             not built.
-            It does not reapply a deletion ledger, because there is no
-            deletion ledger yet.
+            It saves, merges and reapplies the deletion ledger, so data
+            deleted after the backup stays deleted.
             It does not validate the pilot recovery targets (<=24h data loss,
             restore within 4h). Those are UNVALIDATED TARGETS from
             docs/spec/10_DEPLOYMENT.md, not measured results.
@@ -207,35 +210,41 @@ if [ -n "$TARGET_ENC" ] && [ "$BK_ENC_FP" != "unknown" ] && [ -n "$BK_ENC_FP" ];
 fi
 
 # =============================================================================
-# THE DELETION LEDGER GUARD
+# THE DELETION LEDGER
 #
-# This is the part the specification is strict about and the part this build
-# cannot satisfy. It is a loud, explicit refusal rather than a silent omission.
+# Saved BEFORE the restore. The target's ledger knows about deletions the
+# backup predates; the backup's ledger is about to overwrite it, so the copy
+# has to be taken now or not at all.
 # =============================================================================
+LEDGER_SQL="${WORKDIR}/deletion-ledger.sql"
+LEDGER_SAVED=0
+
+if [ "$FILES_ONLY" != "1" ]; then
+  docker compose up -d --wait db >/dev/null 2>&1 || true
+  LEDGER_PRESENT=$(docker compose exec -T db psql -U "$POSTGRES_USER_V" -d "$POSTGRES_DB_V" \
+      -tAc "SELECT to_regclass('public.deletion_ledger') IS NOT NULL" 2>/dev/null | tr -d '\r ' || printf 'f')
+  if [ "$LEDGER_PRESENT" = "t" ]; then
+    # Emitted as idempotent INSERTs rather than CSV: one file, readable by a
+    # person, and replayable into a database whose ledger already holds some
+    # of these rows.
+    docker compose exec -T db psql -U "$POSTGRES_USER_V" -d "$POSTGRES_DB_V" -tAc \
+      "SELECT format('INSERT INTO deletion_ledger (id, workspace_id, object_kind, object_id, deleted_at, reason, created_at) VALUES (%L,%L,%L,%L,%L,%L,%L) ON CONFLICT (id) DO NOTHING;', id, workspace_id, object_kind, object_id, deleted_at, reason, created_at) FROM deletion_ledger" \
+      > "$LEDGER_SQL" 2>/dev/null || : > "$LEDGER_SQL"
+    LEDGER_ROWS=$(grep -c 'INSERT INTO' "$LEDGER_SQL" 2>/dev/null || printf '0')
+    LEDGER_SAVED=1
+    ok "saved ${LEDGER_ROWS} deletion-ledger row(s) from the target"
+  else
+    info "the target has no deletion_ledger table yet (pre-M4 schema); nothing to save"
+  fi
+fi
+
 log ""
-log "======================================================================="
-log " DELETION LEDGER: NOT REAPPLIED - THE FEATURE DOES NOT EXIST YET"
-log "======================================================================="
-log ""
-log " docs/spec/10_DEPLOYMENT.md requires a restore to reapply the deletion"
-log " ledger BEFORE reopening access, so that data a user deleted after this"
-log " backup was taken is not resurrected by restoring it."
-log ""
-log " The deletion ledger is part of PR14 / milestone M4 and is NOT"
-log " IMPLEMENTED. There is nothing for this script to reapply."
-log ""
-log " CONSEQUENCE: if any workspace or record was deleted AFTER"
-log " ${BK_CREATED:-the backup timestamp}, this restore may bring it back."
-log ""
-log " Until M4 lands, this script will NOT describe its result as a verified"
-log " restore, and it will NOT start the API for you. Decide deliberately"
-log " whether resurrected data is acceptable for this installation before you"
-log " run 'docker compose up -d'."
-log ""
-log "======================================================================="
+log " After the restore this script merges that saved ledger back in and runs"
+log " scripts/reapply-deletions.sql, so anything either copy recorded as"
+log " deleted stays deleted. It will NOT start the API for you."
 log ""
 
-confirm "Continue with the restore, understanding the deletion-ledger gap?"
+confirm "Continue with the restore?"
 
 # --- Database -----------------------------------------------------------------
 if [ "$FILES_ONLY" != "1" ]; then
@@ -290,6 +299,41 @@ if [ "$FILES_ONLY" != "1" ]; then
   TABLE_COUNT=$(docker compose exec -T db psql -U "$POSTGRES_USER_V" -d "$POSTGRES_DB_V" \
                   -tAc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public'" 2>/dev/null | tr -d '\r ' || printf '?')
   ok "public schema now has ${TABLE_COUNT} tables"
+
+  # --- Reapply the deletion ledger ------------------------------------------
+  # docs/spec/03_DATA_MODEL.md: "Restore must reapply a deletion ledger before
+  # exposing data." This is that step, and it runs before the script returns.
+  LEDGER_AFTER=$(docker compose exec -T db psql -U "$POSTGRES_USER_V" -d "$POSTGRES_DB_V" \
+      -tAc "SELECT to_regclass('public.deletion_ledger') IS NOT NULL" 2>/dev/null | tr -d '\r ' || printf 'f')
+
+  if [ "$LEDGER_AFTER" != "t" ]; then
+    # The dump predates migration 0007. Migrating is scripts/migrate.sh's job,
+    # not this script's, so the ledger is kept and the exact commands printed.
+    LEDGER_KEEP="${SRC}/deletion-ledger.sql"
+    if [ "$LEDGER_SAVED" = "1" ]; then cp "$LEDGER_SQL" "$LEDGER_KEEP" 2>/dev/null || true; fi
+    LEDGER_REAPPLIED="NO - the restored schema has no deletion_ledger"
+    warn "The restored dump predates the deletion ledger (migration 0007)."
+    warn "The ledger was NOT reapplied. Before serving anything, run:"
+    warn "    sh scripts/migrate.sh"
+    if [ "$LEDGER_SAVED" = "1" ]; then
+      warn "    docker compose exec -T db psql -U ${POSTGRES_USER_V} -d ${POSTGRES_DB_V} < ${LEDGER_KEEP}"
+    fi
+    warn "    docker compose exec -T db psql -U ${POSTGRES_USER_V} -d ${POSTGRES_DB_V} -v ON_ERROR_STOP=1 < scripts/reapply-deletions.sql"
+  else
+    if [ "$LEDGER_SAVED" = "1" ] && [ -s "$LEDGER_SQL" ]; then
+      docker compose exec -T db psql -U "$POSTGRES_USER_V" -d "$POSTGRES_DB_V" \
+          -v ON_ERROR_STOP=1 -q < "$LEDGER_SQL" >/dev/null \
+        || die "merging the saved deletion ledger failed. Do NOT start the API: deleted data may be present."
+      ok "merged the target's deletion-ledger rows back in"
+    fi
+    docker compose exec -T db psql -U "$POSTGRES_USER_V" -d "$POSTGRES_DB_V" \
+        -v ON_ERROR_STOP=1 -q < scripts/reapply-deletions.sql >/dev/null \
+      || die "reapplying the deletion ledger failed. Do NOT start the API: deleted data may be present."
+    LEDGER_TOTAL=$(docker compose exec -T db psql -U "$POSTGRES_USER_V" -d "$POSTGRES_DB_V" \
+        -tAc "SELECT count(*) FROM deletion_ledger" 2>/dev/null | tr -d '\r ' || printf '?')
+    LEDGER_REAPPLIED="yes - ${LEDGER_TOTAL} ledger entries replayed"
+    ok "deletion ledger reapplied (${LEDGER_TOTAL} entries)"
+  fi
 fi
 
 # --- Files --------------------------------------------------------------------
@@ -326,10 +370,11 @@ log "   archive checksums matched"
 [ "$FILES_ONLY" != "1" ] && log "   pg_restore completed; public schema has ${TABLE_COUNT:-?} tables"
 [ "$DB_ONLY" != "1" ]    && log "   files volume holds ${RESTORED_COUNT:-?} files"
 log ""
-log " NOT verified, because the features do not exist yet:"
-log "   deletion ledger reapplied            (M4 / PR14 - not implemented)"
-log "   original CV downloads byte-identical (AT11 - needs M1/M3)"
-log "   packet hashes and history preserved  (AT25 - needs M4)"
+if [ "$FILES_ONLY" != "1" ]; then log "   deletion ledger: ${LEDGER_REAPPLIED:-not run}"; fi
+log ""
+log " NOT verified, because a shell script cannot assert them:"
+log "   original CV downloads byte-identical (AT11 - needs a populated install)"
+log "   packet hashes and history preserved  (AT25 - needs a populated install)"
 log ""
 log " Recovery targets from docs/spec/10_DEPLOYMENT.md - at most 24 hours data"
 log " loss, restore within 4 hours - are UNVALIDATED TARGETS. This run is not"

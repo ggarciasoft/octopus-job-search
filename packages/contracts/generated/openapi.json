@@ -55,6 +55,9 @@
       "name": "tasks"
     },
     {
+      "name": "workspace"
+    },
+    {
       "name": "internal"
     }
   ],
@@ -2569,6 +2572,129 @@
               "maxLength": 80,
               "type": "string"
             }
+          }
+        }
+      },
+      "ExportCounts": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "profile_facts",
+          "jobs",
+          "matches",
+          "resumes",
+          "applications",
+          "application_packets",
+          "application_events",
+          "answer_bank",
+          "files"
+        ],
+        "properties": {
+          "profile_facts": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "jobs": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "matches": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "resumes": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "applications": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "application_packets": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "application_events": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "answer_bank": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "files": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        }
+      },
+      "ExportWorkspaceResult": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "file_id",
+          "bytes",
+          "sha256",
+          "manifest"
+        ],
+        "properties": {
+          "file_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "bytes": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "sha256": {
+            "maxLength": 64,
+            "type": "string"
+          },
+          "manifest": {
+            "$ref": "#/components/schemas/WorkspaceExportManifest"
+          }
+        }
+      },
+      "ExportedFile": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "path",
+          "file_id",
+          "original_name",
+          "mime",
+          "bytes",
+          "sha256",
+          "purpose"
+        ],
+        "properties": {
+          "path": {
+            "maxLength": 500,
+            "type": "string"
+          },
+          "file_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "original_name": {
+            "maxLength": 260,
+            "type": "string"
+          },
+          "mime": {
+            "maxLength": 200,
+            "type": "string"
+          },
+          "bytes": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "sha256": {
+            "maxLength": 64,
+            "type": "string"
+          },
+          "purpose": {
+            "maxLength": 40,
+            "type": "string"
           }
         }
       },
@@ -9681,6 +9807,101 @@
                 "type": "null"
               }
             ]
+          }
+        }
+      },
+      "WorkspaceExportManifest": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "schema_version",
+          "exported_at",
+          "workspace",
+          "counts",
+          "files",
+          "excluded"
+        ],
+        "properties": {
+          "schema_version": {
+            "const": 1,
+            "type": "number"
+          },
+          "exported_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "workspace": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "id",
+              "mode",
+              "locale"
+            ],
+            "properties": {
+              "id": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "mode": {
+                "anyOf": [
+                  {
+                    "const": "local",
+                    "type": "string"
+                  },
+                  {
+                    "const": "hosted",
+                    "type": "string"
+                  }
+                ]
+              },
+              "locale": {
+                "maxLength": 8,
+                "type": "string"
+              }
+            }
+          },
+          "counts": {
+            "$ref": "#/components/schemas/ExportCounts"
+          },
+          "files": {
+            "maxItems": 10000,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExportedFile"
+            }
+          },
+          "excluded": {
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "const": "provider_secrets",
+                  "type": "string"
+                },
+                {
+                  "const": "sessions",
+                  "type": "string"
+                },
+                {
+                  "const": "device_tokens",
+                  "type": "string"
+                },
+                {
+                  "const": "browser_profile",
+                  "type": "string"
+                },
+                {
+                  "const": "operator_infrastructure",
+                  "type": "string"
+                },
+                {
+                  "const": "staging_files",
+                  "type": "string"
+                }
+              ]
+            }
           }
         }
       }
@@ -16922,6 +17143,148 @@
             }
           }
         ]
+      }
+    },
+    "/api/v1/workspace/export": {
+      "post": {
+        "operationId": "exportWorkspace",
+        "summary": "Package this workspace as a downloadable archive.",
+        "tags": [
+          "workspace"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Package this workspace as a downloadable archive.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body, query or header.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated: no valid session, device token or worker credential.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted for this workspace resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or not accessible from the authenticated workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale revision, duplicate command or idempotency key reuse with a different body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload exceeds the configured upload limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Structurally valid but invalid domain input.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota or rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "Mandatory for this command. Replaying the same key returns the stored response for 24 hours; reusing it with a different body returns 409.",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "description": "Anti-CSRF token for cookie-authenticated mutations; origin is verified too.",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 200
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/answer-bank/{id}": {

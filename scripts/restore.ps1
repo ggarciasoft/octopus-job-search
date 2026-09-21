@@ -10,25 +10,21 @@
     assumption here - restoring onto a machine that is not the one the backup
     came from, with a different .env and a different ENCRYPTION_KEY.
 
-    HONEST SCOPE LIMIT - READ BEFORE RELYING ON THIS
+    THE DELETION LEDGER, AND WHAT THIS SCRIPT STILL WILL NOT CLAIM
     The specification requires a restore to REAPPLY THE DELETION LEDGER BEFORE
     REOPENING ACCESS, so that data a user deleted after the backup was taken
     does not come back to life.
 
-    The deletion ledger is M4 work (PR14). IT DOES NOT EXIST YET.
+    The ledger exists as of M4 (migration 0007), and this script now does it:
+    it saves the target's ledger before touching the database, restores the
+    dump, merges the saved rows back in, and runs
+    scripts/reapply-deletions.sql so anything either copy recorded as deleted
+    stays deleted. It still does not start the API for you.
 
-    This script therefore CANNOT perform a spec-complete restore and does not
-    pretend to. It restores the database and files, refuses to describe the
-    result as verified, prints an explicit warning that any workspace deletion
-    performed after the backup timestamp may have been undone, and does not
-    start the API for you - so nothing is served until you decide that is
-    acceptable.
-
-    The spec also requires proving a restored application can download its
-    ORIGINAL CV byte-identically and that packet hashes and history survive
-    (AT25, AT11). Those checks need M1-M4 features and M4 data. This script
-    verifies what exists now - archive checksums, table counts, file counts -
-    and says so. It will not claim AT25 passes.
+    What it STILL does not verify: that a restored application can download
+    its ORIGINAL CV byte-identically, and that packet hashes and history
+    survive (AT11, AT25). Those need a populated installation and are a pilot
+    exercise, not something a script can assert.
 
 .PARAMETER From
     Backup to restore. Accepts .tar.gz.age, .tar.gz.gpg, .tar.gz, or an
@@ -61,9 +57,10 @@
     WHAT A SUCCESSFUL RUN DOES AND DOES NOT PROVE
       DOES      Checksums matched; pg_restore reported success; the file
                 archive unpacked with the expected file count.
-      DOES NOT  AT25 (profile, files, hashes and history restored) - needs
-                M1-M4 features that are not built.
-                Reapply a deletion ledger - there is no deletion ledger yet.
+      DOES      Save, merge and reapply the deletion ledger, so data deleted
+                after the backup stays deleted.
+      DOES NOT  AT25 (profile, files, hashes and history restored) - that
+                needs a populated installation, not a script.
                 Validate the pilot recovery targets (<=24h data loss, restore
                 within 4h). Those are UNVALIDATED TARGETS from
                 docs/spec/10_DEPLOYMENT.md, not measured results.
@@ -222,35 +219,39 @@ if ($targetEnc -and $bkEncFp -ne 'unknown') {
 }
 
 # =============================================================================
-# THE DELETION LEDGER GUARD
+# THE DELETION LEDGER
 #
-# This is the part the specification is strict about and the part this build
-# cannot satisfy. A loud, explicit refusal rather than a silent omission.
+# Saved BEFORE the restore. The target's ledger knows about deletions the
+# backup predates; the backup's ledger is about to overwrite it, so the copy
+# has to be taken now or not at all.
 # =============================================================================
+$ledgerSql      = Join-Path $workDir 'deletion-ledger.sql'
+$ledgerSaved    = $false
+$ledgerReapplied = 'not run'
+
+if (-not $FilesOnly) {
+    & docker compose up -d --wait db 2>$null | Out-Null
+    $ledgerPresent = ((& docker compose exec -T db psql -U $pgUser -d $pgDb -tAc "SELECT to_regclass('public.deletion_ledger') IS NOT NULL" 2>$null) -join '').Trim()
+    if ($ledgerPresent -eq 't') {
+        # Emitted as idempotent INSERTs rather than CSV: one file, readable by
+        # a person, replayable into a ledger that already holds some of them.
+        $rows = & docker compose exec -T db psql -U $pgUser -d $pgDb -tAc "SELECT format('INSERT INTO deletion_ledger (id, workspace_id, object_kind, object_id, deleted_at, reason, created_at) VALUES (%L,%L,%L,%L,%L,%L,%L) ON CONFLICT (id) DO NOTHING;', id, workspace_id, object_kind, object_id, deleted_at, reason, created_at) FROM deletion_ledger" 2>$null
+        Set-Content -LiteralPath $ledgerSql -Value ($rows -join "`n") -Encoding utf8
+        $ledgerSaved = $true
+        Write-JGOk "saved $(@($rows | Where-Object { $_ -match 'INSERT INTO' }).Count) deletion-ledger row(s) from the target"
+    }
+    else {
+        Write-JGInfo 'the target has no deletion_ledger table yet (pre-M4 schema); nothing to save'
+    }
+}
+
 Write-Host ''
-Write-Host '======================================================================='
-Write-Host ' DELETION LEDGER: NOT REAPPLIED - THE FEATURE DOES NOT EXIST YET'
-Write-Host '======================================================================='
-Write-Host ''
-Write-Host ' docs/spec/10_DEPLOYMENT.md requires a restore to reapply the deletion'
-Write-Host ' ledger BEFORE reopening access, so that data a user deleted after this'
-Write-Host ' backup was taken is not resurrected by restoring it.'
-Write-Host ''
-Write-Host ' The deletion ledger is part of PR14 / milestone M4 and is NOT'
-Write-Host ' IMPLEMENTED. There is nothing for this script to reapply.'
-Write-Host ''
-Write-Host " CONSEQUENCE: if any workspace or record was deleted AFTER $bkCreated,"
-Write-Host ' this restore may bring it back.'
-Write-Host ''
-Write-Host ' Until M4 lands, this script will NOT describe its result as a verified'
-Write-Host ' restore, and it will NOT start the API for you. Decide deliberately'
-Write-Host ' whether resurrected data is acceptable for this installation before you'
-Write-Host " run 'docker compose up -d'."
-Write-Host ''
-Write-Host '======================================================================='
+Write-Host ' After the restore this script merges that saved ledger back in and runs'
+Write-Host ' scripts/reapply-deletions.sql, so anything either copy recorded as'
+Write-Host ' deleted stays deleted. It will NOT start the API for you.'
 Write-Host ''
 
-Confirm-JGAction -Prompt 'Continue with the restore, understanding the deletion-ledger gap?' -AssumeYes:$Yes
+Confirm-JGAction -Prompt 'Continue with the restore?' -AssumeYes:$Yes
 
 $tableCount    = '?'
 $restoredCount = '?'
@@ -300,6 +301,36 @@ try {
         $tableCount = ((& docker compose exec -T db psql -U $pgUser -d $pgDb -tAc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public'" 2>$null) -join '').Trim()
         if (-not $tableCount) { $tableCount = '?' }
         Write-JGOk "public schema now has $tableCount tables"
+
+        # --- Reapply the deletion ledger --------------------------------------
+        # docs/spec/03_DATA_MODEL.md: "Restore must reapply a deletion ledger
+        # before exposing data." This is that step, before the script returns.
+        $ledgerAfter = ((& docker compose exec -T db psql -U $pgUser -d $pgDb -tAc "SELECT to_regclass('public.deletion_ledger') IS NOT NULL" 2>$null) -join '').Trim()
+        if ($ledgerAfter -ne 't') {
+            # The dump predates migration 0007. Migrating is migrate.ps1's job,
+            # so the ledger is kept and the exact commands printed.
+            $ledgerKeep = Join-Path $src 'deletion-ledger.sql'
+            if ($ledgerSaved) { Copy-Item -LiteralPath $ledgerSql -Destination $ledgerKeep -Force -ErrorAction SilentlyContinue }
+            $ledgerReapplied = 'NO - the restored schema has no deletion_ledger'
+            Write-JGWarn 'The restored dump predates the deletion ledger (migration 0007).'
+            Write-JGWarn 'The ledger was NOT reapplied. Before serving anything, run:'
+            Write-JGWarn '    pwsh scripts/migrate.ps1'
+            if ($ledgerSaved) { Write-JGWarn "    cmd /c `"docker compose exec -T db psql -U $pgUser -d $pgDb < `"$ledgerKeep`"`"" }
+            Write-JGWarn "    cmd /c `"docker compose exec -T db psql -U $pgUser -d $pgDb -v ON_ERROR_STOP=1 < scripts/reapply-deletions.sql`""
+        }
+        else {
+            if ($ledgerSaved -and (Get-Item -LiteralPath $ledgerSql).Length -gt 0) {
+                & cmd /c "docker compose exec -T db psql -U $pgUser -d $pgDb -v ON_ERROR_STOP=1 -q < `"$ledgerSql`"" | Out-Null
+                if ($LASTEXITCODE -ne 0) { throw 'merging the saved deletion ledger failed. Do NOT start the API: deleted data may be present.' }
+                Write-JGOk "merged the target's deletion-ledger rows back in"
+            }
+            & cmd /c "docker compose exec -T db psql -U $pgUser -d $pgDb -v ON_ERROR_STOP=1 -q < scripts/reapply-deletions.sql" | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw 'reapplying the deletion ledger failed. Do NOT start the API: deleted data may be present.' }
+            $ledgerTotal = ((& docker compose exec -T db psql -U $pgUser -d $pgDb -tAc 'SELECT count(*) FROM deletion_ledger' 2>$null) -join '').Trim()
+            if (-not $ledgerTotal) { $ledgerTotal = '?' }
+            $ledgerReapplied = "yes - $ledgerTotal ledger entries replayed"
+            Write-JGOk "deletion ledger reapplied ($ledgerTotal entries)"
+        }
     }
 
     # --- Files ----------------------------------------------------------------
@@ -335,10 +366,11 @@ Write-Host '   archive checksums matched'
 if (-not $FilesOnly) { Write-Host "   pg_restore completed; public schema has $tableCount tables" }
 if (-not $DbOnly)    { Write-Host "   files volume holds $restoredCount files" }
 Write-Host ''
-Write-Host ' NOT verified, because the features do not exist yet:'
-Write-Host '   deletion ledger reapplied            (M4 / PR14 - not implemented)'
-Write-Host '   original CV downloads byte-identical (AT11 - needs M1/M3)'
-Write-Host '   packet hashes and history preserved  (AT25 - needs M4)'
+if (-not $FilesOnly) { Write-Host "   deletion ledger: $ledgerReapplied" }
+Write-Host ''
+Write-Host ' NOT verified, because a script cannot assert them:'
+Write-Host '   original CV downloads byte-identical (AT11 - needs a populated install)'
+Write-Host '   packet hashes and history preserved  (AT25 - needs a populated install)'
 Write-Host ''
 Write-Host ' Recovery targets from docs/spec/10_DEPLOYMENT.md - at most 24 hours data'
 Write-Host ' loss, restore within 4 hours - are UNVALIDATED TARGETS. This run is not'

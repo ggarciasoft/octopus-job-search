@@ -65,6 +65,7 @@ export type JobGetterApi = Pick<
   | 'createDevicePairing'
   | 'getDevice'
   | 'revokeDevice'
+  | 'exportWorkspace'
 >;
 
 export interface CreateApiClientOptions {

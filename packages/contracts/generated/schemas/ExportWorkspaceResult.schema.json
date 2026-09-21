@@ -1,0 +1,212 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ExportWorkspaceResult.schema.json",
+  "title": "ExportWorkspaceResult",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "file_id",
+    "bytes",
+    "sha256",
+    "manifest"
+  ],
+  "properties": {
+    "file_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "bytes": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "sha256": {
+      "maxLength": 64,
+      "type": "string"
+    },
+    "manifest": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "schema_version",
+        "exported_at",
+        "workspace",
+        "counts",
+        "files",
+        "excluded"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": 1,
+          "type": "number"
+        },
+        "exported_at": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "workspace": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "id",
+            "mode",
+            "locale"
+          ],
+          "properties": {
+            "id": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "mode": {
+              "anyOf": [
+                {
+                  "const": "local",
+                  "type": "string"
+                },
+                {
+                  "const": "hosted",
+                  "type": "string"
+                }
+              ]
+            },
+            "locale": {
+              "maxLength": 8,
+              "type": "string"
+            }
+          }
+        },
+        "counts": {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "profile_facts",
+            "jobs",
+            "matches",
+            "resumes",
+            "applications",
+            "application_packets",
+            "application_events",
+            "answer_bank",
+            "files"
+          ],
+          "properties": {
+            "profile_facts": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "jobs": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "matches": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "resumes": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "applications": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "application_packets": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "application_events": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "answer_bank": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "files": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        },
+        "files": {
+          "maxItems": 10000,
+          "type": "array",
+          "items": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "path",
+              "file_id",
+              "original_name",
+              "mime",
+              "bytes",
+              "sha256",
+              "purpose"
+            ],
+            "properties": {
+              "path": {
+                "maxLength": 500,
+                "type": "string"
+              },
+              "file_id": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "original_name": {
+                "maxLength": 260,
+                "type": "string"
+              },
+              "mime": {
+                "maxLength": 200,
+                "type": "string"
+              },
+              "bytes": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "sha256": {
+                "maxLength": 64,
+                "type": "string"
+              },
+              "purpose": {
+                "maxLength": 40,
+                "type": "string"
+              }
+            }
+          }
+        },
+        "excluded": {
+          "maxItems": 20,
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "const": "provider_secrets",
+                "type": "string"
+              },
+              {
+                "const": "sessions",
+                "type": "string"
+              },
+              {
+                "const": "device_tokens",
+                "type": "string"
+              },
+              {
+                "const": "browser_profile",
+                "type": "string"
+              },
+              {
+                "const": "operator_infrastructure",
+                "type": "string"
+              },
+              {
+                "const": "staging_files",
+                "type": "string"
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

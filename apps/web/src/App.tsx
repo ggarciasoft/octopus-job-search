@@ -28,6 +28,7 @@ import { TasksPage } from './routes/TasksPage';
 import { PreferencesPage } from './routes/settings/PreferencesPage';
 import { ProviderPage } from './routes/settings/ProviderPage';
 import { DevicesPage } from './routes/settings/DevicesPage';
+import { PrivacyPage } from './routes/settings/PrivacyPage';
 import { SettingsLayout } from './routes/settings/SettingsLayout';
 
 export function createQueryClient(): QueryClient {
@@ -95,6 +96,7 @@ export function AppRoutes() {
             <Route path="preferences" element={<PreferencesPage />} />
             <Route path="provider" element={<ProviderPage />} />
             <Route path="devices" element={<DevicesPage />} />
+            <Route path="privacy" element={<PrivacyPage />} />
           </Route>
           {PLACEHOLDER_SCREENS.map((screen) => (
             <Route

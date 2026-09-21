@@ -7,13 +7,14 @@ const SETTINGS_TABS = [
   { path: '/settings/preferences', labelKey: 'settings.preferencesTab' },
   { path: '/settings/provider', labelKey: 'settings.providerTab' },
   { path: '/settings/devices', labelKey: 'settings.devicesTab' },
+  { path: '/settings/privacy', labelKey: 'settings.privacyTab' },
 ] as const;
 
 /**
- * Settings shell. M1 delivers preferences and the model provider and M4 adds
- * paired devices; the rest of the settings screen from
- * 08_UX_AND_CUSTOMIZATION.md (schedules, export and deletion) is listed as
- * missing rather than shown as controls.
+ * Settings shell. M1 delivers preferences and the model provider; M4 adds
+ * paired devices and the privacy tab with the workspace export. What remains
+ * from 08_UX_AND_CUSTOMIZATION.md (scan schedules, workspace deletion) is
+ * listed as missing rather than shown as controls.
  */
 export function SettingsLayout() {
   const { t } = useTranslation();

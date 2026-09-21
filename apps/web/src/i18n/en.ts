@@ -1632,4 +1632,29 @@ export const en = {
   'outcome.cancelled': 'Cancel this application',
 
   'settings.devicesTab': 'Devices',
+
+  'settings.privacyTab': 'Privacy',
+  'privacy.title': 'Your data',
+  'privacy.intro':
+    'Everything this installation holds about you, in a file you can keep. Nothing here is sent anywhere: the archive is written on this machine and downloaded by you.',
+  'privacy.exportHeading': 'Export',
+  'privacy.exportBody':
+    'A ZIP containing versioned JSON of your profile, preferences, jobs, CVs, answers and application history, plus the files themselves.',
+  'privacy.excludedHeading': 'Deliberately not included',
+  'privacy.excluded.providerSecrets': 'Your AI provider API key.',
+  'privacy.excluded.sessions': 'Sign-in sessions.',
+  'privacy.excluded.deviceTokens': 'Paired device tokens.',
+  'privacy.excluded.browserProfile': 'The local runner browser profile and any site logins in it.',
+  'privacy.excluded.operatorInfrastructure': 'Operator records: queued tasks, audit rows, usage.',
+  'privacy.excluded.stagingFiles': 'Half-finished uploads.',
+  'privacy.export': 'Create an export',
+  'privacy.exporting': 'Building the archive…',
+  'privacy.exportReadyTitle': 'Your export is ready',
+  'privacy.exportReady': '{size}, including {files} file(s).',
+  'privacy.download': 'Download the archive',
+  'privacy.exportFailedTitle': 'The export did not finish',
+  'privacy.exportFailedBody': 'Nothing was written. Try again.',
+  'privacy.deleteHeading': 'Deleting your workspace',
+  'privacy.deleteBody':
+    'Not built yet. When it is, deleting will revoke access immediately and erase the files, and this page will show whether the erasure completed. There is no button here in the meantime, because one that did nothing would be worse than none. The implementation status file records exactly where this stands.',
 } as const;

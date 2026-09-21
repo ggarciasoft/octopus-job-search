@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ExportCounts.schema.json",
+  "title": "ExportCounts",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "profile_facts",
+    "jobs",
+    "matches",
+    "resumes",
+    "applications",
+    "application_packets",
+    "application_events",
+    "answer_bank",
+    "files"
+  ],
+  "properties": {
+    "profile_facts": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "jobs": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "matches": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "resumes": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "applications": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "application_packets": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "application_events": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "answer_bank": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "files": {
+      "minimum": 0,
+      "type": "integer"
+    }
+  }
+}

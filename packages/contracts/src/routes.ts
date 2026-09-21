@@ -765,6 +765,18 @@ export const ROUTES: readonly RouteDefinition[] = [
     csrf: true,
   },
   {
+    operationId: 'exportWorkspace',
+    method: 'POST',
+    path: '/workspace/export',
+    auth: 'session',
+    summary: 'Package this workspace as a downloadable archive.',
+    body: Empty,
+    response: AcceptedResponse,
+    successStatus: 202,
+    requiresIdempotencyKey: true,
+    csrf: true,
+  },
+  {
     operationId: 'deleteAnswerBankEntry',
     method: 'DELETE',
     path: '/answer-bank/:id',

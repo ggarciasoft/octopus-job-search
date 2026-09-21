@@ -15,6 +15,7 @@ import * as Answers from './schemas/answers.js';
 import * as Applications from './schemas/applications.js';
 import * as Devices from './schemas/devices.js';
 import * as FillLocal from './tasks/fill-local.js';
+import * as Workspace from './schemas/workspace.js';
 import * as FetchBoard from './tasks/fetch-board.js';
 import * as NoopEcho from './tasks/noop-echo.js';
 import * as ParseProfile from './tasks/parse-profile.js';
@@ -188,6 +189,10 @@ export const EXPORTED_SCHEMAS: Record<string, TSchema> = {
   UnresolvedField: FillLocal.UnresolvedField,
   FillLocalResult: FillLocal.FillLocalResult,
   FillApplicationRequest: FillLocal.FillApplicationRequest,
+  ExportedFile: Workspace.ExportedFile,
+  ExportCounts: Workspace.ExportCounts,
+  WorkspaceExportManifest: Workspace.WorkspaceExportManifest,
+  ExportWorkspaceResult: Workspace.ExportWorkspaceResult,
 };
 
 /** Enumerations mirrored into Python so there is one source of truth. */
@@ -223,6 +228,8 @@ export const EXPORTED_ENUMS: Record<string, readonly string[]> = {
   FillFieldOutcome: FillLocal.ALL_FILL_FIELD_OUTCOMES,
   UnresolvedReason: FillLocal.ALL_UNRESOLVED_REASONS,
   FillOutcome: FillLocal.ALL_FILL_OUTCOMES,
+  ExportExclusion: Workspace.ALL_EXPORT_EXCLUSIONS,
+  DeletedObjectKind: Workspace.ALL_DELETED_OBJECT_KINDS,
 };
 
 /** Shared numeric constants that must not diverge between runtimes. */
@@ -250,4 +257,5 @@ export const EXPORTED_CONSTANTS = {
   PACKET_APPROVAL_MAX_TTL_HOURS: Applications.PACKET_APPROVAL_MAX_TTL_HOURS,
   DEVICE_PAIRING_TTL_SECONDS: Devices.DEVICE_PAIRING_TTL_SECONDS,
   DEVICE_TOKEN_TTL_DAYS: Devices.DEVICE_TOKEN_TTL_DAYS,
+  EXPORT_SCHEMA_VERSION: Workspace.EXPORT_SCHEMA_VERSION,
 } as const;

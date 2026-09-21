@@ -848,6 +848,19 @@ export class JobGetterApiClient {
     });
   }
 
+  /** Package this workspace as a downloadable archive. (`POST /api/v1/workspace/export`) */
+  exportWorkspace(args: ExportWorkspaceArgs): Promise<ExportWorkspaceResult> {
+    return this.#request<ExportWorkspaceResult>({
+      method: 'POST',
+      prefix: API_PREFIX,
+      path: '/workspace/export',
+      json: {},
+      csrf: true,
+      idempotencyKey: args.idempotencyKey,
+      signal: args.signal,
+    });
+  }
+
   /** Forget a stored answer. (`DELETE /api/v1/answer-bank/:id`) */
   deleteAnswerBankEntry(args: DeleteAnswerBankEntryArgs): Promise<DeleteAnswerBankEntryResult> {
     return this.#request<DeleteAnswerBankEntryResult>({
@@ -1417,6 +1430,16 @@ export interface RevokeDeviceArgs {
 
 /** Result of `revokeDevice`. */
 export type RevokeDeviceResult = void;
+
+/** Arguments for `POST /api/v1/workspace/export`. */
+export interface ExportWorkspaceArgs {
+  /** Required: sent as the `Idempotency-Key` header (04_API_CONTRACTS.md). */
+  readonly idempotencyKey: string;
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `exportWorkspace`. */
+export type ExportWorkspaceResult = AcceptedResponse;
 
 /** Arguments for `DELETE /api/v1/answer-bank/:id`. */
 export interface DeleteAnswerBankEntryArgs {
