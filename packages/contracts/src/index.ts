@@ -34,6 +34,8 @@ export * from './schemas/resumes.js';
 export * from './tasks/render-cv.js';
 export * from './schemas/answers.js';
 export * from './schemas/applications.js';
+export * from './schemas/devices.js';
+export * from './tasks/fill-local.js';
 export * from './routes.js';
 export {
   TASK_IO_SCHEMAS,

@@ -33,6 +33,14 @@ import {
   CreateApplicationRequest,
   CreatePacketRequest,
 } from './schemas/applications.js';
+import {
+  CreatePairingRequest,
+  DeviceExchangeRequest,
+  DeviceExchangeResponse,
+  DeviceView,
+  PairingCodeResponse,
+} from './schemas/devices.js';
+import { FillApplicationRequest } from './tasks/fill-local.js';
 import { NoopEchoInput } from './tasks/noop-echo.js';
 import { TaskView } from './tasks/protocol.js';
 import {
@@ -70,6 +78,22 @@ export interface RouteDefinition {
   readonly binaryResponse?: boolean;
   /** Mutating routes require anti-CSRF token plus origin verification. */
   readonly csrf?: boolean;
+  /**
+   * Skips the same-origin check on a state-changing route.
+   *
+   * Exactly one route sets this, and it needs a standing justification rather
+   * than a flag someone can reach for. Origin verification exists to stop a
+   * *browser* being used as a confused deputy: it only works because a browser
+   * always sends `Origin`, and the check therefore rejects any client that
+   * sends none. A paired desktop runner is not a browser and sends none.
+   *
+   * Exempting a route is only safe where there is no ambient authority to
+   * forge — no cookie, no session, nothing the victim's browser would attach
+   * automatically. `POST /devices/exchange` qualifies: it authenticates solely
+   * on a single-use code that expires in five minutes, so anyone who can make
+   * the request already holds the only thing it checks.
+   */
+  readonly originExempt?: boolean;
 }
 
 const IdParam = Type.Object({ id: Uuid }, { additionalProperties: false });
@@ -648,6 +672,78 @@ export const ROUTES: readonly RouteDefinition[] = [
     body: AnswerBankPutRequest,
     response: AnswerBankEntry,
     successStatus: 200,
+    csrf: true,
+  },
+  {
+    operationId: 'fillApplication',
+    method: 'POST',
+    path: '/applications/:id/fill',
+    auth: 'session',
+    summary: 'Hand an approved packet to a paired local runner to fill.',
+    params: IdParam,
+    body: FillApplicationRequest,
+    response: AcceptedResponse,
+    successStatus: 202,
+    requiresIdempotencyKey: true,
+    csrf: true,
+  },
+
+  // --- Milestone M4: paired devices ------------------------------------------
+  {
+    operationId: 'listDevices',
+    method: 'GET',
+    path: '/devices',
+    auth: 'session',
+    summary: 'Paired devices with their status, origins and expiry.',
+    response: Type.Object(
+      { items: Type.Array(DeviceView), next_cursor: Type.Union([Type.String(), Type.Null()]) },
+      { additionalProperties: false },
+    ),
+    successStatus: 200,
+  },
+  {
+    operationId: 'createDevicePairing',
+    method: 'POST',
+    path: '/devices/pairing',
+    auth: 'session',
+    summary: 'Mint a single-use pairing code that expires in five minutes.',
+    body: CreatePairingRequest,
+    response: PairingCodeResponse,
+    successStatus: 201,
+    csrf: true,
+  },
+  {
+    operationId: 'exchangeDevicePairing',
+    method: 'POST',
+    path: '/devices/exchange',
+    auth: 'public',
+    summary: 'Exchange a pairing code for a scoped device token, once.',
+    body: DeviceExchangeRequest,
+    response: DeviceExchangeResponse,
+    successStatus: 200,
+    // The redeeming client is a desktop runner, not a browser: it has no
+    // Origin header and no cookie for anyone to ride. See `originExempt`.
+    originExempt: true,
+  },
+  {
+    operationId: 'getDevice',
+    method: 'GET',
+    path: '/devices/:id',
+    auth: 'session',
+    summary: 'One device and whether its token is still usable.',
+    params: IdParam,
+    response: DeviceView,
+    successStatus: 200,
+  },
+  {
+    operationId: 'revokeDevice',
+    method: 'DELETE',
+    path: '/devices/:id',
+    auth: 'session',
+    summary: 'Revoke a device token; denial takes effect on its next request.',
+    params: IdParam,
+    response: NoContent,
+    successStatus: 204,
     csrf: true,
   },
   {

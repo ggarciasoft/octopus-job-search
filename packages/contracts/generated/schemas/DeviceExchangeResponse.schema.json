@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/DeviceExchangeResponse.schema.json",
+  "title": "DeviceExchangeResponse",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "device_id",
+    "token",
+    "expires_at",
+    "allowed_origins"
+  ],
+  "properties": {
+    "device_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "token": {
+      "minLength": 32,
+      "maxLength": 200,
+      "type": "string"
+    },
+    "expires_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "allowed_origins": {
+      "maxItems": 20,
+      "type": "array",
+      "items": {
+        "maxLength": 500,
+        "type": "string"
+      }
+    }
+  }
+}

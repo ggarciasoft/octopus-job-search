@@ -13,15 +13,21 @@
  *    runner-only capabilities (`fill_local`). A paired device may claim only
  *    runner-only work, and only inside its own workspace.
  *
- * Device pairing is milestone M4/M5, so no device token can be issued yet.
- * `authenticateDevice` therefore has no credential source; the authorization
- * rules it feeds are implemented and tested through the queue layer now.
+ * Device pairing landed in M4: `authenticateDevice` resolves a token issued by
+ * `POST /devices/exchange`, and the authorization rules below have had a real
+ * principal to act on ever since.
  */
 import type { FastifyRequest } from 'fastify';
-import { RUNNER_ONLY_CAPABILITIES, type TaskType } from '@job-getter/contracts';
+import {
+  DEVICE_TOKEN_HEADER,
+  RUNNER_ONLY_CAPABILITIES,
+  type TaskType,
+} from '@job-getter/contracts';
 import type { Config } from '../config.js';
+import type { Db } from '../db/pool.js';
 import { forbidden, unauthenticated } from '../errors.js';
 import { constantTimeEqual } from '../util/crypto.js';
+import { resolveDeviceToken, touchDevice } from '../devices/service.js';
 import type { DevicePrincipal, Principal, WorkerPrincipal } from './scope.js';
 
 const RUNNER_ONLY = new Set<string>(RUNNER_ONLY_CAPABILITIES);
@@ -107,10 +113,30 @@ export function assertCapabilitiesAllowed(
 }
 
 /**
- * Placeholder for M4/M5 device pairing. There is no `paired_devices` table in
- * M0 and no way to issue a device token, so this always reports "no device
- * credential present" rather than pretending a pairing system exists.
+ * Resolves a paired device from the `x-device-token` header.
+ *
+ * Returns null when no device header is present, so the caller can fall
+ * through to the operator worker credential. It throws — rather than returning
+ * null — when a header *is* present but does not resolve: a revoked, expired
+ * or unknown token must be a 401, not a silent downgrade to "no device", or a
+ * revocation would merely change which error the runner eventually sees.
+ *
+ * Every condition lives in `resolveDeviceToken`, which reads `revoked_at` on
+ * every request. That is what makes AT23 true: revocation denies the next call
+ * rather than waiting for the token's own expiry.
  */
-export function authenticateDevice(_request: FastifyRequest): DevicePrincipal | null {
-  return null;
+export async function authenticateDevice(
+  db: Db,
+  request: FastifyRequest,
+): Promise<DevicePrincipal | null> {
+  const raw = request.headers[DEVICE_TOKEN_HEADER];
+  const token = Array.isArray(raw) ? raw[0] : raw;
+  if (typeof token !== 'string' || token.trim() === '') return null;
+
+  const device = await resolveDeviceToken(db, token.trim());
+  if (device === null) {
+    throw unauthenticated('This device token is not valid. Pair the device again.');
+  }
+  await touchDevice(db, device);
+  return { kind: 'device', deviceId: device.id, workspaceId: device.workspace_id };
 }

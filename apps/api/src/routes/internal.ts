@@ -3,8 +3,9 @@
  *
  * These routes are a separate principal from user sessions:
  *
- *  * they authenticate only with the operator `WORKER_AUTH_TOKEN` bearer,
- *    compared in constant time;
+ *  * they authenticate with the operator `WORKER_AUTH_TOKEN` bearer, compared
+ *    in constant time, or with a paired device token that may claim only
+ *    runner-only work inside its own workspace;
  *  * a session cookie has no effect here, and the worker credential cannot
  *    reach `/api/v1`;
  *  * they are absent from the `ROUTES` manifest, so they never appear in the
@@ -29,7 +30,7 @@ import {
 } from '@job-getter/contracts';
 import { Type } from '@sinclair/typebox';
 import { conflict, malformed, unprocessable } from '../errors.js';
-import { authenticateWorker } from '../auth/worker.js';
+import { authenticateDevice, authenticateWorker } from '../auth/worker.js';
 import { WorkspaceScope } from '../auth/scope.js';
 import { sha256Hex } from '../util/crypto.js';
 import {
@@ -89,10 +90,15 @@ export function parseRetryAfter(value: string | string[] | undefined): number | 
 export function registerInternalRoutes(app: FastifyInstance, context: RouteContext): void {
   app.register(
     async (internal) => {
-      // One gate for the whole prefix: no route below is reachable without the
-      // operator worker credential.
+      // One gate for the whole prefix. Two credentials are accepted and they
+      // are not interchangeable: the operator worker bearer, which serves every
+      // workspace but may not claim `fill_local`, and a paired device token,
+      // which may claim *only* `fill_local` and only inside its own workspace
+      // (`assertCapabilitiesAllowed`). A device token is checked first so that
+      // presenting one never silently falls back to the operator credential.
       internal.addHook('onRequest', async (request) => {
-        request.principal = authenticateWorker(context.config, request);
+        const device = await authenticateDevice(context.db, request);
+        request.principal = device ?? authenticateWorker(context.config, request);
       });
 
       internal.post('/tasks/claim', { schema: { body: ClaimRequest } }, async (request, reply) => {

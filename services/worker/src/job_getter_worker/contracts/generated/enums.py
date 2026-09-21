@@ -247,3 +247,36 @@ class ApplicationOutcome(StrEnum):
     OFFER = "offer"
     WITHDRAWN = "withdrawn"
     CANCELLED = "cancelled"
+
+
+class DeviceKind(StrEnum):
+    LOCAL_RUNNER = "local_runner"
+    EXTENSION = "extension"
+
+
+class DeviceStatus(StrEnum):
+    PENDING = "pending"
+    PAIRED = "paired"
+    REVOKED = "revoked"
+    EXPIRED = "expired"
+
+
+class FillFieldOutcome(StrEnum):
+    FILLED = "filled"
+    SKIPPED = "skipped"
+    FAILED = "failed"
+
+
+class UnresolvedReason(StrEnum):
+    NO_ANSWER = "no_answer"
+    NEW_QUESTION = "new_question"
+    UNSUPPORTED_WIDGET = "unsupported_widget"
+    NEEDS_EXACT_MAPPING = "needs_exact_mapping"
+    NEVER_INFERABLE = "never_inferable"
+    FILE_UPLOAD_BLOCKED = "file_upload_blocked"
+
+
+class FillOutcome(StrEnum):
+    AWAITING_USER_SUBMIT = "awaiting_user_submit"
+    NEEDS_INPUT = "needs_input"
+    UNSUPPORTED = "unsupported"

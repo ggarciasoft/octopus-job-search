@@ -34,6 +34,7 @@ import {
   type FetchJobResult,
   type MatchJobResult,
   type ParseProfileResult,
+  type FillLocalResult,
   type RenderCvResult,
 } from '@job-getter/contracts';
 import type { Db, DbExecutor, DbTransaction } from '../db/pool.js';
@@ -48,6 +49,7 @@ import { applyFetchBoardFailure, applyFetchBoardResult } from '../discovery/appl
 import { applyFetchJobFailure, applyFetchJobResult } from '../discovery/imports.js';
 import { applyMatchJobResult } from '../matching/matches.js';
 import { applyRenderCvFailure, applyRenderCvResult } from '../resumes/service.js';
+import { applyFillLocalFailure, applyFillLocalResult } from '../applications/fill.js';
 
 /**
  * Applies a validated task result to the domain rows it owns.
@@ -75,6 +77,8 @@ async function applyDomainResult(
     await applyMatchJobResult(trx, task, result as MatchJobResult);
   } else if (task.type === 'render_cv') {
     await applyRenderCvResult(trx, task, result as RenderCvResult);
+  } else if (task.type === 'fill_local') {
+    await applyFillLocalResult(trx, task, result as FillLocalResult);
   }
 }
 
@@ -93,6 +97,8 @@ async function applyDomainFailure(
     await applyFetchJobFailure(trx, task, code, message);
   } else if (task.type === 'render_cv') {
     await applyRenderCvFailure(trx, task, code, message);
+  } else if (task.type === 'fill_local') {
+    await applyFillLocalFailure(trx, task, code, message);
   }
   // `match_job` has no domain row to mark: a score that could not be computed
   // simply does not exist, and the job keeps reading "not checked". Inventing

@@ -13,11 +13,16 @@ import type {
   ConfirmImportRequest,
   CreateApplicationRequest,
   CreatePacketRequest,
+  CreatePairingRequest,
   CreateProfileImportRequest,
   CreateResumeRequest,
   CreateSourceRequest,
+  DeviceExchangeRequest,
+  DeviceExchangeResponse,
+  DeviceView,
   ErrorCode,
   FileUploadResponse,
+  FillApplicationRequest,
   JobDetailView,
   JobImportRequest,
   JobView,
@@ -25,6 +30,7 @@ import type {
   LoginRequest,
   MeResponse,
   NoopEchoInput,
+  PairingCodeResponse,
   PatchJobRequest,
   PatchSourceRequest,
   PreferencesPutRequest,
@@ -759,6 +765,77 @@ export class JobGetterApiClient {
     });
   }
 
+  /** Hand an approved packet to a paired local runner to fill. (`POST /api/v1/applications/:id/fill`) */
+  fillApplication(args: FillApplicationArgs): Promise<FillApplicationResult> {
+    return this.#request<FillApplicationResult>({
+      method: 'POST',
+      prefix: API_PREFIX,
+      path: '/applications/:id/fill',
+      params: args.params,
+      json: args.body,
+      csrf: true,
+      idempotencyKey: args.idempotencyKey,
+      signal: args.signal,
+    });
+  }
+
+  /** Paired devices with their status, origins and expiry. (`GET /api/v1/devices`) */
+  listDevices(args: ListDevicesArgs = {}): Promise<ListDevicesResult> {
+    return this.#request<ListDevicesResult>({
+      method: 'GET',
+      prefix: API_PREFIX,
+      path: '/devices',
+      signal: args.signal,
+    });
+  }
+
+  /** Mint a single-use pairing code that expires in five minutes. (`POST /api/v1/devices/pairing`) */
+  createDevicePairing(args: CreateDevicePairingArgs): Promise<CreateDevicePairingResult> {
+    return this.#request<CreateDevicePairingResult>({
+      method: 'POST',
+      prefix: API_PREFIX,
+      path: '/devices/pairing',
+      json: args.body,
+      csrf: true,
+      signal: args.signal,
+    });
+  }
+
+  /** Exchange a pairing code for a scoped device token, once. (`POST /api/v1/devices/exchange`) */
+  exchangeDevicePairing(args: ExchangeDevicePairingArgs): Promise<ExchangeDevicePairingResult> {
+    return this.#request<ExchangeDevicePairingResult>({
+      method: 'POST',
+      prefix: API_PREFIX,
+      path: '/devices/exchange',
+      json: args.body,
+      signal: args.signal,
+    });
+  }
+
+  /** One device and whether its token is still usable. (`GET /api/v1/devices/:id`) */
+  getDevice(args: GetDeviceArgs): Promise<GetDeviceResult> {
+    return this.#request<GetDeviceResult>({
+      method: 'GET',
+      prefix: API_PREFIX,
+      path: '/devices/:id',
+      params: args.params,
+      signal: args.signal,
+    });
+  }
+
+  /** Revoke a device token; denial takes effect on its next request. (`DELETE /api/v1/devices/:id`) */
+  revokeDevice(args: RevokeDeviceArgs): Promise<RevokeDeviceResult> {
+    return this.#request<RevokeDeviceResult>({
+      method: 'DELETE',
+      prefix: API_PREFIX,
+      path: '/devices/:id',
+      params: args.params,
+      csrf: true,
+      noContent: true,
+      signal: args.signal,
+    });
+  }
+
   /** Forget a stored answer. (`DELETE /api/v1/answer-bank/:id`) */
   deleteAnswerBankEntry(args: DeleteAnswerBankEntryArgs): Promise<DeleteAnswerBankEntryResult> {
     return this.#request<DeleteAnswerBankEntryResult>({
@@ -1256,6 +1333,68 @@ export interface PutAnswerBankEntryArgs {
 
 /** Result of `putAnswerBankEntry`. */
 export type PutAnswerBankEntryResult = AnswerBankEntry;
+
+/** Arguments for `POST /api/v1/applications/:id/fill`. */
+export interface FillApplicationArgs {
+  /** Path parameters. */
+  readonly params: { id: string };
+  /** JSON request body. */
+  readonly body: FillApplicationRequest;
+  /** Required: sent as the `Idempotency-Key` header (04_API_CONTRACTS.md). */
+  readonly idempotencyKey: string;
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `fillApplication`. */
+export type FillApplicationResult = AcceptedResponse;
+
+/** Arguments for `GET /api/v1/devices`. */
+export interface ListDevicesArgs {
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `listDevices`. */
+export type ListDevicesResult = { items: Array<DeviceView>; next_cursor: string | null };
+
+/** Arguments for `POST /api/v1/devices/pairing`. */
+export interface CreateDevicePairingArgs {
+  /** JSON request body. */
+  readonly body: CreatePairingRequest;
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `createDevicePairing`. */
+export type CreateDevicePairingResult = PairingCodeResponse;
+
+/** Arguments for `POST /api/v1/devices/exchange`. */
+export interface ExchangeDevicePairingArgs {
+  /** JSON request body. */
+  readonly body: DeviceExchangeRequest;
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `exchangeDevicePairing`. */
+export type ExchangeDevicePairingResult = DeviceExchangeResponse;
+
+/** Arguments for `GET /api/v1/devices/:id`. */
+export interface GetDeviceArgs {
+  /** Path parameters. */
+  readonly params: { id: string };
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `getDevice`. */
+export type GetDeviceResult = DeviceView;
+
+/** Arguments for `DELETE /api/v1/devices/:id`. */
+export interface RevokeDeviceArgs {
+  /** Path parameters. */
+  readonly params: { id: string };
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `revokeDevice`. */
+export type RevokeDeviceResult = void;
 
 /** Arguments for `DELETE /api/v1/answer-bank/:id`. */
 export interface DeleteAnswerBankEntryArgs {

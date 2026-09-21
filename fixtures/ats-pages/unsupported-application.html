@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Apply — Ridgeline Analytics</title>
+  </head>
+  <!--
+    A synthetic application page belonging to no ATS this build supports.
+
+    Invented: Ridgeline Analytics does not exist. The form is a plausible
+    bespoke one - labelled inputs, a file field, a submit button - and that is
+    the point. It looks fillable. No adapter has been written or tested for it,
+    so the runner must report `unsupported`, leave the page untouched and keep
+    the packet, which is AT17's "honest manual fallback and saved packet".
+
+    There is deliberately no `#application_form` container and no greenhouse
+    host: nothing here should make any adapter claim the page.
+  -->
+  <body>
+    <h1>Data Engineer</h1>
+    <div class="employer">Ridgeline Analytics</div>
+    <form id="careers-form" action="/apply" method="post">
+      <label for="name">Full name</label>
+      <input id="name" name="name" type="text" required />
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" required />
+      <label for="cv">Attach your CV</label>
+      <input id="cv" name="cv" type="file" required />
+      <button type="submit">Send</button>
+    </form>
+  </body>
+</html>

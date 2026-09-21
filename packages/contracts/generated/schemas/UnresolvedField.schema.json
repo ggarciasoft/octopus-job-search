@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/UnresolvedField.schema.json",
+  "title": "UnresolvedField",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "question_key",
+    "label",
+    "required",
+    "reason",
+    "options"
+  ],
+  "properties": {
+    "question_key": {
+      "minLength": 1,
+      "maxLength": 120,
+      "pattern": "^[a-z0-9_.:-]+$",
+      "type": "string"
+    },
+    "label": {
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "required": {
+      "type": "boolean"
+    },
+    "reason": {
+      "anyOf": [
+        {
+          "const": "no_answer",
+          "type": "string"
+        },
+        {
+          "const": "new_question",
+          "type": "string"
+        },
+        {
+          "const": "unsupported_widget",
+          "type": "string"
+        },
+        {
+          "const": "needs_exact_mapping",
+          "type": "string"
+        },
+        {
+          "const": "never_inferable",
+          "type": "string"
+        },
+        {
+          "const": "file_upload_blocked",
+          "type": "string"
+        }
+      ]
+    },
+    "options": {
+      "maxItems": 100,
+      "type": "array",
+      "items": {
+        "maxLength": 300,
+        "type": "string"
+      }
+    }
+  }
+}

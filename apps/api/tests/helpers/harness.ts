@@ -12,6 +12,7 @@ import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { FastifyInstance, InjectOptions } from 'fastify';
 import type pg from 'pg';
+import { DEVICE_TOKEN_HEADER } from '@job-getter/contracts';
 import { buildApp, type RegisteredRoute } from '../../src/app.js';
 import { loadConfig, type Config, type RawEnv } from '../../src/config.js';
 import { closeDb, createDb, createPool, type Db } from '../../src/db/pool.js';
@@ -247,6 +248,23 @@ export function authed(session: Session, options: AuthedInject): InjectOptions {
       origin: TEST_ORIGIN,
       cookie: session.cookie,
       'x-csrf-token': session.csrfToken,
+      ...options.headers,
+    },
+  } satisfies InjectOptions;
+}
+
+/**
+ * Injects a request authenticated as a paired device.
+ *
+ * A device presents its own header and never the operator bearer: the two
+ * credentials reach different work, and sending both would make which one
+ * authorised the call a matter of server-side precedence.
+ */
+export function asDevice(token: string, options: AuthedInject): InjectOptions {
+  return {
+    ...options,
+    headers: {
+      [DEVICE_TOKEN_HEADER]: token,
       ...options.headers,
     },
   } satisfies InjectOptions;

@@ -19,6 +19,7 @@ IMPLEMENTED_TASK_TYPES: Final = (
     "fetch_job",
     "match_job",
     "render_cv",
+    "fill_local",
 )
 RUNNER_ONLY_CAPABILITIES: Final = ("fill_local",)
 NO_RETRY_TASK_TYPES: Final = ("fill_local",)
@@ -31,3 +32,5 @@ RESUME_TEMPLATE_VERSION: Final = "simple/v1"
 RESUME_MIN_FONT_PT: Final = 10
 PACKET_HASH_VERSION: Final = 1
 PACKET_APPROVAL_MAX_TTL_HOURS: Final = 24
+DEVICE_PAIRING_TTL_SECONDS: Final = 300
+DEVICE_TOKEN_TTL_DAYS: Final = 30

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/DeviceExchangeRequest.schema.json",
+  "title": "DeviceExchangeRequest",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "pairing_code",
+    "device_public_id"
+  ],
+  "properties": {
+    "pairing_code": {
+      "minLength": 8,
+      "maxLength": 120,
+      "type": "string"
+    },
+    "device_public_id": {
+      "minLength": 1,
+      "maxLength": 200,
+      "type": "string"
+    }
+  }
+}

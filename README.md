@@ -161,20 +161,31 @@ More detail: [`docs/spec/02_ARCHITECTURE.md`](docs/spec/02_ARCHITECTURE.md).
 
 ## Source support matrix
 
-From `docs/spec/05_DISCOVERY_CONNECTORS.md`. **Every row is currently
-not implemented.** A source appears as supported only once it has a connector
-tested against fixtures — an untested integration is never shown as a working
-one.
+From `docs/spec/05_DISCOVERY_CONNECTORS.md`. A source appears as supported only
+once it has a connector tested against fixtures — an untested integration is
+never shown as a working one, and the two columns are scored separately because
+reading a board and filling its application form are different claims.
 
-| Source                       | Discovery                                         | Application handling                                | Status today                                               |
-| ---------------------------- | ------------------------------------------------- | --------------------------------------------------- | ---------------------------------------------------------- |
-| Greenhouse public job boards | Known board token, public listing/detail reads    | Browser form adapter, no employer API key           | **Not implemented** (planned M2 / M4)                      |
-| Lever public postings        | Known site slug, public postings feed             | Browser form adapter                                | **Not implemented** (planned M2 / M4)                      |
-| User-pasted description      | Supported with your own provenance                | Opens the application URL; manual fallback          | **Not implemented** (planned M2)                           |
-| Company job URL              | Public page fetch, JSON-LD `JobPosting` first     | Generic assistance only unless an adapter is tested | **Not implemented** (planned M2)                           |
-| Additional company discovery | Optional search API adapter                       | Depends on the resolved ATS adapter                 | **Not implemented** (planned M6)                           |
-| LinkedIn                     | Job text or a link **you** provide — nothing else | Use the website yourself                            | **Not implemented**, and scraping/Easy Apply never will be |
-| Workday and other ATS        | Save the URL or the text                          | Manual                                              | **Not implemented**                                        |
+| Source                       | Discovery                                         | Application handling                                | Status today                                                                                                                                  |
+| ---------------------------- | ------------------------------------------------- | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Greenhouse public job boards | Known board token, public listing/detail reads    | Browser form adapter, no employer API key           | Discovery **works**, verified against Greenhouse's own public board. Fill adapter `greenhouse/v1` **tested against a synthetic fixture only** |
+| Lever public postings        | Known site slug, public postings feed             | Browser form adapter                                | Discovery **works**, fixture-tested. Fill adapter **not implemented**                                                                         |
+| User-pasted description      | Supported with your own provenance                | Opens the application URL; manual fallback          | Discovery **works**. Filling is manual                                                                                                        |
+| Company job URL              | Public page fetch, JSON-LD `JobPosting` first     | Generic assistance only unless an adapter is tested | Discovery **works**. No adapter, so filling is manual                                                                                         |
+| Additional company discovery | Optional search API adapter                       | Depends on the resolved ATS adapter                 | **Not implemented** (planned M6)                                                                                                              |
+| LinkedIn                     | Job text or a link **you** provide — nothing else | Use the website yourself                            | **Not implemented**, and scraping/Easy Apply never will be                                                                                    |
+| Workday and other ATS        | Save the URL or the text                          | Manual                                              | **Not implemented**                                                                                                                           |
+
+"Tested against a synthetic fixture only" is the honest description of the
+Greenhouse fill adapter and it is doing real work in that sentence. The adapter
+is driven by a real Chromium against a page built to Greenhouse's shape, in
+`fixtures/ats-pages/greenhouse-application.html`. It has never run against a
+live Greenhouse board, and no application has been submitted through it. When a
+page has no tested adapter the runner says so and leaves the form alone rather
+than filling it approximately.
+
+Nothing in this product ever presses submit. That is a permanent design
+position, not a milestone.
 
 Public listing APIs are not a directory of employers. Boards are seeded by hand.
 

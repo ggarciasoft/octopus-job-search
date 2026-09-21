@@ -21,6 +21,7 @@ import type {
   ApplicationEventType,
   ApplicationStatus,
   ConnectorId,
+  DeviceKind,
   JobEmploymentType,
   JobStatus,
   RemoteType,
@@ -454,6 +455,31 @@ export interface ApplicationsTable {
   current_packet_id: string | null;
   submission_evidence: NullableJsonColumn<SubmissionEvidence>;
   submitted_at: NullableTimestampColumn;
+  /** The form schema a runner actually saw. Null until one has looked. */
+  observed_form_fingerprint: string | null;
+  form_observed_at: NullableTimestampColumn;
+  created_at: TimestampColumn;
+  updated_at: TimestampColumn;
+}
+
+/**
+ * Pairing codes and device tokens are stored as SHA-256 digests. Neither value
+ * can be read back out of this table, which is the point.
+ */
+export interface PairedDevicesTable {
+  id: Generated<string>;
+  workspace_id: string;
+  kind: DeviceKind;
+  label: string;
+  pairing_code_hash: string | null;
+  pairing_expires_at: NullableTimestampColumn;
+  pairing_consumed_at: NullableTimestampColumn;
+  token_hash: string | null;
+  device_public_id: string | null;
+  expires_at: NullableTimestampColumn;
+  revoked_at: NullableTimestampColumn;
+  last_seen_at: NullableTimestampColumn;
+  allowed_origins: DefaultedJsonColumn<string[]>;
   created_at: TimestampColumn;
   updated_at: TimestampColumn;
 }
@@ -532,6 +558,7 @@ export interface Database {
   applications: ApplicationsTable;
   application_packets: ApplicationPacketsTable;
   application_events: ApplicationEventsTable;
+  paired_devices: PairedDevicesTable;
   job_sources: JobSourcesTable;
   job_imports: JobImportsTable;
   schema_migrations: SchemaMigrationsTable;
@@ -571,6 +598,7 @@ export const WORKSPACE_SCOPED_TABLES = [
   'applications',
   'application_packets',
   'application_events',
+  'paired_devices',
 ] as const;
 
 export type WorkspaceScopedTable = (typeof WORKSPACE_SCOPED_TABLES)[number];
@@ -618,3 +646,4 @@ export type AnswerBankRow = Selectable<AnswerBankTable>;
 export type ApplicationRow = Selectable<ApplicationsTable>;
 export type ApplicationPacketRow = Selectable<ApplicationPacketsTable>;
 export type ApplicationEventRow = Selectable<ApplicationEventsTable>;
+export type PairedDeviceRow = Selectable<PairedDevicesTable>;

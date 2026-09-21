@@ -13,6 +13,8 @@ import * as RenderCv from './tasks/render-cv.js';
 import * as Resumes from './schemas/resumes.js';
 import * as Answers from './schemas/answers.js';
 import * as Applications from './schemas/applications.js';
+import * as Devices from './schemas/devices.js';
+import * as FillLocal from './tasks/fill-local.js';
 import * as FetchBoard from './tasks/fetch-board.js';
 import * as NoopEcho from './tasks/noop-echo.js';
 import * as ParseProfile from './tasks/parse-profile.js';
@@ -31,6 +33,7 @@ export const TASK_IO_SCHEMAS: Record<string, { input: TSchema; output: TSchema }
   fetch_job: { input: FetchBoard.FetchJobInput, output: FetchBoard.FetchJobResult },
   match_job: { input: MatchJob.MatchJobInput, output: MatchJob.MatchJobResult },
   render_cv: { input: RenderCv.RenderCvInput, output: RenderCv.RenderCvResult },
+  fill_local: { input: FillLocal.FillLocalInput, output: FillLocal.FillLocalResult },
 };
 
 /**
@@ -172,6 +175,18 @@ export const EXPORTED_SCHEMAS: Record<string, TSchema> = {
   ApproveApplicationRequest: Applications.ApproveApplicationRequest,
   ApplicationOutcomeRequest: Applications.ApplicationOutcomeRequest,
   ApplicationsListQuery: Applications.ApplicationsListQuery,
+  DeviceView: Devices.DeviceView,
+  CreatePairingRequest: Devices.CreatePairingRequest,
+  PairingCodeResponse: Devices.PairingCodeResponse,
+  DeviceExchangeRequest: Devices.DeviceExchangeRequest,
+  DeviceExchangeResponse: Devices.DeviceExchangeResponse,
+  FillField: FillLocal.FillField,
+  FillJobIdentity: FillLocal.FillJobIdentity,
+  FillLocalInput: FillLocal.FillLocalInput,
+  FilledField: FillLocal.FilledField,
+  UnresolvedField: FillLocal.UnresolvedField,
+  FillLocalResult: FillLocal.FillLocalResult,
+  FillApplicationRequest: FillLocal.FillApplicationRequest,
 };
 
 /** Enumerations mirrored into Python so there is one source of truth. */
@@ -202,6 +217,11 @@ export const EXPORTED_ENUMS: Record<string, readonly string[]> = {
   PacketStalenessReason: Applications.ALL_PACKET_STALENESS_REASONS,
   EvidenceType: Applications.ALL_EVIDENCE_TYPES,
   ApplicationOutcome: Applications.ALL_APPLICATION_OUTCOMES,
+  DeviceKind: Devices.ALL_DEVICE_KINDS,
+  DeviceStatus: Devices.ALL_DEVICE_STATUSES,
+  FillFieldOutcome: FillLocal.ALL_FILL_FIELD_OUTCOMES,
+  UnresolvedReason: FillLocal.ALL_UNRESOLVED_REASONS,
+  FillOutcome: FillLocal.ALL_FILL_OUTCOMES,
 };
 
 /** Shared numeric constants that must not diverge between runtimes. */
@@ -227,4 +247,6 @@ export const EXPORTED_CONSTANTS = {
   RESUME_MIN_FONT_PT: Resumes.RESUME_MIN_FONT_PT,
   PACKET_HASH_VERSION: Applications.PACKET_HASH_VERSION,
   PACKET_APPROVAL_MAX_TTL_HOURS: Applications.PACKET_APPROVAL_MAX_TTL_HOURS,
+  DEVICE_PAIRING_TTL_SECONDS: Devices.DEVICE_PAIRING_TTL_SECONDS,
+  DEVICE_TOKEN_TTL_DAYS: Devices.DEVICE_TOKEN_TTL_DAYS,
 } as const;

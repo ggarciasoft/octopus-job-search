@@ -1,0 +1,216 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/FillLocalResult.schema.json",
+  "title": "FillLocalResult",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "packet_id",
+    "filled_fields",
+    "unresolved_fields",
+    "page_url",
+    "form_fingerprint",
+    "outcome",
+    "adapter",
+    "adapter_version",
+    "screenshot_file_id"
+  ],
+  "properties": {
+    "packet_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "filled_fields": {
+      "maxItems": 200,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "question_key",
+          "outcome",
+          "matched_label"
+        ],
+        "properties": {
+          "question_key": {
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[a-z0-9_.:-]+$",
+            "type": "string"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "const": "filled",
+                "type": "string"
+              },
+              {
+                "const": "skipped",
+                "type": "string"
+              },
+              {
+                "const": "failed",
+                "type": "string"
+              }
+            ]
+          },
+          "matched_label": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "unresolved_fields": {
+      "maxItems": 200,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "question_key",
+          "label",
+          "required",
+          "reason",
+          "options"
+        ],
+        "properties": {
+          "question_key": {
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[a-z0-9_.:-]+$",
+            "type": "string"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "const": "no_answer",
+                "type": "string"
+              },
+              {
+                "const": "new_question",
+                "type": "string"
+              },
+              {
+                "const": "unsupported_widget",
+                "type": "string"
+              },
+              {
+                "const": "needs_exact_mapping",
+                "type": "string"
+              },
+              {
+                "const": "never_inferable",
+                "type": "string"
+              },
+              {
+                "const": "file_upload_blocked",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "maxLength": 300,
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "page_url": {
+      "anyOf": [
+        {
+          "maxLength": 2000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "form_fingerprint": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "outcome": {
+      "anyOf": [
+        {
+          "const": "awaiting_user_submit",
+          "type": "string"
+        },
+        {
+          "const": "needs_input",
+          "type": "string"
+        },
+        {
+          "const": "unsupported",
+          "type": "string"
+        }
+      ]
+    },
+    "adapter": {
+      "anyOf": [
+        {
+          "maxLength": 40,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "adapter_version": {
+      "anyOf": [
+        {
+          "maxLength": 40,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "screenshot_file_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

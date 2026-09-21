@@ -42,6 +42,8 @@ export const IMPLEMENTED_TASK_TYPES = [
   'fetch_job',
   'match_job',
   'render_cv',
+  // Implemented by the paired local runner, never by the container worker.
+  'fill_local',
 ] as const satisfies readonly TaskType[];
 
 export const TaskState = Type.Union([

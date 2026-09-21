@@ -1897,3 +1897,141 @@ class ApplicationsListQuery(BaseModel):
     job_id: UuidString | None = None
     cursor: str | None = None
     limit: Annotated[int, Field(ge=1, le=100)] | None = None
+
+
+class DeviceView(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: UuidString
+    kind: Literal["local_runner", "extension"]
+    label: Annotated[str, Field(max_length=120)]
+    status: Literal["pending", "paired", "revoked", "expired"]
+    device_public_id: Annotated[str, Field(max_length=200)] | None
+    allowed_origins: Annotated[list[Annotated[str, Field(max_length=500)]], Field(max_length=20)]
+    expires_at: TimestampString | None
+    revoked_at: TimestampString | None
+    last_seen_at: TimestampString | None
+    created_at: TimestampString
+
+
+class CreatePairingRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    device_kind: Literal["local_runner", "extension"]
+    label: Annotated[str, Field(min_length=1, max_length=120)]
+    allowed_origins: Annotated[
+        list[Annotated[str, Field(min_length=1, max_length=500)]],
+        Field(max_length=20)
+    ] | None = None
+
+
+class PairingCodeResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    device_id: UuidString
+    pairing_code: Annotated[str, Field(min_length=8, max_length=120)]
+    expires_in: Annotated[int, Field(ge=1)]
+
+
+class DeviceExchangeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    pairing_code: Annotated[str, Field(min_length=8, max_length=120)]
+    device_public_id: Annotated[str, Field(min_length=1, max_length=200)]
+
+
+class DeviceExchangeResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    device_id: UuidString
+    token: Annotated[str, Field(min_length=32, max_length=200)]
+    expires_at: TimestampString
+    allowed_origins: Annotated[list[Annotated[str, Field(max_length=500)]], Field(max_length=20)]
+
+
+class FillField(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    question_key: Annotated[str, Field(min_length=1, max_length=120, pattern=r"^[a-z0-9_.:-]+$")]
+    label: Annotated[str, Field(max_length=500)] | None
+    answer: Union[
+        Annotated[str, Field(max_length=5000)],
+        float,
+        bool,
+        Annotated[list[Annotated[str, Field(max_length=500)]], Field(max_length=50)]
+    ]
+    required: bool
+    sensitivity: Literal["standard", "sensitive", "never_reuse"]
+
+
+class FillJobIdentity(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    job_id: UuidString
+    company: Annotated[str, Field(max_length=200)]
+    title: Annotated[str, Field(max_length=300)]
+
+
+class FillLocalInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    application_id: UuidString
+    packet_id: UuidString
+    content_hash: Annotated[str, Field(min_length=64, max_length=64)]
+    device_id: UuidString
+    destination: PacketDestination
+    allowed_origins: Annotated[list[Annotated[str, Field(max_length=500)]], Field(max_length=20)]
+    job: FillJobIdentity
+    resume_file_id: UuidString | None
+    resume_sha256: Annotated[str, Field(max_length=64)] | None
+    resume_filename: Annotated[str, Field(max_length=260)] | None
+    fields: Annotated[list[FillField], Field(max_length=200)]
+    known_form_fingerprint: Annotated[str, Field(max_length=128)] | None
+    adapter: Annotated[str, Field(max_length=40)] | None
+
+
+class FilledField(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    question_key: Annotated[str, Field(min_length=1, max_length=120, pattern=r"^[a-z0-9_.:-]+$")]
+    outcome: Literal["filled", "skipped", "failed"]
+    matched_label: Annotated[str, Field(max_length=500)] | None
+
+
+class UnresolvedField(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    question_key: Annotated[str, Field(min_length=1, max_length=120, pattern=r"^[a-z0-9_.:-]+$")]
+    label: Annotated[str, Field(max_length=500)] | None
+    required: bool
+    reason: Literal[
+        "no_answer",
+        "new_question",
+        "unsupported_widget",
+        "needs_exact_mapping",
+        "never_inferable",
+        "file_upload_blocked"
+    ]
+    options: Annotated[list[Annotated[str, Field(max_length=300)]], Field(max_length=100)]
+
+
+class FillLocalResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    packet_id: UuidString
+    filled_fields: Annotated[list[FilledField], Field(max_length=200)]
+    unresolved_fields: Annotated[list[UnresolvedField], Field(max_length=200)]
+    page_url: Annotated[str, Field(max_length=2000)] | None
+    form_fingerprint: Annotated[str, Field(max_length=128)] | None
+    outcome: Literal["awaiting_user_submit", "needs_input", "unsupported"]
+    adapter: Annotated[str, Field(max_length=40)] | None
+    adapter_version: Annotated[str, Field(max_length=40)] | None
+    screenshot_file_id: UuidString | None
+
+
+class FillApplicationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    expected_revision: Annotated[int, Field(ge=1)]
+    packet_id: UuidString
+    device_id: UuidString

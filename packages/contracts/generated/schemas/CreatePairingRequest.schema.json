@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/CreatePairingRequest.schema.json",
+  "title": "CreatePairingRequest",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "device_kind",
+    "label"
+  ],
+  "properties": {
+    "device_kind": {
+      "anyOf": [
+        {
+          "const": "local_runner",
+          "type": "string"
+        },
+        {
+          "const": "extension",
+          "type": "string"
+        }
+      ]
+    },
+    "label": {
+      "minLength": 1,
+      "maxLength": 120,
+      "type": "string"
+    },
+    "allowed_origins": {
+      "maxItems": 20,
+      "type": "array",
+      "items": {
+        "minLength": 1,
+        "maxLength": 500,
+        "type": "string"
+      }
+    }
+  }
+}

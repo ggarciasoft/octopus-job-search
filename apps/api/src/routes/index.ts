@@ -41,6 +41,14 @@ import {
   recordApplicationOutcome,
 } from './applications.js';
 import { deleteAnswerBankEntry, listAnswerBank, putAnswerBankEntry } from './answers.js';
+import {
+  createDevicePairing,
+  exchangeDevicePairing,
+  getDevice,
+  listDevices,
+  revokeDevice,
+} from './devices.js';
+import { fillApplication } from './fill.js';
 import type { RouteContext, RouteHandler } from './context.js';
 
 /**
@@ -126,9 +134,15 @@ function handlers(): Readonly<Record<string, RouteHandler>> {
     approveApplication,
     recordApplicationOutcome,
     listApplicationEvents,
+    fillApplication,
     listAnswerBank,
     putAnswerBankEntry,
     deleteAnswerBankEntry,
+    listDevices,
+    createDevicePairing,
+    exchangeDevicePairing,
+    getDevice,
+    revokeDevice,
   };
 }
 
@@ -139,6 +153,10 @@ const ROUTE_RATE_LIMITS: Readonly<Record<string, { max: number; timeWindow: stri
   register: { max: 5, timeWindow: '1 minute' },
   requestPasswordReset: { max: 5, timeWindow: '1 minute' },
   confirmPasswordReset: { max: 5, timeWindow: '1 minute' },
+  // 04_API_CONTRACTS.md: "Rate-limit pairing exchange." It is the one
+  // unauthenticated route that hands out a credential, so guessing at it must
+  // be slow even though the code space is 192 bits.
+  exchangeDevicePairing: { max: 10, timeWindow: '1 minute' },
 };
 
 export interface RegisterRoutesOptions {
@@ -157,7 +175,9 @@ function buildPreHandler(
   route: RouteDefinition,
 ): (request: FastifyRequest) => Promise<void> {
   return async (request: FastifyRequest) => {
-    if (isStateChanging(route.method)) {
+    // `originExempt` is documented on RouteDefinition and set by exactly one
+    // route, whose authentication is a single-use code rather than a cookie.
+    if (isStateChanging(route.method) && route.originExempt !== true) {
       verifyOrigin(context.config, request);
     }
 

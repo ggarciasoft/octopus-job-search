@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/FillApplicationRequest.schema.json",
+  "title": "FillApplicationRequest",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "expected_revision",
+    "packet_id",
+    "device_id"
+  ],
+  "properties": {
+    "expected_revision": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "packet_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "device_id": {
+      "format": "uuid",
+      "type": "string"
+    }
+  }
+}

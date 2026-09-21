@@ -1,43 +1,78 @@
 """Command-line entry points.
 
-The runner tests matter more than they look: invariant 10 and the delivery rule
-"Never replace missing backend behavior with a button that reports success"
-mean an unimplemented command must *say so* and fail, not print something
-reassuring.
+The runner tests matter more than they look. Until M4 the runner was a stub
+whose whole job was to say so, and these tests asserted that it did. Now that
+it works, they assert the properties that replaced that honesty: the container
+worker still cannot claim browser work, the pairing code never arrives as an
+argument, and nothing prints a token.
 """
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from job_getter_worker import cli, runner_cli
+from job_getter_worker.runner.store import PairingStore, StoredPairing
 
 
-def test_runner_pair_is_honestly_unimplemented(capsys: pytest.CaptureFixture[str]) -> None:
-    exit_code = runner_cli.main(["pair", "--server", "http://localhost:3000"])
-    output = capsys.readouterr().err
+@pytest.fixture(autouse=True)
+def _keep_pytest_logging(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Stop an entry point from tearing out pytest's log capture.
 
-    assert exit_code != 0, "an unimplemented command must not report success"
-    assert "not implemented" in output.lower()
-    assert runner_cli.MILESTONE in output
-    assert "Nothing was paired" in output
-    # It must not imply anything happened.
-    assert "paired successfully" not in output.lower()
-    assert "success" not in output.lower()
+    Both `main()` functions call `configure_logging`, which runs
+    `logging.basicConfig(..., force=True)` against the stdout that exists at
+    that moment. Under pytest that stdout is a capture buffer which is closed
+    when the test ends, so every later test in the session writes its log lines
+    into a closed file and fails for a reason that has nothing to do with it.
 
-
-def test_runner_without_a_command_shows_help(capsys: pytest.CaptureFixture[str]) -> None:
-    assert runner_cli.main([]) == 2
-    assert "NOT IMPLEMENTED YET" in capsys.readouterr().err
+    Process-wide logging setup is not what these tests are about.
+    """
+    monkeypatch.setattr(runner_cli, "configure_logging", lambda *args, **kwargs: None)
+    monkeypatch.setattr(cli, "configure_logging", lambda *args, **kwargs: None)
 
 
-def test_runner_help_says_the_command_does_not_work_yet() -> None:
+def test_run_without_a_pairing_says_so_and_fails(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    exit_code = runner_cli.main(["run", "--state-dir", str(tmp_path)])
+    assert exit_code == 2
+    assert "No pairing found" in capsys.readouterr().err
+
+
+def test_the_pairing_code_cannot_be_passed_as_an_argument() -> None:
+    """It is typed in, so it stays out of shell history and the process list."""
     parser = runner_cli.build_parser()
-    assert "NOT IMPLEMENTED YET" in (parser.description or "")
+    # argparse offers no public way to reach a subparser's options, so this
+    # asks the parser the way a user would: an unknown option must be rejected.
+    for rejected in ("--code", "--pairing-code"):
+        with pytest.raises(SystemExit):
+            parser.parse_args(["pair", "--server", "http://localhost:3000", rejected, "123456"])
 
 
-def test_fill_local_is_not_implemented_anywhere() -> None:
-    """The container worker must not carry browser-filling code (ADR05)."""
+def test_status_never_prints_the_token(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    secret = "device-token-that-must-never-be-printed-0123456789"
+    store = PairingStore(tmp_path)
+    store.save(
+        StoredPairing(
+            server="http://localhost:3000",
+            device_id="11111111-1111-4111-8111-111111111111",
+            token=secret,
+            expires_at="2026-10-21T00:00:00Z",
+            allowed_origins=("https://boards.greenhouse.io",),
+        )
+    )
+
+    assert runner_cli.main(["status", "--state-dir", str(tmp_path)]) == 0
+    printed = capsys.readouterr()
+    assert secret not in printed.out
+    assert secret not in printed.err
+    assert "11111111-1111-4111-8111-111111111111" in printed.out
+
+
+def test_the_container_worker_cannot_claim_browser_work() -> None:
+    """ADR05: a headless container has no access to a desktop browser."""
     from job_getter_worker.handlers import build_default_registry
 
     registered = {task_type.value for task_type in build_default_registry().registered}
@@ -50,6 +85,13 @@ def test_fill_local_is_not_implemented_anywhere() -> None:
         "render_cv",
     }
     assert "fill_local" not in registered
+
+
+def test_the_runner_registry_carries_only_browser_work() -> None:
+    from job_getter_worker.runner import build_runner_registry
+
+    registry = build_runner_registry(object(), "device-1")
+    assert {task_type.value for task_type in registry.registered} == {"fill_local"}
 
 
 def test_worker_cli_fails_fast_on_a_bad_capability(

@@ -37,25 +37,26 @@ a locator the worker cannot reproduce is not provenance.
 
 ## Layout
 
-| Path                   | What it does                                                                                  |
-| ---------------------- | --------------------------------------------------------------------------------------------- |
-| `settings.py`          | Environment contract, capability validation                                                   |
-| `logging.py`           | Structured JSON logs with mandatory redaction                                                 |
-| `errors.py`            | Failure codes derived from the generated `FailRequest`                                        |
-| `cancellation.py`      | The cooperative cancellation token                                                            |
-| `api.py`               | Client for `/internal/v1/tasks`                                                               |
-| `worker.py`            | Claim → lease → heartbeat → complete/fail loop                                                |
-| `handlers/`            | Task registry; `noop_echo` (M0), `parse_profile` (M1), `fetch_board` and `fetch_job` (M2)     |
-| `extraction/`          | PDF, DOCX and text extraction with bounds and locators                                        |
-| `profile/`             | Injection sanitising, grounding, the fact allowlist                                           |
-| `net/`                 | The only outbound HTTP to job sources: destination policy, pinned fetcher, robots, politeness |
-| `connectors/`          | Discovery connector contract; Greenhouse and Lever                                            |
-| `discovery/`           | HTML-to-text, JSON-LD `JobPosting`, the country table, normalisation and `content_hash`       |
-| `prompts/`             | Versioned prompt constants                                                                    |
-| `providers/`           | `ModelProvider` and the fake / Ollama / OpenAI-compatible adapters                            |
-| `cli.py`               | `job-getter-worker` - the container worker                                                    |
-| `runner_cli.py`        | `job-getter-runner` - **not implemented until M4**                                            |
-| `contracts/generated/` | Generated from the TypeBox schemas. **Never edit.**                                           |
+| Path                   | What it does                                                                                                            |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `settings.py`          | Environment contract, capability validation                                                                             |
+| `logging.py`           | Structured JSON logs with mandatory redaction                                                                           |
+| `errors.py`            | Failure codes derived from the generated `FailRequest`                                                                  |
+| `cancellation.py`      | The cooperative cancellation token                                                                                      |
+| `api.py`               | Client for `/internal/v1/tasks`                                                                                         |
+| `worker.py`            | Claim → lease → heartbeat → complete/fail loop                                                                          |
+| `handlers/`            | Task registry; `noop_echo` (M0), `parse_profile` (M1), `fetch_board`/`fetch_job` (M2), `match_job` and `render_cv` (M3) |
+| `extraction/`          | PDF, DOCX and text extraction with bounds and locators                                                                  |
+| `profile/`             | Injection sanitising, grounding, the fact allowlist                                                                     |
+| `net/`                 | The only outbound HTTP to job sources: destination policy, pinned fetcher, robots, politeness                           |
+| `connectors/`          | Discovery connector contract; Greenhouse and Lever                                                                      |
+| `discovery/`           | HTML-to-text, JSON-LD `JobPosting`, the country table, normalisation and `content_hash`                                 |
+| `prompts/`             | Versioned prompt constants                                                                                              |
+| `providers/`           | `ModelProvider` and the fake / Ollama / OpenAI-compatible adapters                                                      |
+| `cli.py`               | `job-getter-worker` - the container worker                                                                              |
+| `runner/`              | The paired desktop runner (M4): field model, planner, site adapters, browser, device token                              |
+| `runner_cli.py`        | `job-getter-runner` - pair, run, status                                                                                 |
+| `contracts/generated/` | Generated from the TypeBox schemas. **Never edit.**                                                                     |
 
 Every shared model, enum and constant is imported from
 `job_getter_worker.contracts.generated`. There is no hand-written parallel
@@ -90,12 +91,52 @@ attempts and stalls the queue (`docs/spec/02_ARCHITECTURE.md`, ADR05).
 
 Local browser filling is the paired desktop runner's job — which brings us to:
 
-### `job-getter-runner` does not work yet
+### `job-getter-runner`: the paired desktop runner
 
-The command exists because `docs/spec/10_DEPLOYMENT.md` names it. Running it
-prints what it _will_ do at M4 and exits non-zero. It does not print a pairing
-code, open a browser or create a device token, because a stub that looks like it
-worked is worse than no stub (invariant 10).
+Browser filling happens on the user's own machine, in a browser they can see.
+
+```bash
+uv run job-getter-runner pair --server http://localhost:3000   # type the code in
+uv run job-getter-runner run                                   # poll and fill
+uv run job-getter-runner status                                # what is paired
+```
+
+`pair` reads a single-use code from the terminal rather than from an argument,
+so it never reaches a shell history or a process listing, and exchanges it for a
+scoped device token. The token and the Chromium profile live under a restricted
+per-user state directory (`JOB_GETTER_RUNNER_HOME` overrides it) — outside the
+repository, outside the workspace export and outside anything a backup script
+touches, because both are credentials in everything but name.
+
+What the runner will not do, enforced in code rather than promised here:
+
+- **It never clicks submit.** There is no code path that does; its best outcome
+  is `awaiting_user_submit`, a filled form with a person looking at it.
+- **It never guesses an answer.** A choice field is filled only on an exact
+  option match, and demographic, identity and assessment questions are left for
+  the person however confidently a stored answer would have matched.
+- **It never fills a page nobody has tested.** With no adapter for the page it
+  reports `unsupported`, types nothing, and the user applies by hand.
+- **It never leaves the origins the fill was authorised for.** A top-level
+  navigation elsewhere is aborted.
+- **It never reads the user's own browser profile.** Chromium runs from a
+  profile this process owns; sessions in it are ones the user signed into there.
+
+One adapter exists: `greenhouse/v1`, tested with a real Chromium against
+`fixtures/ats-pages/greenhouse-application.html`. It has **never run against a
+live Greenhouse board**, and the support matrix in the root README says so.
+
+Playwright is an optional extra, so the planner and the adapters' parsing import
+and test on a machine with no browser:
+
+```bash
+uv sync --extra browser
+uv run playwright install chromium
+```
+
+Without it, `tests/test_runner_greenhouse.py` skips with a message naming the
+cause, and `job-getter-runner run` exits non-zero with the same message. A
+skipped browser test is never reported as a passing one.
 
 ---
 

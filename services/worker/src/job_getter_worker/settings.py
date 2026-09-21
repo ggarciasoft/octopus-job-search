@@ -44,6 +44,9 @@ class WorkerSettings(BaseSettings):
         extra="ignore",
         case_sensitive=False,
         secrets_dir=None,
+        # The local runner builds its settings in code rather than from the
+        # environment, so the field names have to be usable as arguments.
+        populate_by_name=True,
     )
 
     # --- internal task protocol -------------------------------------------------

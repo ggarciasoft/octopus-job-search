@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/FillJobIdentity.schema.json",
+  "title": "FillJobIdentity",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "job_id",
+    "company",
+    "title"
+  ],
+  "properties": {
+    "job_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "company": {
+      "maxLength": 200,
+      "type": "string"
+    },
+    "title": {
+      "maxLength": 300,
+      "type": "string"
+    }
+  }
+}

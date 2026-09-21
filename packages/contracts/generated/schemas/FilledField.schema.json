@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/FilledField.schema.json",
+  "title": "FilledField",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "question_key",
+    "outcome",
+    "matched_label"
+  ],
+  "properties": {
+    "question_key": {
+      "minLength": 1,
+      "maxLength": 120,
+      "pattern": "^[a-z0-9_.:-]+$",
+      "type": "string"
+    },
+    "outcome": {
+      "anyOf": [
+        {
+          "const": "filled",
+          "type": "string"
+        },
+        {
+          "const": "skipped",
+          "type": "string"
+        },
+        {
+          "const": "failed",
+          "type": "string"
+        }
+      ]
+    },
+    "matched_label": {
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

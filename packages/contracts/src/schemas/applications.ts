@@ -106,6 +106,17 @@ export const ALL_APPLICATION_STATUSES = [
  *    fallback AT17 asks for, rather than a fill state that never happens.
  *  * `filling → needs_input` is the new-question rule: "If the actual form
  *    contains new questions, pause, store the schema, collect answers".
+ *  * `needs_input → submitted` is the other manual path, and the one that is
+ *    easy to leave out. The runner filled what it could and paused with the
+ *    browser open on the employer's form; the person in front of it may well
+ *    answer the last question and submit. Refusing to record that would make
+ *    the tracker deny something that happened, which is worse than a state
+ *    machine with one more edge.
+ *  * `filling → approved` is the unsupported-page case. No tested adapter
+ *    matched, so the runner typed nothing and changed nothing; the approval it
+ *    was handed is untouched and still valid, and the user applies by hand
+ *    (AT17). Sending it to `failed` would put a red mark on a working packet,
+ *    and sending it to `preparing` would discard an approval for no reason.
  *  * `outcome_unknown → submitted` requires evidence; `outcome_unknown →
  *    preparing` is the user saying it never went through. Nothing leaves that
  *    state on its own, and nothing retries from it.
@@ -119,10 +130,10 @@ export const APPLICATION_TRANSITIONS: Readonly<
 > = {
   draft: ['preparing', 'cancelled'],
   preparing: ['needs_input', 'ready_for_review', 'failed', 'cancelled'],
-  needs_input: ['preparing', 'cancelled'],
+  needs_input: ['preparing', 'submitted', 'cancelled'],
   ready_for_review: ['approved', 'preparing', 'cancelled'],
   approved: ['filling', 'preparing', 'ready_for_review', 'submitted', 'cancelled'],
-  filling: ['awaiting_user_submit', 'needs_input', 'failed', 'preparing', 'cancelled'],
+  filling: ['awaiting_user_submit', 'needs_input', 'approved', 'failed', 'preparing', 'cancelled'],
   awaiting_user_submit: ['submitted', 'outcome_unknown', 'failed', 'cancelled'],
   submitted: ['interview', 'rejected', 'offer', 'withdrawn', 'outcome_unknown'],
   outcome_unknown: ['submitted', 'preparing'],

@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Senior Platform Engineer — Northwind Robotics</title>
+    <meta property="og:site_name" content="Northwind Robotics" />
+  </head>
+  <!--
+    The same synthetic Greenhouse form with one required question added.
+
+    It exists to prove that the form fingerprint moves when the form does: a
+    packet approved against the original is not approved against this one, and
+    "Any changed ... known form schema invalidates approval"
+    (docs/spec/03_DATA_MODEL.md) has to be something the runner can detect
+    rather than something the code merely claims.
+
+    Invented throughout: Northwind Robotics does not exist, and no real posting,
+    person or contact detail appears here (fixtures/README.md, "the one rule").
+    What is copied from the real thing is the *shape* a Greenhouse board serves:
+    the `#application_form` container, `label[for]` associations, the trailing
+    asterisk that marks a required field, a select with a blank first option, a
+    fieldset-and-legend radio group, a checkbox group, and a file input for the
+    CV.
+
+    It deliberately includes the cases the runner has to get right rather than
+    only the easy ones:
+
+      * a demographic question, which must never be answered from a stored
+        value however confidently it could be matched;
+      * a required question no packet would carry, so filling has to pause;
+      * a custom combobox with no native control behind it, which must be
+        reported as unsupported rather than typed into;
+      * two controls whose labels normalise to the same question key, which
+        must not silently overwrite each other;
+      * a submit button, which nothing in the runner may ever click.
+  -->
+  <body>
+    <header>
+      <h1 class="app-title">Senior Platform Engineer</h1>
+      <div class="company-name">Northwind Robotics</div>
+    </header>
+
+    <form id="application_form" action="/applications" method="post">
+      <input type="hidden" name="job_id" value="4242" />
+
+      <div class="field">
+        <label for="first_name">First name *</label>
+        <input id="first_name" name="first_name" type="text" required />
+      </div>
+
+      <div class="field">
+        <label for="last_name">Last name *</label>
+        <input id="last_name" name="last_name" type="text" required />
+      </div>
+
+      <div class="field">
+        <label for="email">Email *</label>
+        <input id="email" name="email" type="email" required />
+      </div>
+
+      <div class="field">
+        <label for="phone">Phone</label>
+        <input id="phone" name="phone" type="tel" />
+      </div>
+
+      <div class="field">
+        <label for="resume">Resume/CV *</label>
+        <input id="resume" name="resume" type="file" accept=".pdf,.doc,.docx" required />
+      </div>
+
+      <div class="field">
+        <label for="why_this_role">Why do you want this role? *</label>
+        <textarea id="why_this_role" name="why_this_role" rows="5" required></textarea>
+      </div>
+
+      <div class="field">
+        <label for="notice_period">Notice period</label>
+        <select id="notice_period" name="notice_period">
+          <option value="">Please select</option>
+          <option value="immediate">Immediately</option>
+          <option value="2w">2 weeks</option>
+          <option value="30d">30 days</option>
+          <option value="90d">90 days</option>
+        </select>
+      </div>
+
+      <fieldset>
+        <legend>Are you legally authorised to work in Spain? *</legend>
+        <label for="work_auth_yes"
+          ><input id="work_auth_yes" name="work_auth" type="radio" value="yes" required />
+          Yes</label
+        >
+        <label for="work_auth_no"
+          ><input id="work_auth_no" name="work_auth" type="radio" value="no" /> No</label
+        >
+        <label for="work_auth_sponsor"
+          ><input id="work_auth_sponsor" name="work_auth" type="radio" value="sponsor" /> Yes, with
+          sponsorship</label
+        >
+      </fieldset>
+
+      <fieldset>
+        <legend>Which of these have you worked with?</legend>
+        <label for="stack_python"
+          ><input id="stack_python" name="stack" type="checkbox" value="python" /> Python</label
+        >
+        <label for="stack_go"><input id="stack_go" name="stack" type="checkbox" value="go" /> Go</label>
+        <label for="stack_rust"
+          ><input id="stack_rust" name="stack" type="checkbox" value="rust" /> Rust</label
+        >
+      </fieldset>
+
+      <!-- Never answerable from a stored value, whatever the packet holds. -->
+      <div class="field">
+        <label for="gender">Gender</label>
+        <select id="gender" name="gender">
+          <option value="">Please select</option>
+          <option value="f">Female</option>
+          <option value="m">Male</option>
+          <option value="x">Another</option>
+          <option value="decline">Decline to self-identify</option>
+        </select>
+      </div>
+
+      <!-- A question no prepared packet would carry: filling must pause here. -->
+      <div class="field">
+        <label for="reference_code">Internal referral code *</label>
+        <input id="reference_code" name="reference_code" type="text" required />
+      </div>
+
+      <!-- No native control behind it. Reported as unsupported, never typed. -->
+      <div class="field">
+        <label id="location_label">Current location</label>
+        <div id="location_picker" role="combobox" aria-labelledby="location_label" tabindex="0">
+          Start typing…
+        </div>
+      </div>
+
+      <!-- Two controls whose labels normalise to one key. The second must be
+           reported rather than quietly overwriting the first. -->
+      <div class="field">
+        <label for="portfolio_url">Portfolio URL</label>
+        <input id="portfolio_url" name="portfolio_url" type="url" />
+      </div>
+      <div class="field">
+        <label for="portfolio_url_alt">Portfolio url</label>
+        <input id="portfolio_url_alt" name="portfolio_url_alt" type="url" />
+      </div>
+
+      <!-- The one difference from greenhouse-application.html: an extra
+           required question. A packet approved against the other form's
+           fingerprint is not approved against this one. -->
+      <div class="field">
+        <label for="security_clearance">Do you hold a security clearance? *</label>
+        <input id="security_clearance" name="security_clearance" type="text" required />
+      </div>
+
+      <button type="submit">Submit application</button>
+    </form>
+  </body>
+</html>

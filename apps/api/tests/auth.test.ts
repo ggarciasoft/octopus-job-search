@@ -388,11 +388,22 @@ describe('GET /me reports capabilities honestly (invariant 10)', () => {
     // with the task types a *registered* route can create. A worker handler
     // alone is not a capability the user can reach. M2 registered
     // scanSource/importJob, so fetch_board/fetch_job now appear — computed
-    // from the route table, not added by hand.
+    // from the route table, not added by hand. M4 added fillApplication, and
+    // `fill_local` appears for the same reason, even though the handler that
+    // performs it lives in the paired runner rather than in the container
+    // worker: the user can reach it, which is what this list claims.
     const advertised: string[] = body.capabilities.implemented_task_types;
     for (const type of advertised) expect(IMPLEMENTED_TASK_TYPES).toContain(type);
     expect([...advertised].sort()).toEqual(
-      ['noop_echo', 'parse_profile', 'fetch_board', 'fetch_job', 'match_job', 'render_cv'].sort(),
+      [
+        'noop_echo',
+        'parse_profile',
+        'fetch_board',
+        'fetch_job',
+        'match_job',
+        'render_cv',
+        'fill_local',
+      ].sort(),
     );
     // M1 and M2 landed: their routes exist, so these flags are true and the
     // task types appear above. Everything beyond M2 must still be false.

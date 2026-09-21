@@ -43,6 +43,11 @@ _INTERNAL_PREFIX: Final = "/internal/v1/tasks"
 #: is the header *name*, not a credential. The credential is passed in at call
 #: time and never appears in source.
 LEASE_TOKEN_HEADER: Final = "x-lease-token"  # noqa: S105
+
+#: Header a paired local runner presents instead of the operator bearer.
+#: Mirrors ``DEVICE_TOKEN_HEADER`` in the contracts package. Again a header
+#: *name*, not a credential.
+DEVICE_TOKEN_HEADER: Final = "x-device-token"  # noqa: S105
 _MAX_ATTEMPTS: Final = 4
 _MAX_RETRY_WAIT_SECONDS: Final = 30.0
 
@@ -119,15 +124,28 @@ class TaskApiClient:
         timeout_seconds: float = 30.0,
         max_download_bytes: int,
         transport: httpx.AsyncBaseTransport | None = None,
+        device_token: str | None = None,
+        user_agent: str = "job-getter-worker/0",
     ) -> None:
         self._max_download_bytes = max_download_bytes
+        # Two credentials, never both. The operator bearer serves every
+        # workspace and may not claim `fill_local`; a paired device token may
+        # claim only `fill_local`, only inside its own workspace, and must
+        # never carry the operator bearer alongside it -- sending both would
+        # make which one authorised the call a question of server-side
+        # precedence rather than of what the process actually holds.
+        credential = (
+            {DEVICE_TOKEN_HEADER: device_token}
+            if device_token is not None
+            else {"authorization": f"Bearer {auth_token}"}
+        )
         self._client = httpx.AsyncClient(
             base_url=base_url.rstrip("/"),
             timeout=httpx.Timeout(timeout_seconds),
             headers={
-                "authorization": f"Bearer {auth_token}",
+                **credential,
                 "accept": "application/json",
-                "user-agent": "job-getter-worker/0",
+                "user-agent": user_agent,
             },
             transport=transport,
             follow_redirects=False,

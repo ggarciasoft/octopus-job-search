@@ -29,6 +29,8 @@ const CREATING_OPERATION: Partial<Record<TaskType, string>> = {
   // M3.
   match_job: 'matchJob',
   render_cv: 'createResume',
+  // M4. Enqueued by the API, claimed only by a paired local runner.
+  fill_local: 'fillApplication',
 };
 
 /**

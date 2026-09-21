@@ -40,6 +40,7 @@ beforeAll(async () => {
     '0003_matches',
     '0004_resumes',
     '0005_applications',
+    '0006_devices',
   ]);
 }, 180_000);
 
