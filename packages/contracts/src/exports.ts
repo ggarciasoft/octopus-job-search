@@ -96,6 +96,11 @@ export const EXPORTED_SCHEMAS: Record<string, TSchema> = {
   TaskAck: Protocol.TaskAck,
   ArtifactUploadResponse: Protocol.ArtifactUploadResponse,
   TaskView: Protocol.TaskView,
+  UsageReserveRequest: Protocol.UsageReserveRequest,
+  UsageReserveResponse: Protocol.UsageReserveResponse,
+  UsageSettleRequest: Protocol.UsageSettleRequest,
+  UsageSettleResponse: Protocol.UsageSettleResponse,
+  UsageReleaseRequest: Protocol.UsageReleaseRequest,
   TaskProgress: Registry.TaskProgress,
 
   NoopEchoInput: NoopEcho.NoopEchoInput,

@@ -18,7 +18,6 @@
  *    milestone that implements them, not before.
  */
 import {
-  DEFAULT_OPERATIONAL_LIMITS,
   type Capabilities,
   type Locale,
   type MeResponse,
@@ -28,6 +27,7 @@ import {
 import { notFound } from '../errors.js';
 import type { WorkspaceScope } from '../auth/scope.js';
 import { isWorkerOnline } from '../tasks/queue.js';
+import { summariseUsage } from '../usage/service.js';
 import { enqueueableTaskTypes } from './capabilities.js';
 import { requireScope, requireSession, type RouteContext, type RouteHandler } from './context.js';
 
@@ -41,44 +41,26 @@ export interface MeSubject {
 }
 
 /**
- * Usage for M0.
+ * Today's AI usage, read from the ledger the worker reserves against.
  *
- * No provider adapter exists yet, so no inference has happened and the counts
- * are genuinely zero. Cost is `null` rather than `0`: without a rate card the
- * cost is *unknown*, and reporting unknown as zero would be a lie the budget
- * logic would later inherit (04_API_CONTRACTS.md).
+ * Every figure here is observed rather than assumed. The request limit is the
+ * workspace's own `ai_requests_per_day`, not the shipped default, because the
+ * user can change it and a dashboard that quotes 50 while enforcing 10 is worse
+ * than no dashboard. Cost stays `null` when no rate card is configured: without
+ * a price list the cost is genuinely unknown, and reporting unknown as zero is
+ * a lie the budget logic would inherit (04_API_CONTRACTS.md).
  */
 async function buildUsage(scope: WorkspaceScope): Promise<UsageSummary> {
-  const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  const rows = await scope
-    .selectFrom('usage_ledger')
-    .select(['input_tokens', 'output_tokens', 'measured_cost', 'currency'])
-    .where('created_at', '>=', since)
-    .where('status', '!=', 'released')
-    .execute();
-
-  let inputTokens = 0;
-  let outputTokens = 0;
-  let measuredCost: number | null = null;
-  let currency: string | null = null;
-
-  for (const row of rows) {
-    inputTokens += row.input_tokens;
-    outputTokens += row.output_tokens;
-    if (row.measured_cost !== null) {
-      measuredCost = (measuredCost ?? 0) + Number(row.measured_cost);
-      currency = row.currency;
-    }
-  }
+  const { totals, budget, currency } = await summariseUsage(scope);
 
   return {
-    ai_requests_today: rows.length,
-    ai_requests_per_day_limit: DEFAULT_OPERATIONAL_LIMITS.ai_requests_per_day,
-    input_tokens_today: inputTokens,
-    output_tokens_today: outputTokens,
-    measured_cost_today: measuredCost,
+    ai_requests_today: totals.requests,
+    ai_requests_per_day_limit: budget.requestsPerDay,
+    input_tokens_today: totals.inputTokens,
+    output_tokens_today: totals.outputTokens,
+    measured_cost_today: budget.rateCard === null ? null : totals.cost,
     currency,
-    daily_cost_budget: null,
+    daily_cost_budget: budget.dailyCostBudget,
   };
 }
 

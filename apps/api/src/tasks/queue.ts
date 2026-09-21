@@ -344,7 +344,12 @@ async function loadInputFiles(trx: DbExecutor, task: TaskRow): Promise<TaskInput
  * ids) and 409 when the lease is stale or wrong — the case AT18 exercises
  * after a reclaim.
  */
-async function lockLeasedTask(
+/**
+ * Loads a task and proves the caller still holds its lease, locking the row
+ * for the rest of the transaction. Every worker-facing write goes through
+ * this: a reclaimed worker's stale token gets a 409 and no domain effect.
+ */
+export async function lockLeasedTask(
   trx: DbTransaction,
   taskId: string,
   leaseToken: string,

@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/UsageReserveResponse.schema.json",
+  "title": "UsageReserveResponse",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "reservation_id",
+    "reserved_tokens",
+    "reserved_cost",
+    "currency"
+  ],
+  "properties": {
+    "reservation_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "reserved_tokens": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "reserved_cost": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "currency": {
+      "anyOf": [
+        {
+          "pattern": "^[A-Z]{3}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

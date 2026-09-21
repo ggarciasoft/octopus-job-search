@@ -781,3 +781,98 @@ describe('GET /me', () => {
     expect(response.json().capabilities.profile_import).toBe(true);
   });
 });
+
+/**
+ * AT21 — "Cloud provider unavailable → No surprise provider switch; local/draft
+ * work preserved."
+ *
+ * The provider-switch half is the worker's (`build_provider` returns exactly
+ * one provider and nothing looks for a second; asserted in
+ * `services/worker/tests/test_budget_and_availability.py`). What the API owes is
+ * the second half, and it is the one a user would actually notice: an import
+ * that could not reach a model must cost them nothing they already had.
+ */
+describe('AT21: an unreachable provider preserves the work already done', () => {
+  async function failParse(code: string, message: string) {
+    const created = await createImport({ pasted_text: PASTED_TEXT });
+    expect(created.statusCode).toBe(202);
+    const taskId = created.json().task_id as string;
+    const claimed = await claimParseProfile();
+
+    const failed = await harness.app.inject(
+      asWorker({
+        method: 'POST',
+        url: `/internal/v1/tasks/${taskId}/fail`,
+        payload: {
+          lease_token: claimed.lease_token,
+          code,
+          retryable: false,
+          redacted_message: message,
+        },
+      }),
+    );
+    expect(failed.statusCode).toBe(200);
+    return taskId;
+  }
+
+  it('keeps every confirmed fact the user had already approved', async () => {
+    const factId = await seedConfirmedExperience();
+    await failParse('PROVIDER_UNAVAILABLE', 'The configured provider did not answer.');
+
+    const profile = await getProfile();
+    expect(profile.statusCode).toBe(200);
+    const facts = profile.json().facts as Array<{ id: string; confirmed: boolean }>;
+    expect(facts.map((fact) => fact.id)).toContain(factId);
+    expect(facts.find((fact) => fact.id === factId)!.confirmed).toBe(true);
+  });
+
+  it('leaves an earlier import and its drafts untouched', async () => {
+    const { importId } = await importWithDrafts([draft()]);
+    const before = await readImport(importId);
+    expect(before.json().status).toBe('ready_for_review');
+
+    await failParse('PROVIDER_UNAVAILABLE', 'The configured provider did not answer.');
+
+    // A second import failing is not a reason to lose the first one's drafts,
+    // which the user may still be part-way through reviewing.
+    const after = await readImport(importId);
+    expect(after.json().status).toBe('ready_for_review');
+    expect(after.json().draft_facts).toEqual(before.json().draft_facts);
+  });
+
+  it('says what happened instead of reporting an empty extraction', async () => {
+    const taskId = await failParse(
+      'PROVIDER_UNAVAILABLE',
+      'The configured provider did not answer.',
+    );
+    const view = await readImport(taskId);
+    expect(view.statusCode).toBe(200);
+
+    // "Failed, because the model could not be reached" and "your CV contains
+    // nothing" are very different claims. Only the first one is true.
+    expect(view.json().status).toBe('failed');
+    expect(view.json().error.code).toBe('PROVIDER_UNAVAILABLE');
+    expect(view.json().error.message).toContain('did not answer');
+    expect(view.json().draft_facts).toEqual([]);
+  });
+
+  it('is the same for a budget refusal (AT22)', async () => {
+    const factId = await seedConfirmedExperience();
+    const taskId = await failParse(
+      'BUDGET_EXHAUSTED',
+      "The day's model requests are spent. Reviewing and exporting still work.",
+    );
+
+    const view = await readImport(taskId);
+    expect(view.json().status).toBe('failed');
+    expect(view.json().error.code).toBe('BUDGET_EXHAUSTED');
+    expect(view.json().error.message).toContain('exporting still work');
+
+    const facts = profileFactIds(await getProfile());
+    expect(facts).toContain(factId);
+  });
+
+  function profileFactIds(response: { json: () => { facts: Array<{ id: string }> } }): string[] {
+    return response.json().facts.map((fact) => fact.id);
+  }
+});

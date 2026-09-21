@@ -17,15 +17,15 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from ..contracts.generated import RateCard
-from ..errors import TaskFailureError
+from ..errors import BudgetExhaustedError
 from .base import TokenUsage
 
-
-class BudgetExhaustedError(TaskFailureError):
-    """A new request would exceed the configured budget."""
-
-    def __init__(self, message: str) -> None:
-        super().__init__("BUDGET_EXHAUSTED", message, retryable=False)
+__all__ = [
+    "BudgetExhaustedError",
+    "BudgetLedger",
+    "Reservation",
+    "SettledUsage",
+]
 
 
 @dataclass(frozen=True)

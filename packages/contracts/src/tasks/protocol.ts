@@ -132,3 +132,80 @@ export const TaskView = Type.Object(
   { additionalProperties: false },
 );
 export type TaskView = Static<typeof TaskView>;
+
+// ---------------------------------------------------------------------------
+// Usage reservation (06_AI_PROFILE_AND_CV.md)
+//
+//     Reserve estimated token/cost budget before requests; settle actual usage
+//     if reported. Track unknown price as unknown, never zero.
+//
+// The reservation is taken *before* the request and against the database, not
+// against a counter in the worker process. A per-process counter cannot express
+// a daily budget at all: it is born at zero on every task, so a budget could
+// only ever refuse a single request larger than the whole day's allowance, and
+// a day of ordinary requests would never exhaust anything.
+// ---------------------------------------------------------------------------
+
+/** POST /internal/v1/tasks/:id/usage/reserve */
+export const UsageReserveRequest = Type.Object(
+  {
+    lease_token: Type.String({ minLength: 32 }),
+    /**
+     * The worker's estimate, made from the prompt it is about to send. It is
+     * deliberately crude and deliberately made first: the point is to stop a
+     * request that cannot be afforded before it is sent, not to bill precisely.
+     */
+    estimated_input_tokens: Type.Integer({ minimum: 0, maximum: 10_000_000 }),
+    estimated_output_tokens: Type.Integer({ minimum: 0, maximum: 10_000_000 }),
+  },
+  { additionalProperties: false },
+);
+export type UsageReserveRequest = Static<typeof UsageReserveRequest>;
+
+export const UsageReserveResponse = Type.Object(
+  {
+    reservation_id: Uuid,
+    reserved_tokens: Type.Integer({ minimum: 0 }),
+    /** Null when no rate card is configured: the price is unknown, not zero. */
+    reserved_cost: Type.Union([Type.Number({ minimum: 0 }), Type.Null()]),
+    currency: Type.Union([Type.String({ pattern: '^[A-Z]{3}$' }), Type.Null()]),
+  },
+  { additionalProperties: false },
+);
+export type UsageReserveResponse = Static<typeof UsageReserveResponse>;
+
+/** POST /internal/v1/tasks/:id/usage/:reservation_id/settle */
+export const UsageSettleRequest = Type.Object(
+  {
+    lease_token: Type.String({ minLength: 32 }),
+    /**
+     * Null means the provider reported nothing. The reservation's estimate then
+     * stands as the charge — an unreported request is not a free one.
+     */
+    input_tokens: Type.Union([Type.Integer({ minimum: 0, maximum: 10_000_000 }), Type.Null()]),
+    output_tokens: Type.Union([Type.Integer({ minimum: 0, maximum: 10_000_000 }), Type.Null()]),
+  },
+  { additionalProperties: false },
+);
+export type UsageSettleRequest = Static<typeof UsageSettleRequest>;
+
+export const UsageSettleResponse = Type.Object(
+  {
+    reservation_id: Uuid,
+    input_tokens: Type.Integer({ minimum: 0 }),
+    output_tokens: Type.Integer({ minimum: 0 }),
+    measured_cost: Type.Union([Type.Number({ minimum: 0 }), Type.Null()]),
+    currency: Type.Union([Type.String({ pattern: '^[A-Z]{3}$' }), Type.Null()]),
+    /** True when no price could be computed. Never reported as a cost of zero. */
+    cost_is_unknown: Type.Boolean(),
+  },
+  { additionalProperties: false },
+);
+export type UsageSettleResponse = Static<typeof UsageSettleResponse>;
+
+/** POST /internal/v1/tasks/:id/usage/:reservation_id/release */
+export const UsageReleaseRequest = Type.Object(
+  { lease_token: Type.String({ minLength: 32 }) },
+  { additionalProperties: false },
+);
+export type UsageReleaseRequest = Static<typeof UsageReleaseRequest>;

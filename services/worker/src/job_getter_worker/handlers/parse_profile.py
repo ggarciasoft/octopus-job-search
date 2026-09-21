@@ -43,13 +43,9 @@ from ..profile.truthfulness import (
     validate_result_shape,
 )
 from ..prompts import build_parse_profile_prompt
-from ..providers import (
-    ModelProvider,
-    build_budget,
-    build_provider,
-    estimate_tokens,
-)
+from ..providers import ModelProvider, build_provider
 from ..providers.base import GenerationResult
+from ..usage import reserved_budget
 from . import TaskContext
 
 #: The closed schema the provider must satisfy, taken from the generated model
@@ -224,12 +220,11 @@ async def _generate(
         style_suffix=None,
     )
 
-    budget = build_budget(ctx.settings)
-    reservation = budget.reserve(
-        estimate_tokens(prompt.text), ctx.settings.provider_output_token_limit
-    )
-
-    try:
+    async with reserved_budget(
+        ctx,
+        prompt_text=prompt.text,
+        output_token_limit=ctx.settings.provider_output_token_limit,
+    ) as hold:
         generation = await provider.generate_structured(
             schema=RESULT_JSON_SCHEMA,
             prompt=prompt.text,
@@ -237,11 +232,8 @@ async def _generate(
             validate=validate_result_shape,
             prompt_version=prompt.version,
         )
-    except BaseException:
-        budget.release(reservation)
-        raise
+        settled = await hold.settle(generation.usage)
 
-    settled = budget.settle(reservation, generation.usage)
     log_shape(
         "parse_profile.model_usage",
         provider=generation.metadata.provider_id,

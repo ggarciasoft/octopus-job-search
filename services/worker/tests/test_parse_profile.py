@@ -22,7 +22,7 @@ from job_getter_worker.handlers.parse_profile import handle_parse_profile
 from job_getter_worker.logging import configure_logging
 from job_getter_worker.settings import WorkerSettings
 
-from .conftest import CV_FIXTURES, LEASE_TOKEN, input_file_entry, read_cv
+from .conftest import CV_FIXTURES, LEASE_TOKEN, UsageLedgerStub, input_file_entry, read_cv
 
 BASE_URL = "http://api.internal.test"
 TASK_ID = "11111111-2222-4333-8444-555555555555"
@@ -75,12 +75,20 @@ async def run_parse(
     inline_text: str | None = None,
     format_hint: str = "auto",
     locale: str = "en",
+    ledger: UsageLedgerStub | None = None,
     **limit_overrides: int,
 ) -> ParseProfileResult:
-    """Run the handler over a fixture document and return its result."""
+    """Run the handler over a fixture document and return its result.
+
+    The usage ledger is always mounted: every model request reserves daily
+    budget against the API first, so a test that did not mount it would be
+    testing a worker that cannot run.
+    """
     from job_getter_worker.cancellation import CancellationToken
     from job_getter_worker.contracts.generated import TaskInputFile, TaskType
     from job_getter_worker.handlers import TaskContext
+
+    (ledger or UsageLedgerStub(BASE_URL, TASK_ID)).mount()
 
     files: list[TaskInputFile] = []
     if cv is not None:

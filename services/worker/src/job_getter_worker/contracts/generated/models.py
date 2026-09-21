@@ -720,6 +720,48 @@ class TaskView(BaseModel):
     error: TaskViewError | None
 
 
+class UsageReserveRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    lease_token: Annotated[str, Field(min_length=32)]
+    estimated_input_tokens: Annotated[int, Field(ge=0, le=10000000)]
+    estimated_output_tokens: Annotated[int, Field(ge=0, le=10000000)]
+
+
+class UsageReserveResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    reservation_id: UuidString
+    reserved_tokens: Annotated[int, Field(ge=0)]
+    reserved_cost: Annotated[float, Field(ge=0)] | None
+    currency: Annotated[str, Field(pattern=r"^[A-Z]{3}$")] | None
+
+
+class UsageSettleRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    lease_token: Annotated[str, Field(min_length=32)]
+    input_tokens: Annotated[int, Field(ge=0, le=10000000)] | None
+    output_tokens: Annotated[int, Field(ge=0, le=10000000)] | None
+
+
+class UsageSettleResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    reservation_id: UuidString
+    input_tokens: Annotated[int, Field(ge=0)]
+    output_tokens: Annotated[int, Field(ge=0)]
+    measured_cost: Annotated[float, Field(ge=0)] | None
+    currency: Annotated[str, Field(pattern=r"^[A-Z]{3}$")] | None
+    cost_is_unknown: bool
+
+
+class UsageReleaseRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    lease_token: Annotated[str, Field(min_length=32)]
+
+
 class NoopEchoInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

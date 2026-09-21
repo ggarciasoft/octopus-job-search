@@ -9788,6 +9788,176 @@
           }
         }
       },
+      "UsageReleaseRequest": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "lease_token"
+        ],
+        "properties": {
+          "lease_token": {
+            "minLength": 32,
+            "type": "string"
+          }
+        }
+      },
+      "UsageReserveRequest": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "lease_token",
+          "estimated_input_tokens",
+          "estimated_output_tokens"
+        ],
+        "properties": {
+          "lease_token": {
+            "minLength": 32,
+            "type": "string"
+          },
+          "estimated_input_tokens": {
+            "minimum": 0,
+            "maximum": 10000000,
+            "type": "integer"
+          },
+          "estimated_output_tokens": {
+            "minimum": 0,
+            "maximum": 10000000,
+            "type": "integer"
+          }
+        }
+      },
+      "UsageReserveResponse": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reservation_id",
+          "reserved_tokens",
+          "reserved_cost",
+          "currency"
+        ],
+        "properties": {
+          "reservation_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "reserved_tokens": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "reserved_cost": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Z]{3}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "UsageSettleRequest": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "lease_token",
+          "input_tokens",
+          "output_tokens"
+        ],
+        "properties": {
+          "lease_token": {
+            "minLength": 32,
+            "type": "string"
+          },
+          "input_tokens": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "maximum": 10000000,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "maximum": 10000000,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "UsageSettleResponse": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reservation_id",
+          "input_tokens",
+          "output_tokens",
+          "measured_cost",
+          "currency",
+          "cost_is_unknown"
+        ],
+        "properties": {
+          "reservation_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "input_tokens": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "output_tokens": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "measured_cost": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Z]{3}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cost_is_unknown": {
+            "type": "boolean"
+          }
+        }
+      },
       "UsageSummary": {
         "additionalProperties": false,
         "type": "object",

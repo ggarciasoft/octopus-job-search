@@ -61,6 +61,22 @@ class TaskFailureError(WorkerError):
         return FailRequest.model_validate(payload)
 
 
+class BudgetExhaustedError(TaskFailureError):
+    """A new request would exceed the configured daily budget.
+
+    Never retryable: the cap does not move until the day's requests age out, so
+    a second attempt would fail identically and spend an attempt doing it. It
+    lives here rather than beside the arithmetic in ``providers/budget.py``
+    because the authoritative refusal now arrives from the API, and
+    :mod:`job_getter_worker.api` cannot import the provider package without a
+    cycle. ``providers.budget`` re-exports it, so the name is unchanged for
+    everything that already raised or caught it.
+    """
+
+    def __init__(self, message: str) -> None:
+        super().__init__("BUDGET_EXHAUSTED", message, retryable=False)
+
+
 class TaskCancelledError(WorkerError):
     """Raised at a safe checkpoint after the API requested cancellation.
 

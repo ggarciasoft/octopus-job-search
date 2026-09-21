@@ -16,6 +16,7 @@ from typing import Any
 
 import httpx
 import pytest
+import respx
 
 from job_getter_worker.api import TaskApiClient
 from job_getter_worker.cancellation import CancellationToken
@@ -316,3 +317,89 @@ def read_page(name: str) -> str:
 
 def read_job_fixture(name: str) -> Any:
     return json.loads((JOB_FIXTURES / name).read_text(encoding="utf-8"))
+
+
+# ---------------------------------------------------------------------------
+# The usage ledger, as the worker sees it
+# ---------------------------------------------------------------------------
+
+
+class UsageLedgerStub:
+    """A stand-in for the API's usage ledger, mounted on ``respx``.
+
+    It mirrors ``apps/api/src/usage/service.ts`` closely enough to exercise the
+    worker's half of the protocol: a reservation is created before the request,
+    settled with whatever the provider reported, or released when the request
+    was never sent. A refusal arrives the way the API sends one — **409 with
+    ``BUDGET_EXHAUSTED``**, not 429, because a budget refusal must not be
+    retried.
+
+    The recorded calls are the point: a test can assert that the reservation
+    happened *before* the model was asked anything.
+    """
+
+    def __init__(self, base_url: str, task_id: str, *, exhausted: bool = False) -> None:
+        self._base = f"{base_url}/internal/v1/tasks/{task_id}/usage"
+        self.exhausted = exhausted
+        self.reserved: list[dict[str, Any]] = []
+        self.settled: list[dict[str, Any]] = []
+        self.released: list[str] = []
+
+    RESERVATION_ID = "cccccccc-dddd-4eee-8fff-aaaaaaaaaaaa"
+
+    def _reserve(self, request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        if self.exhausted:
+            return httpx.Response(
+                409,
+                json={
+                    "error": {
+                        "code": "BUDGET_EXHAUSTED",
+                        "message": (
+                            "The daily limit of 50 model requests has been reached. "
+                            "Reviewing, editing and exporting still work."
+                        ),
+                        "request_id": "11111111-1111-4111-8111-111111111111",
+                    }
+                },
+            )
+        self.reserved.append(body)
+        return httpx.Response(
+            201,
+            json={
+                "reservation_id": self.RESERVATION_ID,
+                "reserved_tokens": body["estimated_input_tokens"] + body["estimated_output_tokens"],
+                "reserved_cost": None,
+                "currency": None,
+            },
+        )
+
+    def _settle(self, request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        self.settled.append(body)
+        # Nulls mean the provider reported nothing; the estimate then stands,
+        # exactly as the API does it.
+        estimate = self.reserved[-1] if self.reserved else {}
+        input_tokens = body["input_tokens"] or estimate.get("estimated_input_tokens", 0)
+        output_tokens = body["output_tokens"] or estimate.get("estimated_output_tokens", 0)
+        return httpx.Response(
+            200,
+            json={
+                "reservation_id": self.RESERVATION_ID,
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+                "measured_cost": None,
+                "currency": None,
+                "cost_is_unknown": True,
+            },
+        )
+
+    def _release(self, request: httpx.Request) -> httpx.Response:
+        self.released.append(str(request.url))
+        return httpx.Response(204)
+
+    def mount(self) -> UsageLedgerStub:
+        respx.post(f"{self._base}/reserve").mock(side_effect=self._reserve)
+        respx.post(f"{self._base}/{self.RESERVATION_ID}/settle").mock(side_effect=self._settle)
+        respx.post(f"{self._base}/{self.RESERVATION_ID}/release").mock(side_effect=self._release)
+        return self

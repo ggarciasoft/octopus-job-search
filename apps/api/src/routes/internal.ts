@@ -23,6 +23,9 @@ import {
   FailRequest,
   HeartbeatRequest,
   INTERNAL_PREFIX,
+  UsageReleaseRequest,
+  UsageReserveRequest,
+  UsageSettleRequest,
   PROTOCOL_VERSION,
   RESULT_SCHEMA_VERSION,
   type ArtifactUploadResponse,
@@ -50,6 +53,7 @@ import {
   storeFile,
   validateUpload,
 } from '../files/service.js';
+import { releaseUsage, reserveUsage, settleUsage } from '../usage/service.js';
 import type { RouteContext } from './context.js';
 
 const IdParams = Type.Object(
@@ -58,6 +62,10 @@ const IdParams = Type.Object(
 );
 const FileParams = Type.Object(
   { id: Type.String({ format: 'uuid' }), file_id: Type.String({ format: 'uuid' }) },
+  { additionalProperties: false },
+);
+const ReservationParams = Type.Object(
+  { id: Type.String({ format: 'uuid' }), reservation_id: Type.String({ format: 'uuid' }) },
   { additionalProperties: false },
 );
 
@@ -236,6 +244,57 @@ export function registerInternalRoutes(app: FastifyInstance, context: RouteConte
 
           const ack: TaskAck = { task_id: row.id, state: row.state };
           return reply.status(200).send(ack);
+        },
+      );
+
+      // -- usage reservation --------------------------------------------------
+      //
+      // The budget is enforced here rather than in the worker because the
+      // ledger is per workspace and per day, and a worker process lives for one
+      // task. See src/usage/service.ts.
+
+      internal.post(
+        '/tasks/:id/usage/reserve',
+        { schema: { params: IdParams, body: UsageReserveRequest } },
+        async (request, reply) => {
+          const { id } = request.params as { id: string };
+          const body = request.body as typeof UsageReserveRequest.static;
+          const reservation = await reserveUsage(context.db, id, body.lease_token, {
+            estimatedInputTokens: body.estimated_input_tokens,
+            estimatedOutputTokens: body.estimated_output_tokens,
+          });
+          return reply.status(201).send(reservation);
+        },
+      );
+
+      internal.post(
+        '/tasks/:id/usage/:reservation_id/settle',
+        { schema: { params: ReservationParams, body: UsageSettleRequest } },
+        async (request, reply) => {
+          const { id, reservation_id: reservationId } = request.params as {
+            id: string;
+            reservation_id: string;
+          };
+          const body = request.body as typeof UsageSettleRequest.static;
+          const settled = await settleUsage(context.db, id, body.lease_token, reservationId, {
+            inputTokens: body.input_tokens,
+            outputTokens: body.output_tokens,
+          });
+          return reply.status(200).send(settled);
+        },
+      );
+
+      internal.post(
+        '/tasks/:id/usage/:reservation_id/release',
+        { schema: { params: ReservationParams, body: UsageReleaseRequest } },
+        async (request, reply) => {
+          const { id, reservation_id: reservationId } = request.params as {
+            id: string;
+            reservation_id: string;
+          };
+          const body = request.body as typeof UsageReleaseRequest.static;
+          await releaseUsage(context.db, id, body.lease_token, reservationId);
+          return reply.status(204).send();
         },
       );
 

@@ -39,12 +39,13 @@ from ..contracts.generated import (
 from ..errors import TaskFailureError
 from ..logging import log_shape
 from ..prompts.render_cv import RENDER_CV_PROMPT_VERSION, build_render_cv_prompt
-from ..providers import build_budget, build_provider, estimate_tokens
+from ..providers import build_provider
 from ..providers.base import ModelProvider, ProviderInvalidOutputError
 from ..resume.document import MissingContactError, build_document
 from ..resume.docx_render import render_docx
 from ..resume.pdf_render import render_pdf
 from ..resume.validation import validate_document
+from ..usage import reserved_budget
 from . import TaskContext
 
 #: The closed schema the provider must satisfy: the document's own.
@@ -99,11 +100,11 @@ async def _tailor(
         style_suffix=payload.prompt_style_suffix,
     )
 
-    budget = build_budget(ctx.settings)
-    reservation = budget.reserve(
-        estimate_tokens(prompt.text), ctx.settings.provider_output_token_limit
-    )
-    try:
+    async with reserved_budget(
+        ctx,
+        prompt_text=prompt.text,
+        output_token_limit=ctx.settings.provider_output_token_limit,
+    ) as hold:
         generation = await provider.generate_structured(
             schema=DOCUMENT_JSON_SCHEMA,
             prompt=prompt.text,
@@ -111,11 +112,8 @@ async def _tailor(
             validate=_validate_model_document,
             prompt_version=prompt.version,
         )
-    except BaseException:
-        budget.release(reservation)
-        raise
+        settled = await hold.settle(generation.usage)
 
-    settled = budget.settle(reservation, generation.usage)
     log_shape(
         "render_cv.model_usage",
         provider=generation.metadata.provider_id,

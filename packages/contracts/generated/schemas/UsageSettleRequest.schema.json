@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/UsageSettleRequest.schema.json",
+  "title": "UsageSettleRequest",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "lease_token",
+    "input_tokens",
+    "output_tokens"
+  ],
+  "properties": {
+    "lease_token": {
+      "minLength": 32,
+      "type": "string"
+    },
+    "input_tokens": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "maximum": 10000000,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "output_tokens": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "maximum": 10000000,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

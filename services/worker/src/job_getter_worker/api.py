@@ -31,8 +31,13 @@ from .contracts.generated import (
     TaskAck,
     TaskProgress,
     TaskType,
+    UsageReleaseRequest,
+    UsageReserveRequest,
+    UsageReserveResponse,
+    UsageSettleRequest,
+    UsageSettleResponse,
 )
-from .errors import LeaseLostError, TaskFailureError, WorkerError
+from .errors import BudgetExhaustedError, LeaseLostError, TaskFailureError, WorkerError
 from .logging import get_logger
 
 _INTERNAL_PREFIX: Final = "/internal/v1/tasks"
@@ -360,6 +365,81 @@ class TaskApiClient:
             },
         )
         return ArtifactUploadResponse.model_validate(response.json())
+
+    # -- usage reservation ------------------------------------------------------
+
+    async def reserve_usage(
+        self,
+        task_id: str,
+        lease_token: str,
+        *,
+        estimated_input_tokens: int,
+        estimated_output_tokens: int,
+    ) -> UsageReserveResponse:
+        """Hold daily budget for one model request, or learn it cannot be had.
+
+        The reservation is taken against the *database*, because the budget is
+        per workspace and per day while this process lives for one task. A 409
+        carrying ``BUDGET_EXHAUSTED`` is the budget saying no, and it is
+        deliberately not a 429: it must not be retried, because nothing will
+        change until the day's requests age out.
+        """
+        request = UsageReserveRequest(
+            lease_token=lease_token,
+            estimated_input_tokens=estimated_input_tokens,
+            estimated_output_tokens=estimated_output_tokens,
+        )
+        try:
+            response = await self._request_with_retry(
+                "POST",
+                f"{_INTERNAL_PREFIX}/{task_id}/usage/reserve",
+                json=request.model_dump(mode="json"),
+            )
+        except ApiRequestError as error:
+            if error.code == "BUDGET_EXHAUSTED":
+                raise BudgetExhaustedError(error.message) from error
+            if error.status_code == 409:
+                raise LeaseLostError(
+                    "usage reservation rejected: the lease is no longer ours"
+                ) from error
+            raise
+        return UsageReserveResponse.model_validate(response.json())
+
+    async def settle_usage(
+        self,
+        task_id: str,
+        lease_token: str,
+        reservation_id: str,
+        *,
+        input_tokens: int | None,
+        output_tokens: int | None,
+    ) -> UsageSettleResponse:
+        """Replace a reservation with what the provider reported.
+
+        ``None`` means the provider reported nothing; the estimate then stands.
+        An unreported request is not a free one.
+        """
+        request = UsageSettleRequest(
+            lease_token=lease_token,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+        )
+        response = await self._request_with_retry(
+            "POST",
+            f"{_INTERNAL_PREFIX}/{task_id}/usage/{reservation_id}/settle",
+            json=request.model_dump(mode="json"),
+        )
+        return UsageSettleResponse.model_validate(response.json())
+
+    async def release_usage(self, task_id: str, lease_token: str, reservation_id: str) -> None:
+        """Give back a reservation for a request that was never sent."""
+        request = UsageReleaseRequest(lease_token=lease_token)
+        await self._request_with_retry(
+            "POST",
+            f"{_INTERNAL_PREFIX}/{task_id}/usage/{reservation_id}/release",
+            json=request.model_dump(mode="json"),
+            expect_no_content=True,
+        )
 
     async def complete(self, task_id: str, lease_token: str, result: Any) -> TaskAck:
         """Report success.

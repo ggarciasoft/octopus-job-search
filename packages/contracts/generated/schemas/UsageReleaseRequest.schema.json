@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/UsageReleaseRequest.schema.json",
+  "title": "UsageReleaseRequest",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "lease_token"
+  ],
+  "properties": {
+    "lease_token": {
+      "minLength": 32,
+      "type": "string"
+    }
+  }
+}
