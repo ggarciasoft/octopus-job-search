@@ -32,6 +32,7 @@ import {
   type TaskView,
   type FetchBoardResult,
   type FetchJobResult,
+  type MatchJobResult,
   type ParseProfileResult,
 } from '@job-getter/contracts';
 import type { Db, DbExecutor, DbTransaction } from '../db/pool.js';
@@ -44,6 +45,7 @@ import type { Principal } from '../auth/scope.js';
 import { applyParseProfileFailure, applyParseProfileResult } from '../profile/imports.js';
 import { applyFetchBoardFailure, applyFetchBoardResult } from '../discovery/apply-board.js';
 import { applyFetchJobFailure, applyFetchJobResult } from '../discovery/imports.js';
+import { applyMatchJobResult } from '../matching/matches.js';
 
 /**
  * Applies a validated task result to the domain rows it owns.
@@ -67,6 +69,8 @@ async function applyDomainResult(
     await applyFetchBoardResult(trx, task, result as FetchBoardResult);
   } else if (task.type === 'fetch_job') {
     await applyFetchJobResult(trx, task, result as FetchJobResult);
+  } else if (task.type === 'match_job') {
+    await applyMatchJobResult(trx, task, result as MatchJobResult);
   }
 }
 
@@ -84,6 +88,10 @@ async function applyDomainFailure(
   } else if (task.type === 'fetch_job') {
     await applyFetchJobFailure(trx, task, code, message);
   }
+  // `match_job` has no domain row to mark: a score that could not be computed
+  // simply does not exist, and the job keeps reading "not checked". Inventing
+  // a failed-match row would put a permanent red mark on a job over what is
+  // usually a transient problem.
 }
 
 export const LEASE_MS = LEASE_SECONDS * 1000;

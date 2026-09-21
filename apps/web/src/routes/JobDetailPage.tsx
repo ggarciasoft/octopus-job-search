@@ -1,11 +1,11 @@
 import type { JobDetailView, JobRequirement, JobView } from '@job-getter/contracts';
 import { Badge, Button, Callout, Dialog, Disclosure, Spinner } from '@job-getter/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useApi } from '../api/ApiProvider';
 import { describeFailure } from '../api/errors';
-import { ExternalLink, JobStatusBadge, MatchNotChecked } from '../components/DiscoveryBadges';
+import { ExternalLink, JobStatusBadge } from '../components/DiscoveryBadges';
 import { ErrorNotice } from '../components/ErrorNotice';
 import { FreshnessCell, SalaryCell, locationText } from '../discovery/JobCells';
 import {
@@ -17,6 +17,9 @@ import {
   REQUIREMENT_KIND_LABEL,
   REQUIREMENT_KIND_ORDER,
 } from '../discovery/labels';
+import { FitPanel, MatchCell } from '../discovery/MatchViews';
+import { IdempotentIntent } from '../api/idempotency';
+import { useTaskPolling } from '../hooks/useTaskPolling';
 import { useTranslation } from '../i18n/I18nProvider';
 import { formatDateTime } from '../i18n/format';
 
@@ -49,6 +52,39 @@ export function JobDetailPage() {
   const [patchError, setPatchError] = useState<unknown>(null);
   const [confirmClose, setConfirmClose] = useState(false);
   const nowMs = Date.now();
+
+  // Scoring is a task, so it is queued and followed like any other. The intent
+  // keeps one idempotency key per attempt, so a retry after a network error
+  // re-sends the same request rather than queueing a second score.
+  const matchIntent = useRef(new IdempotentIntent());
+  const [matchTaskId, setMatchTaskId] = useState<string | null>(null);
+  const [matchQueueError, setMatchQueueError] = useState<unknown>(null);
+  const [queueingMatch, setQueueingMatch] = useState(false);
+
+  const { task: matchTask, error: matchPollError } = useTaskPolling({
+    taskId: matchTaskId,
+    onTerminal: () => {
+      // The score lives on the job, not on the task result, so the job is what
+      // gets refetched.
+      void jobQuery.refetch();
+      setMatchTaskId(null);
+    },
+  });
+
+  const checkFit = async () => {
+    const key = matchIntent.current.keyFor({ job: id, revision: job?.revision ?? null });
+    setQueueingMatch(true);
+    setMatchQueueError(null);
+    try {
+      const accepted = await api.matchJob({ params: { id }, idempotencyKey: key });
+      matchIntent.current.complete();
+      setMatchTaskId(accepted.task_id);
+    } catch (caught) {
+      setMatchQueueError(caught);
+    } finally {
+      setQueueingMatch(false);
+    }
+  };
 
   /** `PATCH /jobs/:id` answers a `JobView`; the detail-only fields are kept. */
   const applyPatched = (current: JobDetailView, patched: JobView) => {
@@ -133,7 +169,7 @@ export function JobDetailPage() {
           {job.excluded_reason === null ? null : (
             <Badge tone="attention">{t('jobs.excluded', { reason: job.excluded_reason })}</Badge>
           )}
-          <MatchNotChecked />
+          <MatchCell match={job.match} />
           <span className="text-xs text-slate-600">
             {t('jobDetail.revision', { revision: job.revision })}
           </span>
@@ -172,10 +208,44 @@ export function JobDetailPage() {
             {t('jobDetail.markClosed')}
           </Button>
         )}
+        <Button
+          busy={queueingMatch || matchTaskId !== null}
+          busyLabel={t('jobDetail.checkingFit')}
+          disabled={pending !== null}
+          onClick={() => void checkFit()}
+        >
+          {job.match === null ? t('jobDetail.checkFit') : t('jobDetail.recheckFit')}
+        </Button>
         <p className="basis-full text-sm text-slate-700" data-testid="prepare-unavailable">
           {t('jobDetail.prepareUnavailable')}
         </p>
       </section>
+
+      {matchQueueError === null ? null : (
+        <ErrorNotice error={matchQueueError} overrideMessage={t('jobDetail.fitFailed')} />
+      )}
+      {matchPollError === null ? null : (
+        <ErrorNotice error={matchPollError} overrideMessage={t('jobDetail.fitFailed')} />
+      )}
+      {matchTask !== null && matchTask.state === 'failed' ? (
+        <Callout tone="warning" title={t('jobDetail.fitFailed')}>
+          {/* The worker's own words, never a rewritten reassurance. */}
+          <p data-testid="fit-failed">{matchTask.error?.message ?? ''}</p>
+        </Callout>
+      ) : null}
+      {matchTaskId === null ? null : (
+        <p className="text-sm text-slate-700" data-testid="fit-queued">
+          {t('jobDetail.fitQueued')}
+        </p>
+      )}
+
+      {job.match === null || job.match_explanation === null ? (
+        <p className="text-sm text-slate-700" data-testid="fit-not-checked">
+          {t('jobDetail.fitNotChecked')}
+        </p>
+      ) : (
+        <FitPanel match={job.match} explanation={job.match_explanation} />
+      )}
 
       <Section title={t('jobDetail.summaryTitle')}>
         <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">

@@ -7,10 +7,12 @@
  *    company. Full-text search arrives with the index 03_DATA_MODEL.md
  *    reserves for it ("Add full-text index on jobs title/description when
  *    search is introduced").
- *  * `min_score` and `eligible` are accepted because the contract declares
- *    them, but no match exists before M3 and a null match satisfies neither
- *    filter, so either one yields an empty page rather than a guess. The UI
- *    shows "Not checked", never a score (invariant 3).
+ *  * `min_score` and `eligible` filter on the stored match (M3). A job with
+ *    no match satisfies neither: "not checked" is not a score of 0 and not an
+ *    eligibility of unknown, so an unchecked job is absent from a filtered
+ *    page rather than being guessed into it. A job whose score is null
+ *    (nothing was evaluable) likewise fails `min_score`, including
+ *    `min_score=0`.
  *  * Excluded employers are hidden unless `include_excluded` is set
  *    (01_PRODUCT_REQUIREMENTS.md: "Excluded employers ... hide jobs by
  *    default; users can inspect exclusions"). The exclusion is evaluated
@@ -29,6 +31,7 @@ import {
   type JobImportRequest,
   type JobView,
   type JobsListQuery,
+  type MatchJobInput,
   type PatchJobRequest,
   type Preferences,
 } from '@job-getter/contracts';
@@ -45,6 +48,11 @@ import {
 } from '../discovery/jobs.js';
 import { type JobImportInput } from '../discovery/imports.js';
 import { workspacePreferences } from '../discovery/scans.js';
+import {
+  buildMatchInput,
+  readMatchContext,
+  requireJob as requireJobRow,
+} from '../matching/matches.js';
 import { requireScope, requireSession, type RouteHandler } from './context.js';
 import { decodeCursor, encodeCursor } from './tasks.js';
 
@@ -209,11 +217,7 @@ export const listJobs: RouteHandler = async (context, request, reply) => {
   const query = request.query as JobsListQuery;
   const limit = Math.min(Math.max(query.limit ?? DEFAULT_LIMIT, 1), MAX_LIMIT);
   const preferences: Preferences = await workspacePreferences(scope);
-
-  // No match exists before M3, and a null match satisfies neither filter.
-  if (query.min_score !== undefined || query.eligible !== undefined) {
-    return reply.status(200).send({ items: [], next_cursor: null });
-  }
+  const matchContext = await readMatchContext(scope, preferences);
 
   let builder = scope
     .selectFrom('jobs')
@@ -221,6 +225,31 @@ export const listJobs: RouteHandler = async (context, request, reply) => {
     .orderBy('last_seen_at', 'desc')
     .orderBy('id', 'desc')
     .limit(limit + 1);
+
+  // Filtering on the match means filtering on the newest one per job. A job
+  // with no match at all drops out, which is the honest reading of "not
+  // checked": it is not a low score and not an unknown eligibility.
+  if (query.min_score !== undefined || query.eligible !== undefined) {
+    const minScore = query.min_score;
+    const eligible = query.eligible;
+    builder = builder.where((eb) =>
+      eb.exists(
+        eb
+          .selectFrom('matches')
+          .select('matches.id')
+          .whereRef('matches.job_id', '=', 'jobs.id')
+          .where('matches.workspace_id', '=', scope.workspaceId)
+          .$if(minScore !== undefined, (inner) =>
+            // A null score is "nothing was evaluable", so it passes no
+            // threshold at all - not even zero.
+            inner.where('matches.score', '>=', minScore as number),
+          )
+          .$if(eligible !== undefined, (inner) =>
+            inner.where('matches.eligible', '=', eligible as NonNullable<typeof eligible>),
+          ),
+      ),
+    );
+  }
 
   if (query.status !== undefined) builder = builder.where('status', '=', query.status);
   if (query.saved !== undefined) builder = builder.where('saved', '=', query.saved);
@@ -263,7 +292,10 @@ export const listJobs: RouteHandler = async (context, request, reply) => {
       : null;
 
   return reply.status(200).send({
-    items: await buildJobViews(scope, page, preferences),
+    items: await buildJobViews(scope, page, preferences, {
+      profileRevision: matchContext.profileRevision,
+      preferencesRevision: matchContext.preferencesRevision,
+    }),
     next_cursor: nextCursor,
   });
 };
@@ -300,7 +332,13 @@ export const getJob: RouteHandler = async (context, request, reply) => {
   const { id } = request.params as { id: string };
   const row = await findJob(scope, id);
   const preferences = await workspacePreferences(scope);
-  return reply.status(200).send(await buildJobDetailView(scope, row, preferences));
+  const matchContext = await readMatchContext(scope, preferences);
+  return reply.status(200).send(
+    await buildJobDetailView(scope, row, preferences, {
+      profileRevision: matchContext.profileRevision,
+      preferencesRevision: matchContext.preferencesRevision,
+    }),
+  );
 };
 
 // ---------------------------------------------------------------------------
@@ -364,6 +402,78 @@ export const patchJob: RouteHandler = async (context, request, reply) => {
   });
 
   const preferences = await workspacePreferences(scope);
-  const [view] = await buildJobViews(scope, [updated], preferences);
+  const matchContext = await readMatchContext(scope, preferences);
+  const [view] = await buildJobViews(scope, [updated], preferences, {
+    profileRevision: matchContext.profileRevision,
+    preferencesRevision: matchContext.preferencesRevision,
+  });
   return reply.status(200).send(view as JobView);
+};
+
+// ---------------------------------------------------------------------------
+// POST /jobs/:id/match
+// ---------------------------------------------------------------------------
+
+/**
+ * Queue a fit score for one job.
+ *
+ * Scoring is cheap and deterministic, so this does not refuse to re-run when a
+ * current match already exists: the user asked, and re-scoring unchanged
+ * inputs rewrites the same row rather than accumulating history (the revision
+ * tuple is unique). What it will not do is score silently in the background —
+ * every match in the system was asked for.
+ *
+ * No provider is involved, so this consumes no AI budget and works on an
+ * installation with no model configured at all.
+ */
+export const matchJob: RouteHandler = async (context, request, reply) => {
+  const scope = requireScope(context, request);
+  const principal = requireSession(request);
+  const { id } = request.params as { id: string };
+  const idempotencyKey = readIdempotencyKey(request);
+
+  const job = await requireJobRow(scope, id);
+  const preferences = await workspacePreferences(scope);
+  const matchContext = await readMatchContext(scope, preferences);
+  const payload: MatchJobInput = buildMatchInput(job, matchContext);
+
+  const outcome = await withIdempotency<AcceptedResponse>(
+    context.db,
+    scope,
+    request,
+    `POST /jobs/${id}/match`,
+    async () => {
+      const task = await context.db.transaction().execute(async (trx) => {
+        const enqueued = await enqueueTask(trx, {
+          workspaceId: scope.workspaceId,
+          type: 'match_job',
+          payload,
+          idempotencyKey,
+        });
+
+        await recordAuditEvent(scope.withExecutor(trx), {
+          action: 'job.match_queued',
+          actorId: principal.userId,
+          objectId: job.id,
+          objectType: 'job',
+          // Shape only: counts, never the facts themselves.
+          metadata: {
+            job_revision: job.revision,
+            profile_revision: matchContext.profileRevision,
+            preferences_revision: matchContext.preferencesRevision,
+            confirmed_fact_count: matchContext.confirmedFacts.length,
+          },
+        });
+
+        return enqueued;
+      });
+
+      return {
+        status: 202,
+        body: { task_id: task.id, status: 'queued' } satisfies AcceptedResponse,
+      };
+    },
+  );
+
+  return sendOutcome(reply, outcome);
 };

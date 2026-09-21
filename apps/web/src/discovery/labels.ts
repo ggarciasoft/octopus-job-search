@@ -1,14 +1,20 @@
 import type {
   ConnectorId,
+  EligibilityCode,
+  EligibilityFilter,
   FetchWarningCode,
   InferredField,
   JobEmploymentType,
   JobRequirement,
   JobStatus,
+  MatchComponentKey,
+  MatchUnknownCode,
   PossibleDuplicate,
   RemoteType,
+  RequirementOutcome,
   ScanStatus,
   SourceHealthState,
+  TriState,
 } from '@job-getter/contracts';
 import type { BadgeTone } from '@job-getter/ui';
 import type { MessageKey } from '../i18n/messages';
@@ -185,3 +191,94 @@ export const DUPLICATE_REASON_LABEL: Record<PossibleDuplicate['reason'], Message
   same_requisition: 'duplicateReason.same_requisition',
   similar_title_and_location: 'duplicateReason.similar_title_and_location',
 };
+
+// ---------------------------------------------------------------------------
+// Fit (M3)
+// ---------------------------------------------------------------------------
+
+export const MATCH_COMPONENT_LABEL: Record<MatchComponentKey, MessageKey> = {
+  skills: 'match.component.skills',
+  role_title: 'match.component.role_title',
+  seniority: 'match.component.seniority',
+  work_arrangement: 'match.component.work_arrangement',
+  industry: 'match.component.industry',
+};
+
+/**
+ * Why a component could not be judged. Each reads as a statement about the
+ * evidence, never about the person: "the posting does not say" is a fact about
+ * the posting, and it is not a mark against anyone's CV.
+ */
+export const MATCH_UNKNOWN_LABEL: Record<MatchUnknownCode, MessageKey> = {
+  JOB_STATES_NOTHING: 'match.unknown.JOB_STATES_NOTHING',
+  PROFILE_STATES_NOTHING: 'match.unknown.PROFILE_STATES_NOTHING',
+  NO_CONFIRMED_FACTS: 'match.unknown.NO_CONFIRMED_FACTS',
+  NOT_COMPARABLE: 'match.unknown.NOT_COMPARABLE',
+  WEIGHT_ZERO: 'match.unknown.WEIGHT_ZERO',
+};
+
+export const ELIGIBILITY_FILTER_LABEL: Record<EligibilityFilter, MessageKey> = {
+  excluded_employer: 'eligibility.filter.excluded_employer',
+  employment_type: 'eligibility.filter.employment_type',
+  location: 'eligibility.filter.location',
+  work_authorization: 'eligibility.filter.work_authorization',
+  language: 'eligibility.filter.language',
+  salary_minimum: 'eligibility.filter.salary_minimum',
+};
+
+export const ELIGIBILITY_CODE_LABEL: Record<EligibilityCode, MessageKey> = {
+  NOT_CONFIGURED: 'eligibility.code.NOT_CONFIGURED',
+  PASSES: 'eligibility.code.PASSES',
+  EMPLOYER_EXCLUDED: 'eligibility.code.EMPLOYER_EXCLUDED',
+  EMPLOYMENT_TYPE_NOT_ACCEPTED: 'eligibility.code.EMPLOYMENT_TYPE_NOT_ACCEPTED',
+  EMPLOYMENT_TYPE_NOT_STATED: 'eligibility.code.EMPLOYMENT_TYPE_NOT_STATED',
+  COUNTRY_NOT_ELIGIBLE: 'eligibility.code.COUNTRY_NOT_ELIGIBLE',
+  COUNTRY_NOT_STATED: 'eligibility.code.COUNTRY_NOT_STATED',
+  REMOTE_MODE_NOT_ACCEPTED: 'eligibility.code.REMOTE_MODE_NOT_ACCEPTED',
+  AUTHORIZATION_NOT_CONFIRMED: 'eligibility.code.AUTHORIZATION_NOT_CONFIRMED',
+  AUTHORIZATION_ABSENT: 'eligibility.code.AUTHORIZATION_ABSENT',
+  SPONSORSHIP_REQUIRED: 'eligibility.code.SPONSORSHIP_REQUIRED',
+  LANGUAGE_NOT_DECLARED: 'eligibility.code.LANGUAGE_NOT_DECLARED',
+  LANGUAGE_NOT_STATED: 'eligibility.code.LANGUAGE_NOT_STATED',
+  SALARY_BELOW_MINIMUM: 'eligibility.code.SALARY_BELOW_MINIMUM',
+  SALARY_NOT_STATED: 'eligibility.code.SALARY_NOT_STATED',
+  SALARY_NOT_COMPARABLE: 'eligibility.code.SALARY_NOT_COMPARABLE',
+};
+
+/**
+ * `unknown` uses the dashed `unknown` tone rather than a soft green: an
+ * undetermined eligibility must never read as a pass.
+ */
+export const ELIGIBILITY_VERDICT_TONE: Record<TriState, BadgeTone> = {
+  yes: 'success',
+  no: 'danger',
+  unknown: 'unknown',
+};
+
+export const ELIGIBILITY_VERDICT_LABEL: Record<TriState, MessageKey> = {
+  yes: 'eligibility.verdict.yes',
+  no: 'eligibility.verdict.no',
+  unknown: 'eligibility.verdict.unknown',
+};
+
+export const REQUIREMENT_OUTCOME_LABEL: Record<RequirementOutcome, MessageKey> = {
+  matched: 'match.outcome.matched',
+  uncertain: 'match.outcome.uncertain',
+  missing: 'match.outcome.missing',
+};
+
+/**
+ * An uncertain requirement is not a near-miss to be celebrated: it is a
+ * warning that the alias map found something adjacent and refused to count it.
+ */
+export const REQUIREMENT_OUTCOME_TONE: Record<RequirementOutcome, BadgeTone> = {
+  matched: 'success',
+  uncertain: 'warning',
+  missing: 'neutral',
+};
+
+export const REQUIREMENT_OUTCOME_ORDER: readonly RequirementOutcome[] = [
+  'missing',
+  'uncertain',
+  'matched',
+];

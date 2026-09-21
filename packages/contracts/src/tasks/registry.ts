@@ -40,6 +40,7 @@ export const IMPLEMENTED_TASK_TYPES = [
   'parse_profile',
   'fetch_board',
   'fetch_job',
+  'match_job',
 ] as const satisfies readonly TaskType[];
 
 export const TaskState = Type.Union([

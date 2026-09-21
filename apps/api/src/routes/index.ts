@@ -29,7 +29,7 @@ import { getPreferences, putPreferences } from './preferences.js';
 import { getProviderSettings, putProviderSettings, testProviderSettings } from './providers.js';
 import { createSource, deleteSource, listSources, patchSource, scanSource } from './sources.js';
 import { getScan } from './scans.js';
-import { getJob, importJob, listJobs, patchJob } from './jobs.js';
+import { getJob, importJob, listJobs, matchJob, patchJob } from './jobs.js';
 import type { RouteContext, RouteHandler } from './context.js';
 
 /**
@@ -103,6 +103,7 @@ function handlers(): Readonly<Record<string, RouteHandler>> {
     importJob,
     listJobs,
     getJob,
+    matchJob,
     patchJob,
   };
 }

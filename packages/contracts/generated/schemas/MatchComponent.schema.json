@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/MatchComponent.schema.json",
+  "title": "MatchComponent",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "key",
+    "value",
+    "weight",
+    "evaluable",
+    "unknown_code",
+    "evidence",
+    "fact_ids"
+  ],
+  "properties": {
+    "key": {
+      "anyOf": [
+        {
+          "const": "skills",
+          "type": "string"
+        },
+        {
+          "const": "role_title",
+          "type": "string"
+        },
+        {
+          "const": "seniority",
+          "type": "string"
+        },
+        {
+          "const": "work_arrangement",
+          "type": "string"
+        },
+        {
+          "const": "industry",
+          "type": "string"
+        }
+      ]
+    },
+    "value": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "maximum": 1,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "weight": {
+      "minimum": 0,
+      "maximum": 100,
+      "type": "integer"
+    },
+    "evaluable": {
+      "type": "boolean"
+    },
+    "unknown_code": {
+      "anyOf": [
+        {
+          "anyOf": [
+            {
+              "const": "JOB_STATES_NOTHING",
+              "type": "string"
+            },
+            {
+              "const": "PROFILE_STATES_NOTHING",
+              "type": "string"
+            },
+            {
+              "const": "NO_CONFIRMED_FACTS",
+              "type": "string"
+            },
+            {
+              "const": "NOT_COMPARABLE",
+              "type": "string"
+            },
+            {
+              "const": "WEIGHT_ZERO",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "evidence": {
+      "maxItems": 20,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source",
+          "excerpt",
+          "fact_id"
+        ],
+        "properties": {
+          "source": {
+            "anyOf": [
+              {
+                "const": "job",
+                "type": "string"
+              },
+              {
+                "const": "profile",
+                "type": "string"
+              }
+            ]
+          },
+          "excerpt": {
+            "minLength": 1,
+            "maxLength": 600,
+            "type": "string"
+          },
+          "fact_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "fact_ids": {
+      "maxItems": 50,
+      "type": "array",
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      }
+    }
+  }
+}

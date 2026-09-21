@@ -148,7 +148,7 @@ describe('jobs list', () => {
     );
   });
 
-  it('sends the other filters only when set and never the M3-only ones', async () => {
+  it('sends each filter only when it is set', async () => {
     const user = userEvent.setup();
     const listJobs = vi.fn<JobGetterApi['listJobs']>(async () => ({
       items: [],
@@ -165,10 +165,38 @@ describe('jobs list', () => {
     await waitFor(() => expect(listJobs.mock.calls.length).toBeGreaterThan(1));
     const sent = listJobs.mock.lastCall?.[0]?.query;
     expect(sent).toEqual({ limit: 25, query: 'engineer', status: 'closed', saved: true });
+    // Left at "Any", the fit filters are absent rather than sent as a zero
+    // threshold or an "unknown" verdict, either of which would silently
+    // narrow the page.
     expect(sent).not.toHaveProperty('min_score');
     expect(sent).not.toHaveProperty('eligible');
-    expect(screen.queryByLabelText(/score/i)).toBeNull();
-    expect(screen.queryByLabelText(/eligib/i)).toBeNull();
+  });
+
+  it('sends the fit filters once they are chosen', async () => {
+    const user = userEvent.setup();
+    const listJobs = vi.fn<JobGetterApi['listJobs']>(async () => ({
+      items: [],
+      next_cursor: null,
+    }));
+    await openJobs(createFakeApi({ listJobs }));
+    await screen.findByTestId('jobs-empty');
+
+    await user.selectOptions(screen.getByLabelText(/^Minimum ranking/), '70');
+    await user.selectOptions(screen.getByLabelText(/^Eligibility/), 'yes');
+    await user.click(screen.getByRole('button', { name: 'Apply filters' }));
+    await waitFor(() => expect(listJobs.mock.calls.length).toBeGreaterThan(1));
+
+    expect(listJobs.mock.lastCall?.[0]?.query).toMatchObject({
+      min_score: 70,
+      eligible: 'yes',
+    });
+  });
+
+  it('warns that a fit filter can only ever match jobs that were checked', async () => {
+    await openJobs(createFakeApi());
+    await screen.findByLabelText(/^Minimum ranking/);
+
+    expect(screen.getByText(/Only jobs you have checked can pass this/)).toBeTruthy();
   });
 
   it('shows an empty state that suggests boards, a scan and relaxed filters, with no rows', async () => {

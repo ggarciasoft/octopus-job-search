@@ -4,6 +4,8 @@ import { OptionalNullable, Timestamp, TriState, Uuid } from '../common.js';
 // preference period must be the same enum, because they are compared directly
 // and never converted.
 import { SalaryPeriod } from './preferences.js';
+import { JobRequirement } from './requirements.js';
+import { MatchExplanation, MatchSummary } from './matches.js';
 
 /**
  * Discovery and job contracts (milestone M2), from
@@ -99,22 +101,6 @@ export const JobSalary = Type.Object(
   { additionalProperties: false },
 );
 export type JobSalary = Static<typeof JobSalary>;
-
-export const RequirementKind = Type.Union([
-  Type.Literal('required'),
-  Type.Literal('preferred'),
-  Type.Literal('unknown'),
-]);
-
-export const JobRequirement = Type.Object(
-  {
-    text: Type.String({ minLength: 1, maxLength: 600 }),
-    kind: RequirementKind,
-    evidence_excerpt: Type.String({ minLength: 1, maxLength: 600 }),
-  },
-  { additionalProperties: false },
-);
-export type JobRequirement = Static<typeof JobRequirement>;
 
 /**
  * A field the connector inferred (from surrounding text, a heuristic, or a
@@ -321,26 +307,6 @@ export const PossibleDuplicate = Type.Object(
 );
 export type PossibleDuplicate = Static<typeof PossibleDuplicate>;
 
-/**
- * Match summary as the jobs list carries it. Populated by M3; until then the
- * API returns null, and the UI must render "Not checked", not a score.
- */
-export const MatchSummary = Type.Object(
-  {
-    match_id: Uuid,
-    eligible: TriState,
-    /** Null when zero components were evaluable. Heuristic, not probability. */
-    score: Type.Union([Type.Integer({ minimum: 0, maximum: 100 }), Type.Null()]),
-    coverage_percent: Type.Integer({ minimum: 0, maximum: 100 }),
-    algorithm_version: Type.String({ maxLength: 16 }),
-    /** True when profile, preferences or the job changed since scoring. */
-    stale: Type.Boolean(),
-    computed_at: Timestamp,
-  },
-  { additionalProperties: false },
-);
-export type MatchSummary = Static<typeof MatchSummary>;
-
 export const JobView = Type.Object(
   {
     id: Uuid,
@@ -386,6 +352,12 @@ export const JobDetailView = Type.Object(
     requirements: Type.Array(JobRequirement),
     inferred: Type.Array(InferredField),
     content_hash: Type.String({ pattern: '^[a-f0-9]{64}$' }),
+    /**
+     * The scored explanation behind `match`. Null whenever `match` is null:
+     * a summary on its own cannot be reviewed, and an unreviewable score is
+     * not worth showing.
+     */
+    match_explanation: Type.Union([MatchExplanation, Type.Null()]),
   },
   { additionalProperties: false },
 );

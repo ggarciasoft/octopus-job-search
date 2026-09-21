@@ -213,6 +213,46 @@ contract change breaks the screens and the test fakes at compile time.
   in `src/discovery/labels.ts`, so a new contract member is a compile error
   here until it is explained.
 
+## Fit (M3)
+
+`POST /jobs/:id/match` queues a `match_job` task; the score lands on the job,
+not on the task result, so the detail page refetches the job when the task
+reaches a terminal state. Scoring is deterministic and calls no model, so the
+button works on an installation with no provider configured and spends no AI
+budget — the copy says so, because "checking fit" otherwise sounds like it
+costs something.
+
+Every rule below is about what a number is allowed to imply. A score is a
+heuristic ranking, never a probability of being hired (invariant 3).
+
+- **A score never appears without its coverage.** `MatchCell` renders "72" and
+  "of 100" as separate elements next to "90% of the weighting was judged".
+  There is no `72%` anywhere: a percentage reads as a chance of being hired.
+- **"Not checked" is not zero.** A job with `match === null` renders the shared
+  `not_checked` status and no digit at all, asserted by
+  `tests/fit.test.tsx`.
+- **A null score is "not enough to judge".** When nothing was evaluable the API
+  sends `score: null` with `coverage_percent: 0`, and the UI says so rather
+  than drawing a 0, which would read as a bad match nobody claimed.
+- **An unjudgeable component says why.** Each `MatchComponent` that is not
+  evaluable renders "Not judged" plus its reason — "the posting does not say"
+  and "your confirmed profile does not say" are different statements and are
+  never collapsed into one.
+- **Uncertain is not a near-match.** A requirement matched only through a
+  _related_ skill (TypeScript against JavaScript) renders as uncertain and says
+  it was not counted, "because claiming it would put experience on your CV that
+  you did not enter".
+- **Unknown eligibility is never a pass.** The verdict badge uses the dashed
+  `unknown` tone, and a blocking unknown adds "Unknown is not a yes".
+- **A stale score is shown as it was.** When the profile, preferences or job
+  moved on, the old score stays visible with an "Out of date" badge and an
+  explanation, rather than being silently recomputed or hidden.
+- **Gaps are listed before matches**, so the requirement list opens with what
+  is missing rather than what flatters.
+- **The fit filters only ever match checked jobs.** `min_score` and `eligible`
+  are sent only when set, and the form says beneath the control that an
+  unchecked job is left out rather than assumed to be a poor one.
+
 ## Known limitations
 
 These are real gaps, not oversights. Each one is handled honestly in the UI
@@ -236,23 +276,29 @@ today; remove the entry when the underlying cause is fixed.
    persists to `localStorage` and says so in its own description. The locale
    reported by `GET /me` is adopted only when the user has not chosen one here.
    Nothing reports the preference as saved to the server, because it is not.
-4. **The external-data notice follows the saved provider.** `sends_data_externally`
+4. **The industry component can never be judged.** Neither the job contracts
+   nor the preferences schema carries an industry, and no connector extracts
+   one, so `industry` is always reported as unknown and its weight is
+   redistributed by renormalisation. With the default weights that caps
+   coverage at 90%. The UI states the component as unjudged rather than
+   implying the 10% was assessed.
+5. **The external-data notice follows the saved provider.** `sends_data_externally`
    is computed by the API and returned on GET/PUT, so the prominent notice
    reflects the stored provider, not an unsaved selection. The option label and
    description for `openai_compatible` say it sends task input externally, so
    the user is told before saving as well.
-5. **Provider "Test connection" probes the saved settings.** The route takes no
+6. **Provider "Test connection" probes the saved settings.** The route takes no
    body, so unsaved edits cannot be tested; the screen says so whenever the form
    is dirty.
-6. **The scan panel follows one scan at a time, and only ones it can name.**
+7. **The scan panel follows one scan at a time, and only ones it can name.**
    The contract declares no scan list, so the panel can follow the task id
    `scanSource` just returned or a board's `last_scan_id`; a scan queued by
    the scheduler is reachable only once it becomes the board's last scan.
-7. **Scan warnings come from the task, not the scan.** `ScanView` carries only
+8. **Scan warnings come from the task, not the scan.** `ScanView` carries only
    `error_code`/`error_message`; the fetch warnings (including the
    `NOT_MODIFIED` that distinguishes "unchanged" from "partial") are read from
    `getTask(task_id)`. If that read fails, the generic partial copy is shown.
-8. **No client-side JSON Schema validation.** `@sinclair/typebox` is not a
+9. **No client-side JSON Schema validation.** `@sinclair/typebox` is not a
    dependency of this app, so fact and preference values are checked with the
    small hand-written rules in `src/profile/factValues.ts` (mirroring the API's
    `facts.ts`) plus the server's own field errors. The API remains the authority.
@@ -268,10 +314,10 @@ two cadences exist once.
 
 ## Adding a screen when its milestone lands
 
-1. Flip `available` in `src/navigation.ts` and remove its `missingKey`.
-2. Register the real route in `src/App.tsx`.
-3. Add the keys to **both** `src/i18n/en.ts` and `src/i18n/es.ts` — the Spanish
-   catalogue is typed `Record<MessageKey, string>`, so a missing key will not
-   compile.
-4. Extend `JobGetterApi` in `src/api/client.ts` with the routes you now call,
-   and `createFakeApi` in `tests/helpers.tsx` with a default for each.
+10. Flip `available` in `src/navigation.ts` and remove its `missingKey`.
+11. Register the real route in `src/App.tsx`.
+12. Add the keys to **both** `src/i18n/en.ts` and `src/i18n/es.ts` — the Spanish
+    catalogue is typed `Record<MessageKey, string>`, so a missing key will not
+    compile.
+13. Extend `JobGetterApi` in `src/api/client.ts` with the routes you now call,
+    and `createFakeApi` in `tests/helpers.tsx` with a default for each.

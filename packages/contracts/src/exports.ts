@@ -6,6 +6,9 @@ import * as Preferences from './schemas/preferences.js';
 import * as Profile from './schemas/profile.js';
 import * as Providers from './schemas/providers.js';
 import * as Jobs from './schemas/jobs.js';
+import * as Matches from './schemas/matches.js';
+import * as MatchJob from './tasks/match-job.js';
+import * as Requirements from './schemas/requirements.js';
 import * as FetchBoard from './tasks/fetch-board.js';
 import * as NoopEcho from './tasks/noop-echo.js';
 import * as ParseProfile from './tasks/parse-profile.js';
@@ -22,6 +25,7 @@ export const TASK_IO_SCHEMAS: Record<string, { input: TSchema; output: TSchema }
   parse_profile: { input: ParseProfile.ParseProfileInput, output: ParseProfile.ParseProfileResult },
   fetch_board: { input: FetchBoard.FetchBoardInput, output: FetchBoard.FetchBoardResult },
   fetch_job: { input: FetchBoard.FetchJobInput, output: FetchBoard.FetchJobResult },
+  match_job: { input: MatchJob.MatchJobInput, output: MatchJob.MatchJobResult },
 };
 
 /**
@@ -100,7 +104,7 @@ export const EXPORTED_SCHEMAS: Record<string, TSchema> = {
   // --- M2 discovery ---
   JobLocation: Jobs.JobLocation,
   JobSalary: Jobs.JobSalary,
-  JobRequirement: Jobs.JobRequirement,
+  JobRequirement: Requirements.JobRequirement,
   InferredField: Jobs.InferredField,
   NormalizedJob: Jobs.NormalizedJob,
   SourceHealth: Jobs.SourceHealth,
@@ -111,7 +115,7 @@ export const EXPORTED_SCHEMAS: Record<string, TSchema> = {
   ScanView: Jobs.ScanView,
   JobSourceView: Jobs.JobSourceView,
   PossibleDuplicate: Jobs.PossibleDuplicate,
-  MatchSummary: Jobs.MatchSummary,
+  MatchSummary: Matches.MatchSummary,
   JobView: Jobs.JobView,
   JobDetailView: Jobs.JobDetailView,
   JobsListQuery: Jobs.JobsListQuery,
@@ -123,6 +127,16 @@ export const EXPORTED_SCHEMAS: Record<string, TSchema> = {
   FetchBoardResult: FetchBoard.FetchBoardResult,
   FetchJobInput: FetchBoard.FetchJobInput,
   FetchJobResult: FetchBoard.FetchJobResult,
+
+  MatchEvidence: Matches.MatchEvidence,
+  MatchComponent: Matches.MatchComponent,
+  EligibilityCheck: Matches.EligibilityCheck,
+  MatchedRequirement: Matches.MatchedRequirement,
+  MatchExplanation: Matches.MatchExplanation,
+  MatchView: Matches.MatchView,
+  MatchJobSnapshot: MatchJob.MatchJobSnapshot,
+  MatchJobInput: MatchJob.MatchJobInput,
+  MatchJobResult: MatchJob.MatchJobResult,
 };
 
 /** Enumerations mirrored into Python so there is one source of truth. */
@@ -135,6 +149,11 @@ export const EXPORTED_ENUMS: Record<string, readonly string[]> = {
   ProviderId: Providers.ALL_PROVIDER_IDS,
   ConnectorId: Jobs.ALL_CONNECTOR_IDS,
   JobStatus: Jobs.ALL_JOB_STATUSES,
+  RequirementKind: Requirements.ALL_REQUIREMENT_KINDS,
+  MatchComponentKey: Matches.ALL_MATCH_COMPONENT_KEYS,
+  MatchUnknownCode: Matches.ALL_MATCH_UNKNOWN_CODES,
+  EligibilityFilter: Matches.ALL_ELIGIBILITY_FILTERS,
+  EligibilityCode: Matches.ALL_ELIGIBILITY_CODES,
 };
 
 /** Shared numeric constants that must not diverge between runtimes. */
@@ -151,4 +170,8 @@ export const EXPORTED_CONSTANTS = {
   IMPLEMENTED_TASK_TYPES: Registry.IMPLEMENTED_TASK_TYPES,
   RUNNER_ONLY_CAPABILITIES: Registry.RUNNER_ONLY_CAPABILITIES,
   NO_RETRY_TASK_TYPES: Registry.NO_RETRY_TASK_TYPES,
+  MATCH_ALGORITHM_VERSION: Matches.MATCH_ALGORITHM_VERSION,
+  SKILL_ALIAS_MAP_VERSION: Matches.SKILL_ALIAS_MAP_VERSION,
+  SKILL_REQUIRED_WEIGHT: Matches.SKILL_REQUIRED_WEIGHT,
+  SKILL_PREFERRED_WEIGHT: Matches.SKILL_PREFERRED_WEIGHT,
 } as const;

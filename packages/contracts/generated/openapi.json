@@ -810,6 +810,141 @@
           }
         }
       },
+      "EligibilityCheck": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "filter",
+          "verdict",
+          "code",
+          "blocking",
+          "evidence"
+        ],
+        "properties": {
+          "filter": {
+            "anyOf": [
+              {
+                "const": "excluded_employer",
+                "type": "string"
+              },
+              {
+                "const": "employment_type",
+                "type": "string"
+              },
+              {
+                "const": "location",
+                "type": "string"
+              },
+              {
+                "const": "work_authorization",
+                "type": "string"
+              },
+              {
+                "const": "language",
+                "type": "string"
+              },
+              {
+                "const": "salary_minimum",
+                "type": "string"
+              }
+            ]
+          },
+          "verdict": {
+            "anyOf": [
+              {
+                "const": "yes",
+                "type": "string"
+              },
+              {
+                "const": "no",
+                "type": "string"
+              },
+              {
+                "const": "unknown",
+                "type": "string"
+              }
+            ]
+          },
+          "code": {
+            "anyOf": [
+              {
+                "const": "NOT_CONFIGURED",
+                "type": "string"
+              },
+              {
+                "const": "PASSES",
+                "type": "string"
+              },
+              {
+                "const": "EMPLOYER_EXCLUDED",
+                "type": "string"
+              },
+              {
+                "const": "EMPLOYMENT_TYPE_NOT_ACCEPTED",
+                "type": "string"
+              },
+              {
+                "const": "EMPLOYMENT_TYPE_NOT_STATED",
+                "type": "string"
+              },
+              {
+                "const": "COUNTRY_NOT_ELIGIBLE",
+                "type": "string"
+              },
+              {
+                "const": "COUNTRY_NOT_STATED",
+                "type": "string"
+              },
+              {
+                "const": "REMOTE_MODE_NOT_ACCEPTED",
+                "type": "string"
+              },
+              {
+                "const": "AUTHORIZATION_NOT_CONFIRMED",
+                "type": "string"
+              },
+              {
+                "const": "AUTHORIZATION_ABSENT",
+                "type": "string"
+              },
+              {
+                "const": "SPONSORSHIP_REQUIRED",
+                "type": "string"
+              },
+              {
+                "const": "LANGUAGE_NOT_DECLARED",
+                "type": "string"
+              },
+              {
+                "const": "LANGUAGE_NOT_STATED",
+                "type": "string"
+              },
+              {
+                "const": "SALARY_BELOW_MINIMUM",
+                "type": "string"
+              },
+              {
+                "const": "SALARY_NOT_STATED",
+                "type": "string"
+              },
+              {
+                "const": "SALARY_NOT_COMPARABLE",
+                "type": "string"
+              }
+            ]
+          },
+          "blocking": {
+            "type": "boolean"
+          },
+          "evidence": {
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MatchEvidence"
+            }
+          }
+        }
+      },
       "ErrorEnvelope": {
         "additionalProperties": false,
         "type": "object",
@@ -1929,7 +2064,8 @@
           "description_text",
           "requirements",
           "inferred",
-          "content_hash"
+          "content_hash",
+          "match_explanation"
         ],
         "properties": {
           "id": {
@@ -2147,6 +2283,16 @@
           "content_hash": {
             "pattern": "^[a-f0-9]{64}$",
             "type": "string"
+          },
+          "match_explanation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MatchExplanation"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },
@@ -2769,6 +2915,483 @@
           }
         }
       },
+      "MatchComponent": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "key",
+          "value",
+          "weight",
+          "evaluable",
+          "unknown_code",
+          "evidence",
+          "fact_ids"
+        ],
+        "properties": {
+          "key": {
+            "anyOf": [
+              {
+                "const": "skills",
+                "type": "string"
+              },
+              {
+                "const": "role_title",
+                "type": "string"
+              },
+              {
+                "const": "seniority",
+                "type": "string"
+              },
+              {
+                "const": "work_arrangement",
+                "type": "string"
+              },
+              {
+                "const": "industry",
+                "type": "string"
+              }
+            ]
+          },
+          "value": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "maximum": 1,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "weight": {
+            "minimum": 0,
+            "maximum": 100,
+            "type": "integer"
+          },
+          "evaluable": {
+            "type": "boolean"
+          },
+          "unknown_code": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "const": "JOB_STATES_NOTHING",
+                    "type": "string"
+                  },
+                  {
+                    "const": "PROFILE_STATES_NOTHING",
+                    "type": "string"
+                  },
+                  {
+                    "const": "NO_CONFIRMED_FACTS",
+                    "type": "string"
+                  },
+                  {
+                    "const": "NOT_COMPARABLE",
+                    "type": "string"
+                  },
+                  {
+                    "const": "WEIGHT_ZERO",
+                    "type": "string"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "evidence": {
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MatchEvidence"
+            }
+          },
+          "fact_ids": {
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        }
+      },
+      "MatchEvidence": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source",
+          "excerpt",
+          "fact_id"
+        ],
+        "properties": {
+          "source": {
+            "anyOf": [
+              {
+                "const": "job",
+                "type": "string"
+              },
+              {
+                "const": "profile",
+                "type": "string"
+              }
+            ]
+          },
+          "excerpt": {
+            "minLength": 1,
+            "maxLength": 600,
+            "type": "string"
+          },
+          "fact_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "MatchExplanation": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "algorithm_version",
+          "alias_map_version",
+          "components",
+          "eligibility",
+          "requirements",
+          "unknown_components",
+          "fact_ids",
+          "evaluated_weight"
+        ],
+        "properties": {
+          "algorithm_version": {
+            "maxLength": 16,
+            "type": "string"
+          },
+          "alias_map_version": {
+            "maxLength": 16,
+            "type": "string"
+          },
+          "components": {
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MatchComponent"
+            }
+          },
+          "eligibility": {
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EligibilityCheck"
+            }
+          },
+          "requirements": {
+            "maxItems": 200,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MatchedRequirement"
+            }
+          },
+          "unknown_components": {
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "const": "skills",
+                  "type": "string"
+                },
+                {
+                  "const": "role_title",
+                  "type": "string"
+                },
+                {
+                  "const": "seniority",
+                  "type": "string"
+                },
+                {
+                  "const": "work_arrangement",
+                  "type": "string"
+                },
+                {
+                  "const": "industry",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "fact_ids": {
+            "maxItems": 200,
+            "type": "array",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          "evaluated_weight": {
+            "minimum": 0,
+            "maximum": 100,
+            "type": "integer"
+          }
+        }
+      },
+      "MatchJobInput": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "job_id",
+          "job_revision",
+          "profile_revision",
+          "preferences_revision",
+          "locale",
+          "job",
+          "confirmed_facts",
+          "preferences"
+        ],
+        "properties": {
+          "job_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "job_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "profile_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "preferences_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "locale": {
+            "anyOf": [
+              {
+                "const": "en",
+                "type": "string"
+              },
+              {
+                "const": "es",
+                "type": "string"
+              }
+            ]
+          },
+          "job": {
+            "$ref": "#/components/schemas/MatchJobSnapshot"
+          },
+          "confirmed_facts": {
+            "maxItems": 500,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileFact"
+            }
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/Preferences"
+          }
+        }
+      },
+      "MatchJobResult": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "eligible",
+          "score",
+          "coverage_percent",
+          "explanation",
+          "computed_at"
+        ],
+        "properties": {
+          "eligible": {
+            "anyOf": [
+              {
+                "const": "yes",
+                "type": "string"
+              },
+              {
+                "const": "no",
+                "type": "string"
+              },
+              {
+                "const": "unknown",
+                "type": "string"
+              }
+            ]
+          },
+          "score": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "maximum": 100,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "coverage_percent": {
+            "minimum": 0,
+            "maximum": 100,
+            "type": "integer"
+          },
+          "explanation": {
+            "$ref": "#/components/schemas/MatchExplanation"
+          },
+          "computed_at": {
+            "format": "date-time",
+            "type": "string"
+          }
+        }
+      },
+      "MatchJobSnapshot": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "company",
+          "title",
+          "description_text",
+          "locations",
+          "remote_type",
+          "eligible_countries",
+          "employment_type",
+          "salary",
+          "language",
+          "requirements"
+        ],
+        "properties": {
+          "company": {
+            "minLength": 1,
+            "maxLength": 200,
+            "type": "string"
+          },
+          "title": {
+            "minLength": 1,
+            "maxLength": 300,
+            "type": "string"
+          },
+          "description_text": {
+            "maxLength": 200000,
+            "type": "string"
+          },
+          "locations": {
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JobLocation"
+            }
+          },
+          "remote_type": {
+            "anyOf": [
+              {
+                "const": "remote",
+                "type": "string"
+              },
+              {
+                "const": "hybrid",
+                "type": "string"
+              },
+              {
+                "const": "onsite",
+                "type": "string"
+              },
+              {
+                "const": "unknown",
+                "type": "string"
+              }
+            ]
+          },
+          "eligible_countries": {
+            "anyOf": [
+              {
+                "maxItems": 250,
+                "type": "array",
+                "items": {
+                  "pattern": "^[A-Z]{2}$",
+                  "type": "string"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "employment_type": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "const": "full_time",
+                    "type": "string"
+                  },
+                  {
+                    "const": "part_time",
+                    "type": "string"
+                  },
+                  {
+                    "const": "contract",
+                    "type": "string"
+                  },
+                  {
+                    "const": "internship",
+                    "type": "string"
+                  },
+                  {
+                    "const": "temporary",
+                    "type": "string"
+                  },
+                  {
+                    "const": "freelance",
+                    "type": "string"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "salary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobSalary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "language": {
+            "anyOf": [
+              {
+                "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "requirements": {
+            "maxItems": 200,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JobRequirement"
+            }
+          }
+        }
+      },
       "MatchSummary": {
         "additionalProperties": false,
         "type": "object",
@@ -2832,6 +3455,93 @@
           }
         }
       },
+      "MatchView": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "job_id",
+          "job_revision",
+          "profile_revision",
+          "preferences_revision",
+          "algorithm_version",
+          "eligible",
+          "score",
+          "coverage_percent",
+          "stale",
+          "explanation",
+          "computed_at"
+        ],
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "job_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "job_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "profile_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "preferences_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "algorithm_version": {
+            "maxLength": 16,
+            "type": "string"
+          },
+          "eligible": {
+            "anyOf": [
+              {
+                "const": "yes",
+                "type": "string"
+              },
+              {
+                "const": "no",
+                "type": "string"
+              },
+              {
+                "const": "unknown",
+                "type": "string"
+              }
+            ]
+          },
+          "score": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "maximum": 100,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "coverage_percent": {
+            "minimum": 0,
+            "maximum": 100,
+            "type": "integer"
+          },
+          "stale": {
+            "type": "boolean"
+          },
+          "explanation": {
+            "$ref": "#/components/schemas/MatchExplanation"
+          },
+          "computed_at": {
+            "format": "date-time",
+            "type": "string"
+          }
+        }
+      },
       "MatchWeights": {
         "additionalProperties": false,
         "type": "object",
@@ -2867,6 +3577,62 @@
             "minimum": 0,
             "maximum": 100,
             "type": "integer"
+          }
+        }
+      },
+      "MatchedRequirement": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "requirement",
+          "outcome",
+          "weight",
+          "fact_ids",
+          "matched_skill"
+        ],
+        "properties": {
+          "requirement": {
+            "$ref": "#/components/schemas/JobRequirement"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "const": "matched",
+                "type": "string"
+              },
+              {
+                "const": "uncertain",
+                "type": "string"
+              },
+              {
+                "const": "missing",
+                "type": "string"
+              }
+            ]
+          },
+          "weight": {
+            "minimum": 0,
+            "maximum": 2,
+            "type": "integer"
+          },
+          "fact_ids": {
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          "matched_skill": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },
@@ -10156,6 +10922,157 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/PatchJobRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/jobs/{id}/match": {
+      "post": {
+        "operationId": "matchJob",
+        "summary": "Score this job against the confirmed profile and preferences.",
+        "tags": [
+          "jobs"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Score this job against the confirmed profile and preferences.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body, query or header.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated: no valid session, device token or worker credential.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted for this workspace resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or not accessible from the authenticated workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale revision, duplicate command or idempotency key reuse with a different body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload exceeds the configured upload limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Structurally valid but invalid domain input.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota or rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "description": "Mandatory for this command. Replaying the same key returns the stored response for 24 hours; reusing it with a different body returns 409.",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "description": "Anti-CSRF token for cookie-authenticated mutations; origin is verified too.",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 200
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "type": "object",
+                "properties": {}
               }
             }
           }

@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/MatchEvidence.schema.json",
+  "title": "MatchEvidence",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "source",
+    "excerpt",
+    "fact_id"
+  ],
+  "properties": {
+    "source": {
+      "anyOf": [
+        {
+          "const": "job",
+          "type": "string"
+        },
+        {
+          "const": "profile",
+          "type": "string"
+        }
+      ]
+    },
+    "excerpt": {
+      "minLength": 1,
+      "maxLength": 600,
+      "type": "string"
+    },
+    "fact_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

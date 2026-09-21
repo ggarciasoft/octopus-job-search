@@ -1225,4 +1225,109 @@ export const es: Record<MessageKey, string> = {
   'duplicateReason.same_apply_url': 'Misma URL de solicitud',
   'duplicateReason.same_requisition': 'Misma requisición',
   'duplicateReason.similar_title_and_location': 'Título y ubicación similares',
+
+  // --- Ajuste (M3) ---------------------------------------------------------
+
+  'match.heading': 'Ajuste',
+  'match.heuristicNotice':
+    'Esta es una clasificacion heuristica de como encaja la oferta con tu perfil confirmado. No es una probabilidad de ser contratado ni una puntuacion ATS. Lee la evidencia antes de confiar en ella.',
+  'match.scoreOutOf': 'de 100',
+  'match.coverage': 'Se evaluo el {percent}% de la ponderacion',
+  'match.scoreWithCoverage':
+    'Clasificacion {score} de 100, a partir del {percent}% de la ponderacion.',
+  'match.scoreUnknown': 'No hay suficiente para evaluar',
+  'match.scoreUnknownExplanation':
+    'No se pudo evaluar nada, asi que no hay clasificacion. Eso no es una puntuacion baja: la oferta y tu perfil no coincidieron en nada que esta version sepa comparar.',
+  'match.coverageNote':
+    'Esto quedo fuera porque no se pudo leer nada al respecto: {components}. La clasificacion se calculo con el resto.',
+  'match.componentsHeading': 'Que se tuvo en cuenta',
+  'match.componentValue': '{value} de 100, ponderado {weight}',
+  'match.componentNotEvaluated': 'Sin evaluar',
+  'match.requirementsHeading': 'Requisitos',
+  'match.noRequirements':
+    'No se extrajo ningun requisito, asi que no se pudo comprobar ninguno. La extraccion depende de encabezados de seccion explicitos; una lista vacia significa que no se leyo ninguno, no que el puesto no tenga.',
+  'match.evidenceFromJob': 'De la oferta',
+  'match.evidenceFromProfile': 'De tu perfil',
+  'match.matchedVia': 'Coincide con tu habilidad confirmada "{skill}".',
+  'match.uncertainExplanation':
+    'Tu perfil tiene "{skill}", que esta relacionada pero no es lo mismo. No se conto: darla por valida pondria en tu CV experiencia que no registraste.',
+  'match.showRequirementEvidence': 'Ver la linea de la que salio',
+  'match.stale': 'Desactualizado',
+  'match.staleDescription':
+    'Tu perfil, tus preferencias o la oferta cambiaron despues de este calculo.',
+  'match.staleNotice':
+    'Tu perfil, tus preferencias o la oferta cambiaron despues de este calculo, asi que se muestra tal como estaba. Vuelve a comprobar el ajuste para obtener uno actual.',
+  'match.versions': 'Algoritmo {algorithm}, mapa de alias {aliases}.',
+
+  'match.component.skills': 'Habilidades',
+  'match.component.role_title': 'Puesto y titulo',
+  'match.component.seniority': 'Seniority',
+  'match.component.work_arrangement': 'Modalidad de trabajo',
+  'match.component.industry': 'Sector',
+
+  'match.unknown.JOB_STATES_NOTHING': 'La oferta no lo dice.',
+  'match.unknown.PROFILE_STATES_NOTHING': 'Tu perfil confirmado no lo dice.',
+  'match.unknown.NO_CONFIRMED_FACTS': 'Todavia no tienes datos confirmados con los que comparar.',
+  'match.unknown.NOT_COMPARABLE': 'No se pudieron comparar sin suponer.',
+  'match.unknown.WEIGHT_ZERO': 'Le asignaste peso cero a este componente.',
+
+  'match.outcome.matched': 'Cubierto',
+  'match.outcome.uncertain': 'Incierto',
+  'match.outcome.missing': 'Sin cubrir',
+
+  'eligibility.heading': 'Puedes postularte?',
+  'eligibility.verdict.yes': 'Elegible',
+  'eligibility.verdict.no': 'No elegible',
+  'eligibility.verdict.unknown': 'Desconocido',
+  'eligibility.blocksApplication':
+    'Esto hay que responderlo antes de postularse. Desconocido no es un si.',
+
+  'eligibility.filter.excluded_employer': 'Empleador excluido',
+  'eligibility.filter.employment_type': 'Tipo de empleo',
+  'eligibility.filter.location': 'Elegibilidad por ubicacion',
+  'eligibility.filter.work_authorization': 'Autorizacion de trabajo',
+  'eligibility.filter.language': 'Idioma',
+  'eligibility.filter.salary_minimum': 'Salario minimo',
+
+  'eligibility.code.NOT_CONFIGURED':
+    'No has configurado esta preferencia, asi que no se comprobo nada.',
+  'eligibility.code.PASSES': 'Nada aqui te descarta.',
+  'eligibility.code.EMPLOYER_EXCLUDED': 'Excluiste a este empleador.',
+  'eligibility.code.EMPLOYMENT_TYPE_NOT_ACCEPTED': 'No es uno de los tipos de empleo que aceptas.',
+  'eligibility.code.EMPLOYMENT_TYPE_NOT_STATED': 'La oferta no indica el tipo de empleo.',
+  'eligibility.code.COUNTRY_NOT_ELIGIBLE':
+    'La oferta enumera paises y ninguno de los tuyos esta entre ellos.',
+  'eligibility.code.COUNTRY_NOT_STATED':
+    'La oferta no dice a que paises esta abierta. Remoto no significa en todo el mundo.',
+  'eligibility.code.REMOTE_MODE_NOT_ACCEPTED': 'Esta modalidad de trabajo no es una que aceptes.',
+  'eligibility.code.AUTHORIZATION_NOT_CONFIRMED':
+    'No tienes ningun dato confirmado de autorizacion para los paises que enumera esta oferta.',
+  'eligibility.code.AUTHORIZATION_ABSENT':
+    'Tu perfil no registra ninguna autorizacion de trabajo, asi que esto no se puede responder.',
+  'eligibility.code.SPONSORSHIP_REQUIRED':
+    'Necesitarias patrocinio. Si este empleador patrocina es una respuesta suya, no nuestra.',
+  'eligibility.code.LANGUAGE_NOT_DECLARED':
+    'No has declarado el idioma en el que esta escrita esta oferta.',
+  'eligibility.code.LANGUAGE_NOT_STATED': 'La oferta no indica un idioma.',
+  'eligibility.code.SALARY_BELOW_MINIMUM':
+    'El tope del rango publicado esta por debajo de tu minimo.',
+  'eligibility.code.SALARY_NOT_STATED': 'La oferta no indica salario.',
+  'eligibility.code.SALARY_NOT_COMPARABLE':
+    'El salario esta en una moneda o un periodo distintos de tu minimo. No se convirtio nada.',
+
+  'jobs.minScore': 'Clasificacion minima',
+  'jobs.minScoreAny': 'Cualquiera',
+  'jobs.minScoreDescription':
+    'Solo los puestos que has comprobado pueden pasar este filtro. Un puesto sin comprobar no tiene una puntuacion baja, asi que se deja fuera en lugar de suponerla.',
+  'jobs.eligible': 'Elegibilidad',
+  'jobs.eligibleAny': 'Cualquiera',
+
+  'jobDetail.checkFit': 'Comprobar ajuste',
+  'jobDetail.recheckFit': 'Volver a comprobar el ajuste',
+  'jobDetail.checkingFit': 'Comprobando',
+  'jobDetail.fitQueued':
+    'Comprobando el ajuste. Se ejecuta localmente y no consume presupuesto de IA.',
+  'jobDetail.fitFailed': 'La comprobacion de ajuste no termino.',
+  'jobDetail.fitNotChecked':
+    'Este puesto todavia no se ha comparado con tu perfil. No se puntua nada hasta que lo pidas.',
 };

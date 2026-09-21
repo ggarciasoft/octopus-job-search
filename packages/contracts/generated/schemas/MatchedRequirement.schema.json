@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/MatchedRequirement.schema.json",
+  "title": "MatchedRequirement",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "requirement",
+    "outcome",
+    "weight",
+    "fact_ids",
+    "matched_skill"
+  ],
+  "properties": {
+    "requirement": {
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "text",
+        "kind",
+        "evidence_excerpt"
+      ],
+      "properties": {
+        "text": {
+          "minLength": 1,
+          "maxLength": 600,
+          "type": "string"
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "const": "required",
+              "type": "string"
+            },
+            {
+              "const": "preferred",
+              "type": "string"
+            },
+            {
+              "const": "unknown",
+              "type": "string"
+            }
+          ]
+        },
+        "evidence_excerpt": {
+          "minLength": 1,
+          "maxLength": 600,
+          "type": "string"
+        }
+      }
+    },
+    "outcome": {
+      "anyOf": [
+        {
+          "const": "matched",
+          "type": "string"
+        },
+        {
+          "const": "uncertain",
+          "type": "string"
+        },
+        {
+          "const": "missing",
+          "type": "string"
+        }
+      ]
+    },
+    "weight": {
+      "minimum": 0,
+      "maximum": 2,
+      "type": "integer"
+    },
+    "fact_ids": {
+      "maxItems": 20,
+      "type": "array",
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      }
+    },
+    "matched_skill": {
+      "anyOf": [
+        {
+          "maxLength": 120,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

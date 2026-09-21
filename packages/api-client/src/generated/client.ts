@@ -573,6 +573,20 @@ export class JobGetterApiClient {
     });
   }
 
+  /** Score this job against the confirmed profile and preferences. (`POST /api/v1/jobs/:id/match`) */
+  matchJob(args: MatchJobArgs): Promise<MatchJobResult> {
+    return this.#request<MatchJobResult>({
+      method: 'POST',
+      prefix: API_PREFIX,
+      path: '/jobs/:id/match',
+      params: args.params,
+      json: {},
+      csrf: true,
+      idempotencyKey: args.idempotencyKey,
+      signal: args.signal,
+    });
+  }
+
   /** Save, unsave or explicitly close a job. (`PATCH /api/v1/jobs/:id`) */
   patchJob(args: PatchJobArgs): Promise<PatchJobResult> {
     return this.#request<PatchJobResult>({
@@ -912,6 +926,18 @@ export interface GetJobArgs {
 
 /** Result of `getJob`. */
 export type GetJobResult = JobDetailView;
+
+/** Arguments for `POST /api/v1/jobs/:id/match`. */
+export interface MatchJobArgs {
+  /** Path parameters. */
+  readonly params: { id: string };
+  /** Required: sent as the `Idempotency-Key` header (04_API_CONTRACTS.md). */
+  readonly idempotencyKey: string;
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `matchJob`. */
+export type MatchJobResult = AcceptedResponse;
 
 /** Arguments for `PATCH /api/v1/jobs/:id`. */
 export interface PatchJobArgs {

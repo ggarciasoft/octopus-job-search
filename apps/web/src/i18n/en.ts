@@ -1209,4 +1209,108 @@ export const en = {
   'duplicateReason.same_apply_url': 'Same application URL',
   'duplicateReason.same_requisition': 'Same requisition',
   'duplicateReason.similar_title_and_location': 'Similar title and location',
+
+  // --- Fit (M3) ------------------------------------------------------------
+  // A score is a heuristic ranking, never a probability of being hired
+  // (invariant 3). Nothing below may read as a chance, an ATS score, or a
+  // verdict on a person.
+
+  'match.heading': 'Fit',
+  'match.heuristicNotice':
+    'This is a heuristic ranking of how the posting lines up with your confirmed profile. It is not a probability of being hired and not an ATS score. Read the evidence before you rely on it.',
+  'match.scoreOutOf': 'of 100',
+  'match.coverage': '{percent}% of the weighting was judged',
+  'match.scoreWithCoverage': 'Ranking {score} of 100, from {percent}% of the weighting.',
+  'match.scoreUnknown': 'Not enough to judge',
+  'match.scoreUnknownExplanation':
+    'Nothing could be judged, so there is no ranking. That is not a low score: the posting and your profile did not overlap on anything this version knows how to compare.',
+  'match.coverageNote':
+    'These were left out because nothing could be read for them: {components}. The ranking was calculated from the rest.',
+  'match.componentsHeading': 'What went into it',
+  'match.componentValue': '{value} of 100, weighted {weight}',
+  'match.componentNotEvaluated': 'Not judged',
+  'match.requirementsHeading': 'Requirements',
+  'match.noRequirements':
+    'No requirements were extracted, so none could be checked. Extraction relies on explicit section headings; an empty list means none were read, not that the job has none.',
+  'match.evidenceFromJob': 'From the posting',
+  'match.evidenceFromProfile': 'From your profile',
+  'match.matchedVia': 'Matched through your confirmed skill "{skill}".',
+  'match.uncertainExplanation':
+    'Your profile has "{skill}", which is related but not the same thing. It was not counted: claiming it would put experience on your CV that you did not enter.',
+  'match.showRequirementEvidence': 'Show the line this came from',
+  'match.stale': 'Out of date',
+  'match.staleDescription':
+    'Your profile, preferences or the posting changed after this was calculated.',
+  'match.staleNotice':
+    'Your profile, preferences or the posting changed after this was calculated, so it is shown as it was. Check the fit again for a current one.',
+  'match.versions': 'Algorithm {algorithm}, alias map {aliases}.',
+
+  'match.component.skills': 'Skills',
+  'match.component.role_title': 'Role and title',
+  'match.component.seniority': 'Seniority',
+  'match.component.work_arrangement': 'Work arrangement',
+  'match.component.industry': 'Industry',
+
+  'match.unknown.JOB_STATES_NOTHING': 'The posting does not say.',
+  'match.unknown.PROFILE_STATES_NOTHING': 'Your confirmed profile does not say.',
+  'match.unknown.NO_CONFIRMED_FACTS': 'You have no confirmed facts to compare against yet.',
+  'match.unknown.NOT_COMPARABLE': 'The two could not be compared without guessing.',
+  'match.unknown.WEIGHT_ZERO': 'You set this component to no weight.',
+
+  'match.outcome.matched': 'Covered',
+  'match.outcome.uncertain': 'Uncertain',
+  'match.outcome.missing': 'Not covered',
+
+  'eligibility.heading': 'Can you apply?',
+  'eligibility.verdict.yes': 'Eligible',
+  'eligibility.verdict.no': 'Not eligible',
+  'eligibility.verdict.unknown': 'Unknown',
+  'eligibility.blocksApplication': 'This has to be answered before applying. Unknown is not a yes.',
+
+  'eligibility.filter.excluded_employer': 'Excluded employer',
+  'eligibility.filter.employment_type': 'Employment type',
+  'eligibility.filter.location': 'Location eligibility',
+  'eligibility.filter.work_authorization': 'Work authorization',
+  'eligibility.filter.language': 'Language',
+  'eligibility.filter.salary_minimum': 'Salary minimum',
+
+  'eligibility.code.NOT_CONFIGURED': 'You have not set this preference, so nothing was checked.',
+  'eligibility.code.PASSES': 'Nothing here rules you out.',
+  'eligibility.code.EMPLOYER_EXCLUDED': 'You excluded this employer.',
+  'eligibility.code.EMPLOYMENT_TYPE_NOT_ACCEPTED':
+    'This is not one of the employment types you accept.',
+  'eligibility.code.EMPLOYMENT_TYPE_NOT_STATED': 'The posting does not state an employment type.',
+  'eligibility.code.COUNTRY_NOT_ELIGIBLE':
+    'The posting lists countries, and none of yours is among them.',
+  'eligibility.code.COUNTRY_NOT_STATED':
+    'The posting does not say which countries it is open to. Remote does not mean worldwide.',
+  'eligibility.code.REMOTE_MODE_NOT_ACCEPTED': 'This work arrangement is not one you accept.',
+  'eligibility.code.AUTHORIZATION_NOT_CONFIRMED':
+    'You have no confirmed authorization fact for the countries this posting lists.',
+  'eligibility.code.AUTHORIZATION_ABSENT':
+    'Your profile records no work authorization at all, so this cannot be answered.',
+  'eligibility.code.SPONSORSHIP_REQUIRED':
+    'You would need sponsorship. Whether this employer sponsors is their answer to give, not ours.',
+  'eligibility.code.LANGUAGE_NOT_DECLARED':
+    'You have not declared the language this posting is written in.',
+  'eligibility.code.LANGUAGE_NOT_STATED': 'The posting does not state a language.',
+  'eligibility.code.SALARY_BELOW_MINIMUM': 'The top of the advertised range is below your minimum.',
+  'eligibility.code.SALARY_NOT_STATED': 'The posting states no salary.',
+  'eligibility.code.SALARY_NOT_COMPARABLE':
+    'The salary is in a different currency or period from your minimum. Nothing was converted.',
+
+  'jobs.minScore': 'Minimum ranking',
+  'jobs.minScoreAny': 'Any',
+  'jobs.minScoreDescription':
+    'Only jobs you have checked can pass this. An unchecked job is not a low-scoring one, so it is left out rather than guessed at.',
+  'jobs.eligible': 'Eligibility',
+  'jobs.eligibleAny': 'Any',
+
+  'jobDetail.checkFit': 'Check fit',
+  'jobDetail.recheckFit': 'Check fit again',
+  'jobDetail.checkingFit': 'Checking',
+  'jobDetail.fitQueued': 'Checking the fit. This runs locally and uses no AI budget.',
+  'jobDetail.fitFailed': 'The fit check did not finish.',
+  'jobDetail.fitNotChecked':
+    'This job has not been checked against your profile yet. Nothing is scored until you ask.',
 } as const;

@@ -151,11 +151,18 @@ describe('generated Pydantic models', () => {
       }
     }
     // Derived from the contract rather than hard-coded, so adding a task type
-    // does not turn this into a test of yesterday's list.
-    const implemented = (EXPORTED_CONSTANTS.IMPLEMENTED_TASK_TYPES as readonly string[])
-      .map((type) => `"${type}"`)
-      .join(', ');
-    expect(python.constants).toContain(`IMPLEMENTED_TASK_TYPES: Final = (${implemented})`);
+    // does not turn this into a test of yesterday's list. The members are
+    // asserted rather than the exact layout, because a tuple long enough to
+    // exceed the Ruff line length is emitted one item per line.
+    const implemented = EXPORTED_CONSTANTS.IMPLEMENTED_TASK_TYPES as readonly string[];
+    const start = python.constants.indexOf('IMPLEMENTED_TASK_TYPES: Final =');
+    expect(start).toBeGreaterThanOrEqual(0);
+    const rest = python.constants.slice(start);
+    // Up to the next constant, which is the next line starting at column zero
+    // with a name rather than a closing bracket or an indented member.
+    const end = rest.search(/\n[A-Z_]+: Final/);
+    const block = end === -1 ? rest : rest.slice(0, end);
+    for (const type of implemented) expect(block).toContain(`"${type}"`);
     expect(python.constants).toContain('RUNNER_ONLY_CAPABILITIES: Final = ("fill_local",)');
   });
 

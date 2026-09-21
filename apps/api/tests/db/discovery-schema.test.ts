@@ -28,7 +28,7 @@ beforeAll(async () => {
   database = await startTestDatabase();
   pool = createPool({ connectionString: database.connectionString, max: 5 });
   const result = await runMigrations(pool);
-  expect(result.applied).toEqual(['0001_foundation', '0002_discovery']);
+  expect(result.applied).toEqual(['0001_foundation', '0002_discovery', '0003_matches']);
 }, 180_000);
 
 afterAll(async () => {

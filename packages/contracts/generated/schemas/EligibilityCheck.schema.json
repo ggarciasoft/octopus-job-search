@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/EligibilityCheck.schema.json",
+  "title": "EligibilityCheck",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "filter",
+    "verdict",
+    "code",
+    "blocking",
+    "evidence"
+  ],
+  "properties": {
+    "filter": {
+      "anyOf": [
+        {
+          "const": "excluded_employer",
+          "type": "string"
+        },
+        {
+          "const": "employment_type",
+          "type": "string"
+        },
+        {
+          "const": "location",
+          "type": "string"
+        },
+        {
+          "const": "work_authorization",
+          "type": "string"
+        },
+        {
+          "const": "language",
+          "type": "string"
+        },
+        {
+          "const": "salary_minimum",
+          "type": "string"
+        }
+      ]
+    },
+    "verdict": {
+      "anyOf": [
+        {
+          "const": "yes",
+          "type": "string"
+        },
+        {
+          "const": "no",
+          "type": "string"
+        },
+        {
+          "const": "unknown",
+          "type": "string"
+        }
+      ]
+    },
+    "code": {
+      "anyOf": [
+        {
+          "const": "NOT_CONFIGURED",
+          "type": "string"
+        },
+        {
+          "const": "PASSES",
+          "type": "string"
+        },
+        {
+          "const": "EMPLOYER_EXCLUDED",
+          "type": "string"
+        },
+        {
+          "const": "EMPLOYMENT_TYPE_NOT_ACCEPTED",
+          "type": "string"
+        },
+        {
+          "const": "EMPLOYMENT_TYPE_NOT_STATED",
+          "type": "string"
+        },
+        {
+          "const": "COUNTRY_NOT_ELIGIBLE",
+          "type": "string"
+        },
+        {
+          "const": "COUNTRY_NOT_STATED",
+          "type": "string"
+        },
+        {
+          "const": "REMOTE_MODE_NOT_ACCEPTED",
+          "type": "string"
+        },
+        {
+          "const": "AUTHORIZATION_NOT_CONFIRMED",
+          "type": "string"
+        },
+        {
+          "const": "AUTHORIZATION_ABSENT",
+          "type": "string"
+        },
+        {
+          "const": "SPONSORSHIP_REQUIRED",
+          "type": "string"
+        },
+        {
+          "const": "LANGUAGE_NOT_DECLARED",
+          "type": "string"
+        },
+        {
+          "const": "LANGUAGE_NOT_STATED",
+          "type": "string"
+        },
+        {
+          "const": "SALARY_BELOW_MINIMUM",
+          "type": "string"
+        },
+        {
+          "const": "SALARY_NOT_STATED",
+          "type": "string"
+        },
+        {
+          "const": "SALARY_NOT_COMPARABLE",
+          "type": "string"
+        }
+      ]
+    },
+    "blocking": {
+      "type": "boolean"
+    },
+    "evidence": {
+      "maxItems": 10,
+      "type": "array",
+      "items": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source",
+          "excerpt",
+          "fact_id"
+        ],
+        "properties": {
+          "source": {
+            "anyOf": [
+              {
+                "const": "job",
+                "type": "string"
+              },
+              {
+                "const": "profile",
+                "type": "string"
+              }
+            ]
+          },
+          "excerpt": {
+            "minLength": 1,
+            "maxLength": 600,
+            "type": "string"
+          },
+          "fact_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

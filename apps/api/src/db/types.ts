@@ -22,6 +22,7 @@ import type {
   SourceHealthState,
   TaskState,
   TaskType,
+  TriState,
 } from '@job-getter/contracts';
 
 /** jsonb: select as parsed value, insert/update as a JSON string. */
@@ -372,6 +373,25 @@ export interface JobImportsTable {
   updated_at: TimestampColumn;
 }
 
+export interface MatchesTable {
+  id: Generated<string>;
+  workspace_id: string;
+  job_id: string;
+  /** The four inputs the score was computed from; together they key the row. */
+  job_revision: number;
+  profile_revision: number;
+  preferences_revision: number;
+  algorithm_version: string;
+  eligible: TriState;
+  /** Null when zero components were evaluable, never 0 to mean "unknown". */
+  score: number | null;
+  coverage_percent: number;
+  explanation: JsonColumn;
+  computed_at: TimestampColumn;
+  created_at: TimestampColumn;
+  updated_at: TimestampColumn;
+}
+
 export interface SchemaMigrationsTable {
   name: string;
   checksum: string;
@@ -399,6 +419,7 @@ export interface Database {
   sources: SourcesTable;
   scans: ScansTable;
   jobs: JobsTable;
+  matches: MatchesTable;
   job_sources: JobSourcesTable;
   job_imports: JobImportsTable;
   schema_migrations: SchemaMigrationsTable;
@@ -432,6 +453,7 @@ export const WORKSPACE_SCOPED_TABLES = [
   'jobs',
   'job_sources',
   'job_imports',
+  'matches',
 ] as const;
 
 export type WorkspaceScopedTable = (typeof WORKSPACE_SCOPED_TABLES)[number];
@@ -471,3 +493,5 @@ export type ScanRow = Selectable<ScansTable>;
 export type JobRow = Selectable<JobsTable>;
 export type JobSourceRow = Selectable<JobSourcesTable>;
 export type JobImportRow = Selectable<JobImportsTable>;
+export type MatchRow = Selectable<MatchesTable>;
+export type NewMatchRow = Insertable<MatchesTable>;

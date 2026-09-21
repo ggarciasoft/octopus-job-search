@@ -283,10 +283,16 @@ async def test_transient_claim_failure_does_not_crash_the_loop(
 async def test_worker_refuses_to_start_without_a_matching_handler(
     make_settings: Any,
 ) -> None:
-    """Declared capabilities and registered handlers must agree."""
-    settings = make_settings(WORKER_CAPABILITIES="noop_echo,match_job")
+    """Declared capabilities and registered handlers must agree.
+
+    ``render_cv`` is the example because it is declared in the task registry
+    but has no handler yet. When M3 gives it one, move this to the next
+    unimplemented type rather than deleting the test: the check it makes is
+    about the agreement itself, not about any particular task.
+    """
+    settings = make_settings(WORKER_CAPABILITIES="noop_echo,render_cv")
     async with api_client() as api:
-        with pytest.raises(RuntimeError, match="match_job"):
+        with pytest.raises(RuntimeError, match="render_cv"):
             Worker(settings, api, build_default_registry())
 
 

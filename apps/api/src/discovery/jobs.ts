@@ -31,7 +31,13 @@ import type {
   PossibleDuplicate,
   Preferences,
 } from '@job-getter/contracts';
-import type { JobRow, JobSourceRow } from '../db/types.js';
+import type { JobRow, JobSourceRow, MatchRow } from '../db/types.js';
+import {
+  latestMatchesFor,
+  toMatchSummary,
+  toMatchView,
+  type MatchInputs,
+} from '../matching/matches.js';
 import type { WorkspaceScope } from '../auth/scope.js';
 import { canonicalKeyFor, isBoardConnector, type JobOrigin } from './connectors.js';
 
@@ -379,6 +385,8 @@ function baseView(
   sources: readonly JobSourceRow[],
   duplicates: readonly PossibleDuplicate[],
   excluded: Set<string>,
+  match: MatchRow | null,
+  inputs: MatchInputs,
 ): JobView {
   return {
     id: row.id,
@@ -400,8 +408,11 @@ function baseView(
     saved: row.saved,
     excluded_reason: excludedReasonFor(row, excluded),
     sources: sources.map(toJobSourceView),
-    // M3 fills this in. Until then every job is "Not checked", never a score.
-    match: null,
+    // Null means "not checked yet", and the UI must say exactly that rather
+    // than showing a zero. A match whose inputs have moved on is still
+    // returned, flagged stale, because a visibly out-of-date score is more
+    // useful than a blank.
+    match: match === null ? null : toMatchSummary(match, inputs),
     possible_duplicates: [...duplicates],
   };
 }
@@ -432,15 +443,24 @@ export async function buildJobViews(
   scope: WorkspaceScope,
   rows: readonly JobRow[],
   preferences: Preferences,
+  revisions: Omit<MatchInputs, 'jobRevision'>,
 ): Promise<JobView[]> {
   const ids = rows.map((row) => row.id);
-  const [sources, duplicates] = await Promise.all([
+  const [sources, duplicates, matches] = await Promise.all([
     loadSources(scope, ids),
     possibleDuplicatesFor(scope, rows),
+    latestMatchesFor(scope, ids),
   ]);
   const excluded = excludedCompanies(preferences);
   return rows.map((row) =>
-    baseView(row, sources.get(row.id) ?? [], duplicates.get(row.id) ?? [], excluded),
+    baseView(
+      row,
+      sources.get(row.id) ?? [],
+      duplicates.get(row.id) ?? [],
+      excluded,
+      matches.get(row.id) ?? null,
+      { ...revisions, jobRevision: row.revision },
+    ),
   );
 }
 
@@ -448,13 +468,22 @@ export async function buildJobDetailView(
   scope: WorkspaceScope,
   row: JobRow,
   preferences: Preferences,
+  revisions: Omit<MatchInputs, 'jobRevision'>,
 ): Promise<JobDetailView> {
-  const [view] = await buildJobViews(scope, [row], preferences);
+  const [view, matches] = await Promise.all([
+    buildJobViews(scope, [row], preferences, revisions).then((views) => views[0] as JobView),
+    latestMatchesFor(scope, [row.id]),
+  ]);
+  const match = matches.get(row.id) ?? null;
+  const inputs: MatchInputs = { ...revisions, jobRevision: row.revision };
   return {
-    ...(view as JobView),
+    ...view,
     description_text: row.description_text,
     requirements: (row.requirements as JobRequirement[] | null) ?? [],
     inferred: (row.inferred as InferredField[] | null) ?? [],
     content_hash: row.content_hash,
+    // The summary alone cannot be reviewed; the detail screen gets the
+    // evidence behind every number or nothing at all.
+    match_explanation: match === null ? null : toMatchView(match, inputs).explanation,
   };
 }

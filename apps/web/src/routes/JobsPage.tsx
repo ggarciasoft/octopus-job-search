@@ -3,6 +3,7 @@ import {
   type JobStatus,
   type JobView,
   type JobsListQuery,
+  type TriState,
 } from '@job-getter/contracts';
 import {
   Badge,
@@ -19,10 +20,15 @@ import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useApi } from '../api/ApiProvider';
 import { describeFailure } from '../api/errors';
-import { JobStatusBadge, MatchNotChecked } from '../components/DiscoveryBadges';
+import { JobStatusBadge } from '../components/DiscoveryBadges';
 import { ErrorNotice } from '../components/ErrorNotice';
 import { FreshnessCell, LocationsCell, SalaryCell } from '../discovery/JobCells';
-import { JOB_EMPLOYMENT_TYPE_LABEL, JOB_STATUS_LABEL } from '../discovery/labels';
+import { MatchCell } from '../discovery/MatchViews';
+import {
+  ELIGIBILITY_VERDICT_LABEL,
+  JOB_EMPLOYMENT_TYPE_LABEL,
+  JOB_STATUS_LABEL,
+} from '../discovery/labels';
 import { useTranslation } from '../i18n/I18nProvider';
 import { formatNumber } from '../i18n/format';
 
@@ -36,14 +42,30 @@ export interface JobFilters {
   readonly status: JobStatus | '';
   readonly savedOnly: boolean;
   readonly includeExcluded: boolean;
+  /** Empty string means "no threshold", which is not the same as zero. */
+  readonly minScore: string;
+  readonly eligible: TriState | '';
 }
 
-const NO_FILTERS: JobFilters = { query: '', status: '', savedOnly: false, includeExcluded: false };
+const NO_FILTERS: JobFilters = {
+  query: '',
+  status: '',
+  savedOnly: false,
+  includeExcluded: false,
+  minScore: '',
+  eligible: '',
+};
+
+/** The thresholds offered. Not free text: a slider of noise helps nobody. */
+const MIN_SCORE_CHOICES = [50, 60, 70, 80, 90] as const;
 
 /**
- * The list query from the filter form. `min_score` and `eligible` exist in the
- * contract but no match exists before M3, so they are not offered: a filter
- * that can only ever return nothing is not a control.
+ * The list query from the filter form.
+ *
+ * `min_score` and `eligible` only ever match a job someone has checked. An
+ * unchecked job is dropped rather than assumed to be a poor one, which is why
+ * the form says so beneath the control instead of leaving the user to guess
+ * where their jobs went.
  */
 export function toListQuery(filters: JobFilters, cursor: string | undefined): JobsListQuery {
   return {
@@ -53,6 +75,8 @@ export function toListQuery(filters: JobFilters, cursor: string | undefined): Jo
     ...(filters.status === '' ? {} : { status: filters.status }),
     ...(filters.savedOnly ? { saved: true } : {}),
     ...(filters.includeExcluded ? { include_excluded: true } : {}),
+    ...(filters.minScore === '' ? {} : { min_score: Number(filters.minScore) }),
+    ...(filters.eligible === '' ? {} : { eligible: filters.eligible }),
   };
 }
 
@@ -61,7 +85,9 @@ function hasActiveFilters(filters: JobFilters): boolean {
     filters.query.trim() !== '' ||
     filters.status !== '' ||
     filters.savedOnly ||
-    filters.includeExcluded
+    filters.includeExcluded ||
+    filters.minScore !== '' ||
+    filters.eligible !== ''
   );
 }
 
@@ -154,6 +180,35 @@ export function JobsPage() {
             ]}
             onChange={(event) =>
               setDraft({ ...draft, status: event.currentTarget.value as JobStatus | '' })
+            }
+          />
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Select
+            label={t('jobs.minScore')}
+            description={t('jobs.minScoreDescription')}
+            value={draft.minScore}
+            options={[
+              { value: '', label: t('jobs.minScoreAny') },
+              ...MIN_SCORE_CHOICES.map((score) => ({
+                value: String(score),
+                label: formatNumber(locale, score),
+              })),
+            ]}
+            onChange={(event) => setDraft({ ...draft, minScore: event.currentTarget.value })}
+          />
+          <Select
+            label={t('jobs.eligible')}
+            value={draft.eligible}
+            options={[
+              { value: '', label: t('jobs.eligibleAny') },
+              ...(['yes', 'no', 'unknown'] as const).map((verdict) => ({
+                value: verdict,
+                label: t(ELIGIBILITY_VERDICT_LABEL[verdict]),
+              })),
+            ]}
+            onChange={(event) =>
+              setDraft({ ...draft, eligible: event.currentTarget.value as TriState | '' })
             }
           />
         </div>
@@ -290,9 +345,7 @@ export function JobsPage() {
             {
               key: 'match',
               header: t('jobs.columnMatch'),
-              // M2: `match` is null for every job. Nothing here renders a
-              // score, and the column exists so "Not checked" is said out loud.
-              cell: () => <MatchNotChecked />,
+              cell: (row) => <MatchCell match={row.match} />,
             },
             {
               key: 'sources',

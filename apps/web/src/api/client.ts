@@ -43,6 +43,8 @@ export type JobGetterApi = Pick<
   | 'listJobs'
   | 'getJob'
   | 'patchJob'
+  // M3: the fit score.
+  | 'matchJob'
 >;
 
 export interface CreateApiClientOptions {

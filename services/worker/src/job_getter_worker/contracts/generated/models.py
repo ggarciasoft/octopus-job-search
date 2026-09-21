@@ -1077,6 +1077,92 @@ class JobView(BaseModel):
     possible_duplicates: list[PossibleDuplicate]
 
 
+class MatchEvidence(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    source: Literal["job", "profile"]
+    excerpt: Annotated[str, Field(min_length=1, max_length=600)]
+    fact_id: UuidString | None
+
+
+class MatchComponent(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    key: Literal["skills", "role_title", "seniority", "work_arrangement", "industry"]
+    value: Annotated[float, Field(ge=0, le=1)] | None
+    weight: Annotated[int, Field(ge=0, le=100)]
+    evaluable: bool
+    unknown_code: Literal[
+        "JOB_STATES_NOTHING",
+        "PROFILE_STATES_NOTHING",
+        "NO_CONFIRMED_FACTS",
+        "NOT_COMPARABLE",
+        "WEIGHT_ZERO"
+    ] | None
+    evidence: Annotated[list[MatchEvidence], Field(max_length=20)]
+    fact_ids: Annotated[list[UuidString], Field(max_length=50)]
+
+
+class EligibilityCheck(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    filter: Literal[
+        "excluded_employer",
+        "employment_type",
+        "location",
+        "work_authorization",
+        "language",
+        "salary_minimum"
+    ]
+    verdict: Literal["yes", "no", "unknown"]
+    code: Literal[
+        "NOT_CONFIGURED",
+        "PASSES",
+        "EMPLOYER_EXCLUDED",
+        "EMPLOYMENT_TYPE_NOT_ACCEPTED",
+        "EMPLOYMENT_TYPE_NOT_STATED",
+        "COUNTRY_NOT_ELIGIBLE",
+        "COUNTRY_NOT_STATED",
+        "REMOTE_MODE_NOT_ACCEPTED",
+        "AUTHORIZATION_NOT_CONFIRMED",
+        "AUTHORIZATION_ABSENT",
+        "SPONSORSHIP_REQUIRED",
+        "LANGUAGE_NOT_DECLARED",
+        "LANGUAGE_NOT_STATED",
+        "SALARY_BELOW_MINIMUM",
+        "SALARY_NOT_STATED",
+        "SALARY_NOT_COMPARABLE"
+    ]
+    blocking: bool
+    evidence: Annotated[list[MatchEvidence], Field(max_length=10)]
+
+
+class MatchedRequirement(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    requirement: JobRequirement
+    outcome: Literal["matched", "uncertain", "missing"]
+    weight: Annotated[int, Field(ge=0, le=2)]
+    fact_ids: Annotated[list[UuidString], Field(max_length=20)]
+    matched_skill: Annotated[str, Field(max_length=120)] | None
+
+
+class MatchExplanation(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    algorithm_version: Annotated[str, Field(max_length=16)]
+    alias_map_version: Annotated[str, Field(max_length=16)]
+    components: Annotated[list[MatchComponent], Field(max_length=10)]
+    eligibility: Annotated[list[EligibilityCheck], Field(max_length=10)]
+    requirements: Annotated[list[MatchedRequirement], Field(max_length=200)]
+    unknown_components: Annotated[
+        list[Literal["skills", "role_title", "seniority", "work_arrangement", "industry"]],
+        Field(max_length=10)
+    ]
+    fact_ids: Annotated[list[UuidString], Field(max_length=200)]
+    evaluated_weight: Annotated[int, Field(ge=0, le=100)]
+
+
 class JobDetailView(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -1112,6 +1198,7 @@ class JobDetailView(BaseModel):
     requirements: list[JobRequirement]
     inferred: list[InferredField]
     content_hash: Annotated[str, Field(pattern=r"^[a-f0-9]{64}$")]
+    match_explanation: MatchExplanation | None
 
 
 class JobsListQuery(BaseModel):
@@ -1253,3 +1340,68 @@ class FetchJobResult(BaseModel):
     candidates: Annotated[list[NormalizedJob], Field(max_length=50)]
     fetch: FetchJobResultFetch
     warnings: Annotated[list[FetchWarning], Field(max_length=100)]
+
+
+class MatchView(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: UuidString
+    job_id: UuidString
+    job_revision: Annotated[int, Field(ge=1)]
+    profile_revision: Annotated[int, Field(ge=1)]
+    preferences_revision: Annotated[int, Field(ge=1)]
+    algorithm_version: Annotated[str, Field(max_length=16)]
+    eligible: Literal["yes", "no", "unknown"]
+    score: Annotated[int, Field(ge=0, le=100)] | None
+    coverage_percent: Annotated[int, Field(ge=0, le=100)]
+    stale: bool
+    explanation: MatchExplanation
+    computed_at: TimestampString
+
+
+class MatchJobSnapshot(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    company: Annotated[str, Field(min_length=1, max_length=200)]
+    title: Annotated[str, Field(min_length=1, max_length=300)]
+    description_text: Annotated[str, Field(max_length=200000)]
+    locations: Annotated[list[JobLocation], Field(max_length=50)]
+    remote_type: Literal["remote", "hybrid", "onsite", "unknown"]
+    eligible_countries: Annotated[
+        list[Annotated[str, Field(pattern=r"^[A-Z]{2}$")]],
+        Field(max_length=250)
+    ] | None
+    employment_type: Literal[
+        "full_time",
+        "part_time",
+        "contract",
+        "internship",
+        "temporary",
+        "freelance"
+    ] | None
+    salary: JobSalary | None
+    language: Annotated[str, Field(pattern=r"^[a-z]{2}(-[A-Z]{2})?$")] | None
+    requirements: Annotated[list[JobRequirement], Field(max_length=200)]
+
+
+class MatchJobInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    job_id: UuidString
+    job_revision: Annotated[int, Field(ge=1)]
+    profile_revision: Annotated[int, Field(ge=1)]
+    preferences_revision: Annotated[int, Field(ge=1)]
+    locale: Literal["en", "es"]
+    job: MatchJobSnapshot
+    confirmed_facts: Annotated[list[ProfileFact], Field(max_length=500)]
+    preferences: Preferences
+
+
+class MatchJobResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    eligible: Literal["yes", "no", "unknown"]
+    score: Annotated[int, Field(ge=0, le=100)] | None
+    coverage_percent: Annotated[int, Field(ge=0, le=100)]
+    explanation: MatchExplanation
+    computed_at: TimestampString

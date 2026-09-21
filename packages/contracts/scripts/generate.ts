@@ -1211,7 +1211,16 @@ export function buildPython(): PythonBuild {
     if (Array.isArray(value)) {
       const items = value.map((entry) => pyLiteral(entry));
       const tuple = items.length === 1 ? `(${items[0]},)` : `(${items.join(', ')})`;
-      constantLines.push(`${name}: Final = ${tuple}`);
+      const oneLine = `${name}: Final = ${tuple}`;
+      if (oneLine.length <= PY_LINE_LENGTH) {
+        constantLines.push(oneLine);
+      } else {
+        // Wrap rather than emit a line Ruff will reject. A trailing comma on
+        // the last item keeps `ruff format` from collapsing it back.
+        constantLines.push(`${name}: Final = (`);
+        for (const item of items) constantLines.push(`    ${item},`);
+        constantLines.push(')');
+      }
     } else {
       constantLines.push(`${name}: Final = ${pyLiteral(value)}`);
     }

@@ -205,7 +205,7 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-info}
       WORKER_API_BASE_URL: ${WORKER_API_BASE_URL:-http://api:8080}
       WORKER_ID: ${WORKER_ID:-container-worker-1}
-      WORKER_CAPABILITIES: ${WORKER_CAPABILITIES:-noop_echo,parse_profile,fetch_board,fetch_job}
+      WORKER_CAPABILITIES: ${WORKER_CAPABILITIES:-noop_echo,parse_profile,fetch_board,fetch_job,match_job}
       LOCAL_MODEL_BASE_URL: ${LOCAL_MODEL_BASE_URL:-}
     depends_on:
       api:

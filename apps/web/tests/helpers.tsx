@@ -6,6 +6,8 @@ import {
   type DraftFact,
   type JobDetailView,
   type JobView,
+  type MatchExplanation,
+  type MatchSummary,
   type MeResponse,
   type PreferencesView,
   type Profile,
@@ -278,6 +280,36 @@ export function makeJobDetail(overrides: Partial<JobDetailView> = {}): JobDetail
     requirements: [],
     inferred: [],
     content_hash: 'a'.repeat(64),
+    // Null, not a stub explanation: the default job is one nobody has scored.
+    match_explanation: null,
+    ...overrides,
+  };
+}
+
+/** A scored match. `stale` defaults to false; the stale path is set explicitly. */
+export function makeMatchSummary(overrides: Partial<MatchSummary> = {}): MatchSummary {
+  return {
+    match_id: '99999999-9999-4999-8999-999999999999',
+    eligible: 'unknown',
+    score: 72,
+    coverage_percent: 90,
+    algorithm_version: 'v1',
+    stale: false,
+    computed_at: '2026-09-20T12:00:00.000Z',
+    ...overrides,
+  };
+}
+
+export function makeMatchExplanation(overrides: Partial<MatchExplanation> = {}): MatchExplanation {
+  return {
+    algorithm_version: 'v1',
+    alias_map_version: 'v1',
+    components: [],
+    eligibility: [],
+    requirements: [],
+    unknown_components: [],
+    fact_ids: [],
+    evaluated_weight: 90,
     ...overrides,
   };
 }
@@ -352,6 +384,10 @@ export function createFakeApi(overrides: Partial<JobGetterApi> = {}): JobGetterA
     listJobs: vi.fn(async () => ({ items: [], next_cursor: null })),
     getJob: vi.fn(async () => makeJobDetail()),
     patchJob: vi.fn(async () => makeJob({ revision: 2 })),
+    matchJob: vi.fn(async () => ({
+      task_id: '88888888-8888-4888-8888-888888888888',
+      status: 'queued' as const,
+    })),
     ...overrides,
   };
 }
