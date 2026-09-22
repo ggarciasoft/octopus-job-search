@@ -101,6 +101,17 @@ export const ALL_APPLICATION_STATUSES = [
  *  * `approved → ready_for_review` is expiry alone. The content is still
  *    exactly what the user read, so the same packet may be re-approved; only
  *    the clock ran out.
+ *  * `draft → submitted` is the manual tracker entry: "Manual tracker entries
+ *    use evidence_type user_report and remain visibly labeled". The user
+ *    applied somewhere this product never touched (by email, or for a job
+ *    with no apply URL, which can never have a packet) and is telling the
+ *    tracker so. No packet is involved, so there is no approval to bypass:
+ *    approval guards what the product sends, and it sent nothing. The only
+ *    route that records it is `POST /applications/:id/outcome`, which refuses
+ *    `adapter_observed` from a session and `none` for a submission, so this
+ *    edge is always `user_report` and the badge says "reported by you".
+ *    Without it, AT28's "tracker remains usable" was false for exactly the
+ *    user AT28 describes.
  *  * `approved → submitted` is the manual path. Where no adapter supports the
  *    site, the user applies in their own browser and reports it — the honest
  *    fallback AT17 asks for, rather than a fill state that never happens.
@@ -128,7 +139,7 @@ export const ALL_APPLICATION_STATUSES = [
 export const APPLICATION_TRANSITIONS: Readonly<
   Record<ApplicationStatus, readonly ApplicationStatus[]>
 > = {
-  draft: ['preparing', 'cancelled'],
+  draft: ['preparing', 'submitted', 'cancelled'],
   preparing: ['needs_input', 'ready_for_review', 'failed', 'cancelled'],
   needs_input: ['preparing', 'submitted', 'cancelled'],
   ready_for_review: ['approved', 'preparing', 'cancelled'],
@@ -473,6 +484,33 @@ export const ALL_APPLICATION_OUTCOMES = [
   'withdrawn',
   'cancelled',
 ] as const satisfies readonly ApplicationOutcome[];
+
+/**
+ * The status each reported outcome moves an application to. Shared so the
+ * tracker offers exactly the outcomes the API would accept from the current
+ * status, rather than a list that answers 409 for most of them.
+ */
+export const APPLICATION_OUTCOME_STATUS: Readonly<Record<ApplicationOutcome, ApplicationStatus>> = {
+  submitted: 'submitted',
+  // The one way out of outcome_unknown that is not a submission: the user
+  // says it never went through, and the work returns to them.
+  not_submitted: 'preparing',
+  outcome_unknown: 'outcome_unknown',
+  interview: 'interview',
+  rejected: 'rejected',
+  offer: 'offer',
+  withdrawn: 'withdrawn',
+  cancelled: 'cancelled',
+};
+
+/** Whether reporting `outcome` is a legal move from `status`. */
+export function isOutcomeAllowedFrom(
+  status: ApplicationStatus,
+  outcome: ApplicationOutcome,
+): boolean {
+  const target = APPLICATION_OUTCOME_STATUS[outcome];
+  return target !== status && isAllowedApplicationTransition(status, target);
+}
 
 // ---------------------------------------------------------------------------
 // Views and requests

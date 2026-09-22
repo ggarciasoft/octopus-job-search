@@ -1,6 +1,6 @@
 # Implementation status
 
-**Last updated: 2026-09-21** · **M0, M1, M2, M3 complete; M4 in progress** — the application backend, the paired local runner and the M4 screens are landed and tested, including a real Chromium filling a synthetic Greenhouse form and stopping before submit. One complete sandbox workflow has now run on the Compose stack — packet, approval, a real Chromium filling a synthetic form and pausing, an outcome and an export — and the five M4 screens have been rendered in a browser for the first time. Workspace deletion is not built and no adapter has met a live board. Three gaps the acceptance scenarios exposed are now closed: the daily AI budget, specified since M0 and enforced by nothing; the submit observation, which did not exist at all; and the Spanish CV fixture, which spelled its Spanish without a single accent. AT12, AT16, AT18, AT21, AT22 and AT27 pass, taking the scenarios to 24 of 28. Next: **the remaining nine pilot workflows, which are the owner's to run**, and the two pilot-gate scenarios still open (AT25 and AT28).
+**Last updated: 2026-09-22** · **M0, M1, M2, M3 complete; M4 in progress** — the application backend, the paired local runner and the M4 screens are landed and tested, including a real Chromium filling a synthetic Greenhouse form and stopping before submit. One complete sandbox workflow has now run on the Compose stack — packet, approval, a real Chromium filling a synthetic form and pausing, an outcome and an export — and the five M4 screens have been rendered in a browser for the first time. Workspace deletion is not built and no adapter has met a live board. Three gaps the acceptance scenarios exposed are now closed: the daily AI budget, specified since M0 and enforced by nothing; the submit observation, which did not exist at all; and the Spanish CV fixture, which spelled its Spanish without a single accent. AT12, AT16, AT18, AT21, AT22 and AT27 pass. AT28 now passes too, on a fresh installation with no AI provider, through both the API and a real browser. It found one real gap: a tracker entry for an application made outside the product could never be marked submitted, which is now fixed. That makes 24 of 28 scenarios passing. The earlier headline figure of 24 was one too many; the rows added up to 23. Next: **the remaining eight pilot workflows, which are the owner's to run**, and AT25, the last open pilot-gate scenario.
 
 This file is required by `docs/spec/00_AI_IMPLEMENTATION_INSTRUCTIONS.md` and by
 the progress-record template in `docs/spec/12_IMPLEMENTATION_PLAN.md`. It is the
@@ -46,9 +46,9 @@ single honest answer to "does this actually work yet?"
 |                                     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Functional requirements implemented | 10 of 14 (PR01–PR10); PR11 is partial (providers, weights, limits and connectors configurable; prompt bodies are not) and PR14's export half is tested while its deletion half is not built                                                                                                                                                                                                                                                                                                                                                              |
-| Acceptance scenarios passing        | 18 of 28 (AT01–AT11 except AT10 is partial, plus AT13–AT15, AT17, AT19, AT20; AT23 is partial — see the rows)                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| Milestones complete                 | 4 of 8 (M0, M1, M2, M3); M4 in progress, 2 of 10 pilot workflows run, 24 of 28 acceptance scenarios passing — see the milestone table for what "complete" covers                                                                                                                                                                                                                                                                                                                                                                                         |
-| Verified working today              | Toolchain; `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm contracts:check`; every test suite (contracts 191, api 567, web 193, ui 7, worker 441); two M4 workflows on the Compose stack — one full sandbox fill with a real Chromium, and one prepared to the approval gate against a live Greenhouse posting; the fixture corpus (46/46); all three images build; `docker compose up` from a `setup.sh`-generated `.env`; `scripts/smoke.sh` through the nginx proxy on `127.0.0.1:3000`; data persistence across `docker compose down`/`up` |
+| Acceptance scenarios passing        | 24 of 28 (AT01–AT22, AT27, AT28); AT23 is partial; AT24–AT26 not started — see the rows                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Milestones complete                 | 4 of 8 (M0, M1, M2, M3); M4 in progress, 2 of 10 pilot workflows run, 24 of 28 acceptance scenarios passing (the pilot gate still needs AT25) — see the milestone table for what "complete" covers                                                                                                                                                                                                                                                                                                                                                       |
+| Verified working today              | Toolchain; `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm contracts:check`; every test suite (contracts 191, api 614, web 218, ui 7, worker 441); two M4 workflows on the Compose stack — one full sandbox fill with a real Chromium, and one prepared to the approval gate against a live Greenhouse posting; the fixture corpus (46/46); all three images build; `docker compose up` from a `setup.sh`-generated `.env`; `scripts/smoke.sh` through the nginx proxy on `127.0.0.1:3000`; data persistence across `docker compose down`/`up` |
 | **Never executed**                  | `scripts/smoke.ps1`, `scripts/backup.*`, `scripts/restore.*`, `scripts/dev.*` (syntax-checked only); the `local-ai` Ollama profile; any image build on a host WITHOUT TLS interception (the no-secret path is verified only by construction); macOS/Linux hosts                                                                                                                                                                                                                                                                                          |
 
 If you came here from the README looking for a product: there isn't one yet.
@@ -114,11 +114,11 @@ when a test exists; `—` means there is no test.
 | AT25 | Backup/restore: profile, files, hashes and history restored                 | Not started | — (`scripts/restore.sh` explicitly declines to claim this; it needs M1–M4 data to be meaningful)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | AT26 | Delete workspace: access revoked, files erased, completion recorded         | Not started | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | AT27 | English/Spanish flow: labels, Unicode, dates, documents correct             | **Passed**  | Three layers, none of which covers the others. Catalogue: `apps/web/tests/i18n.test.tsx` — identical key sets, no empty string, no raw key on a rendered Spanish screen. Dates and numbers: `apps/web/tests/format.test.ts` (17 cases) — Spanish puts the day first and the month in words, groups with `.` and decimalises with `,`, does **not** group a four-digit number (CLDR `minimumGroupingDigits: 2`), and separates a currency from its symbol with a non-breaking space; an absent or unparseable date returns null rather than `Invalid Date`. Flow over real data: `apps/web/tests/spanishFlow.test.tsx` — accented employer, title and city rendered byte-for-byte across two screens, the date in Spanish order on a data-driven row, `lang="es"` on the document, and the same employer name **untranslated** in English. Documents: the AT12 work above, in Spanish throughout, verified live.                                               |
-| AT28 | No AI configured: manual profile, job import and tracker usable             | Not started | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| AT28 | No AI configured: manual profile, job import and tracker usable             | **Passed**  | Verified 2026-09-22 on a fresh, isolated Compose installation with no provider row and `PROVIDER_DEFAULT=none`: 27/27 API checks and 8/8 browser checks, see "AT28" under "Verified commands". It found the tracker gap: an application made outside the product could not be recorded as submitted (`draft → submitted` was refused with 409). That edge is now allowed, always as `user_report` (`apps/api/tests/applications.test.ts`, three new cases; `apps/web/tests/applications.test.tsx`, two).                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 **Release gate status:** the M4 pilot gate (AT01–AT18, AT20–AT22, AT25,
 AT27–AT28) and the M6 hosted gate (all scenarios) are both **not met**. 24 of
-the 28 scenarios pass; the pilot gate still needs AT25 and AT28.
+the 28 scenarios pass; the pilot gate still needs AT25.
 
 ---
 
@@ -1081,6 +1081,66 @@ reported as unknown. Nothing sweeps a reservation whose worker died before
 settling or releasing it: it stands against the day until it ages out of the
 window, which over-counts rather than handing out budget twice, but it does
 over-count.
+
+### AT28: no AI configured, and the tracker entry that could not be finished (verified 2026-09-22)
+
+Run on a **fresh** installation rather than the owner's: a second Compose
+project (`jg-at28`) with its own database and files volumes and its own
+network, published on `127.0.0.1:3100`. It started from `setup`, with no
+`provider_settings` row and `PROVIDER_DEFAULT=none`. Images were rebuilt from
+this commit first. The two scripts that drive it live under `.local/at28/`.
+
+The first attempt to start that project was **not isolated**, and it matters
+for whoever does this next. `docker-compose.yml` names its network
+`job-getter`, so a second project joins the owner's network rather than
+getting its own: two containers answered to `db` and two to `api`. The
+sandbox API resolved `db` to the owner's database, and a sandbox login reached
+the owner's API, which refused it (403, wrong origin). The sandbox was stopped
+within minutes. Both databases were then checked: the owner's showed nothing
+written in that window except the shared worker heartbeat, and the sandbox's
+held only its migrations. A second project needs its network renamed as well
+as its volumes.
+
+| Path                                   | Observed                                                                                                                                                                                                                                            |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| No provider                            | `ai_provider_configured: false`; `GET /settings/providers` answers `none`; the Dashboard shows "AI provider configured — Unavailable".                                                                                                              |
+| Profile by hand (API)                  | One `PATCH /profile` stored six confirmed facts: contact, summary, experience, two skills and work authorization.                                                                                                                                   |
+| Profile by hand (browser)              | Add Skill → Skill name → Confirm → Save; the skill appears on the page.                                                                                                                                                                             |
+| CV import without a provider           | `parse_profile` **succeeded** with no drafts and a `NO_PROVIDER_CONFIGURED` warning that says the text was read and facts can be entered by hand. It does not fail.                                                                                 |
+| Job import (API and browser)           | Pasted text with and without an apply URL: `fetch_job` succeeded both times, and the browser's import panel reported "Job imported".                                                                                                                |
+| Fit check                              | `match_job` succeeded and scored 83. `ai_requests_today` stayed at **0** for the whole run.                                                                                                                                                         |
+| Tracker, the packet path               | An original-mode CV (no AI), a packet, an approval, then `submitted` and `interview` recorded as `user_report`. History: created → packet_created → packet_approved → submitted → outcome_recorded.                                                 |
+| Tracker, an application made elsewhere | **409 before this change:** "An application cannot move from draft to submitted". **After:** 200, badge "Submitted — reported by you", from the API and from the Tracker screen, for a pasted job with no apply URL that could never have a packet. |
+
+Result: 27/27 API checks and 8/8 browser checks on a clean sandbox after the
+fix. Before the fix it was 26/27, and the one failure was the tracker row above.
+
+**The gap, and the fix.** A tracker entry starts as `draft`, and `draft` could
+only move to `preparing` or `cancelled`. Recording `submitted` needed a packet,
+a packet needs an https apply URL, and a pasted job without one never gets
+one. So someone who applied by email could track the job but never say they
+had applied. The spec expects this case: 07_APPLICATION_AUTOMATION.md, "Manual
+tracker entries use evidence_type user_report and remain visibly labeled". The
+change is one edge in `APPLICATION_TRANSITIONS`, `draft → submitted`. It does
+not get around approval: approval guards what the product sends, and on this
+path the product sent nothing. The only route that records the edge already
+refuses `adapter_observed` from a session and `none` for a submission, so it is
+always `user_report`. The outcome→status map moved into the contract as
+`APPLICATION_OUTCOME_STATUS`, so the Tracker now offers only outcomes that are
+legal from each row's status. A draft shows "I submitted it" and "Cancel";
+before, it offered all eight and seven of them answered 409. A finished
+application shows no form.
+
+Tests: `pnpm typecheck`, `pnpm lint`, `pnpm contracts:check` and Prettier all
+clean. Contracts 191/191, web 218/218 and api 614/614, the full suites, with
+the stacks running.
+
+What this does **not** cover. The worker and the API still read "is a provider
+configured" from two different places (`PROVIDER_DEFAULT` and the workspace's
+`provider_settings` row), so they can disagree once someone configures one.
+AT28 is the none/none case, where they agree. `capabilities.cv_generation` and
+`capabilities.applications` are still hard-coded `false` in `GET /me`, although
+both features exist; no screen reads them.
 
 ### M1 and M2 re-verification for the status correction (verified 2026-09-21)
 

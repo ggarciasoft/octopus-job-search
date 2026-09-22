@@ -1,4 +1,9 @@
-import type { ApplicationOutcome, ApplicationView, EvidenceType } from '@job-getter/contracts';
+import {
+  isOutcomeAllowedFrom,
+  type ApplicationOutcome,
+  type ApplicationView,
+  type EvidenceType,
+} from '@job-getter/contracts';
 import {
   Badge,
   Button,
@@ -40,17 +45,35 @@ import {
  * verification.
  */
 
-/** What the user can report, and from where. The server checks again. */
+/**
+ * What the user can report. Each row offers only the ones legal from its
+ * current status - a draft offers "submitted" (you applied on your own) and
+ * "cancelled", nothing else - and the server checks again.
+ */
 const OUTCOMES: readonly ApplicationOutcome[] = [
+  // Ordered by what usually happens next, because the first one legal from a
+  // row's status is what its form starts on: a submitted row should start on
+  // "interview", not on "I cannot tell whether it went through".
   'submitted',
-  'outcome_unknown',
   'interview',
   'rejected',
   'offer',
   'withdrawn',
+  'outcome_unknown',
   'not_submitted',
   'cancelled',
 ];
+
+/**
+ * "It was never submitted" answers an uncertain submission and nothing else.
+ * The machine also lets other pre-submission states return to `preparing`,
+ * but offering that sentence on a packet nobody tried to send would be asking
+ * the wrong question.
+ */
+function offers(application: ApplicationView, outcome: ApplicationOutcome): boolean {
+  if (outcome === 'not_submitted' && application.status !== 'outcome_unknown') return false;
+  return isOutcomeAllowedFrom(application.status, outcome);
+}
 
 const OUTCOME_LABEL: Record<ApplicationOutcome, string> = {
   submitted: 'outcome.submitted',
@@ -89,7 +112,8 @@ function OutcomeForm({
 }) {
   const api = useApi();
   const { t } = useTranslation();
-  const [outcome, setOutcome] = useState<ApplicationOutcome>('submitted');
+  const allowed = OUTCOMES.filter((value) => offers(application, value));
+  const [outcome, setOutcome] = useState<ApplicationOutcome>(allowed[0] ?? 'submitted');
   const [reference, setReference] = useState('');
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
@@ -133,7 +157,7 @@ function OutcomeForm({
         <Select
           label={t('tracker.outcomeLabel')}
           value={outcome}
-          options={OUTCOMES.map((value) => ({
+          options={allowed.map((value) => ({
             value,
             label: t(OUTCOME_LABEL[value] as never),
           }))}
@@ -255,12 +279,17 @@ export function TrackerPage() {
                 </dl>
               )}
 
-              <OutcomeForm
-                application={application}
-                onRecorded={async () => {
-                  await query.refetch();
-                }}
-              />
+              {OUTCOMES.some((value) => offers(application, value)) ? (
+                <OutcomeForm
+                  // Keyed on status so the selection resets to a legal
+                  // outcome once the row moves on.
+                  key={application.status}
+                  application={application}
+                  onRecorded={async () => {
+                    await query.refetch();
+                  }}
+                />
+              ) : null}
             </li>
           ))}
         </ul>

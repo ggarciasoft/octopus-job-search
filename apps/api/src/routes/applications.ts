@@ -25,9 +25,9 @@
  * one shape for every command either way.
  */
 import {
+  APPLICATION_OUTCOME_STATUS,
   SUBMITTED_APPLICATION_STATUSES,
   type AcceptedResponse,
-  type ApplicationOutcome,
   type ApplicationOutcomeRequest,
   type ApplicationStatus,
   type ApplicationView,
@@ -529,19 +529,6 @@ export const approveApplication: RouteHandler = async (context, request, reply) 
 // POST /applications/:id/outcome
 // ---------------------------------------------------------------------------
 
-const OUTCOME_STATUS: Readonly<Record<ApplicationOutcome, ApplicationStatus>> = {
-  submitted: 'submitted',
-  // The one way out of outcome_unknown that is not a submission: the user
-  // says it never went through, and the work returns to them.
-  not_submitted: 'preparing',
-  outcome_unknown: 'outcome_unknown',
-  interview: 'interview',
-  rejected: 'rejected',
-  offer: 'offer',
-  withdrawn: 'withdrawn',
-  cancelled: 'cancelled',
-};
-
 /**
  * Record what happened.
  *
@@ -575,7 +562,7 @@ export const recordApplicationOutcome: RouteHandler = async (context, request, r
     });
   }
 
-  const target = OUTCOME_STATUS[body.outcome];
+  const target = APPLICATION_OUTCOME_STATUS[body.outcome];
   const observedAt =
     body.evidence?.observed_at === undefined || body.evidence.observed_at === null
       ? null

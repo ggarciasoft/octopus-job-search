@@ -157,6 +157,43 @@ docker compose logs api --tail 50
 A worker that started correctly logs `worker.started` with `capabilities` and
 `handlers` counts that **agree**. If it claims nothing, re-read setting 1 above.
 
+## A second, throwaway stack
+
+Some checks need a fresh installation (AT28 did), and the owner's stack holds
+real data. A second Compose project works, but `-p <name>` alone is **not
+isolated**: `docker-compose.yml` fixes the names of the volumes
+(`job-getter-db-data`, `job-getter-files-data`) **and the network**
+(`job-getter`). A second project therefore mounts the owner's data, or joins
+the owner's network, where `db` and `api` each resolve to either stack's
+container. That happened once. The sandbox API read the owner's database until
+it was stopped.
+
+Rename all three in an extra override file. `.local/at28/compose.at28.yml` is
+one:
+
+```yaml
+networks:
+  default:
+    name: jg-at28
+volumes:
+  db-data:
+    name: jg-at28-db-data
+  files-data:
+    name: jg-at28-files-data
+```
+
+```bash
+export APP_ORIGIN=http://127.0.0.1:3100 WEB_PORT=3100 API_PORT=3101
+F="-p jg-at28 -f docker-compose.yml -f docker-compose.override.yml -f .local/at28/compose.at28.yml"
+docker compose $F config | grep -E "name: (jg|job-getter)"   # nothing may say job-getter
+docker compose $F up -d --no-build
+docker exec jg-at28-api-1 getent hosts db                    # must be the sandbox db's IP
+```
+
+`docker compose $F down -v` removes only the renamed volumes. It reuses the
+owner's `SETUP_TOKEN` from `.env`, which is harmless because the route closes
+per database.
+
 ## What this stack cannot do here
 
 Be honest about these rather than working around them:

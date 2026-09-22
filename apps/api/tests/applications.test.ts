@@ -766,6 +766,64 @@ describe('POST /applications/:id/outcome', () => {
     expect(response.statusCode, response.body).toBe(200);
     expect((response.json() as ApplicationView).status).toBe('cancelled');
   });
+
+  // AT28: someone with no AI, no CV in the product and a job with no apply URL
+  // applied on their own and wants the tracker to say so. No packet exists,
+  // so there is no approval to go around.
+  it('records a manual tracker entry straight from draft as user_report', async () => {
+    const job = await seedJob();
+    const application = await createApplication(job.id);
+    expect(application.current_packet).toBeNull();
+
+    const response = await postOutcome(application, {
+      outcome: 'submitted',
+      evidence_type: 'user_report',
+      evidence: { note: 'Applied by email to the recruiter.' },
+    });
+    expect(response.statusCode, response.body).toBe(200);
+    const after = response.json() as ApplicationView;
+    expect(after.status).toBe('submitted');
+    expect(after.submitted_at).not.toBeNull();
+    expect(after.submission_evidence!.evidence_type).toBe('user_report');
+
+    // And the tracker carries on from there like any other submission.
+    const interview = await postOutcome(after, {
+      outcome: 'interview',
+      evidence_type: 'user_report',
+    });
+    expect(interview.statusCode, interview.body).toBe(200);
+    expect((interview.json() as ApplicationView).submitted_at).toBe(after.submitted_at);
+
+    const history = await events(application.id);
+    expect(history.map((entry) => entry.type)).toEqual([
+      'created',
+      'submitted',
+      'outcome_recorded',
+    ]);
+    expect(history[1]!.status_before).toBe('draft');
+  });
+
+  it('still refuses a draft submission with no account of how we know', async () => {
+    const job = await seedJob();
+    const application = await createApplication(job.id);
+
+    const response = await postOutcome(application, {
+      outcome: 'submitted',
+      evidence_type: 'none',
+    });
+    expect(response.statusCode, response.body).toBe(422);
+  });
+
+  it('refuses skipping submission: a draft cannot go straight to an interview', async () => {
+    const job = await seedJob();
+    const application = await createApplication(job.id);
+
+    const response = await postOutcome(application, {
+      outcome: 'interview',
+      evidence_type: 'user_report',
+    });
+    expect(response.statusCode, response.body).toBe(409);
+  });
 });
 
 describe('the event log', () => {

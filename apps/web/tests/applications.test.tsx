@@ -344,6 +344,47 @@ describe('the tracker', () => {
     const options = screen.getAllByRole('option').map((option) => option.textContent);
     expect(options).not.toContain('Seen on the confirmation page');
   });
+
+  // AT28: an application the user made on their own, with no packet at all.
+  it('lets a draft be recorded as submitted by you, and offers nothing it would refuse', async () => {
+    const recordApplicationOutcome = vi.fn(
+      async (_args: { body: { outcome: string; evidence_type: string } }) =>
+        makeApplication({ status: 'submitted', current_packet: null }),
+    );
+    const client = createFakeApi({
+      listApplications: async () => ({
+        items: [makeApplication({ status: 'draft', current_packet: null })],
+        next_cursor: null,
+      }),
+      recordApplicationOutcome,
+    });
+    renderApp({ client, route: '/tracker' });
+
+    const form = await screen.findByTestId('outcome-form');
+    const options = within(form)
+      .getAllByRole('option')
+      .map((option) => option.textContent);
+    expect(options).toEqual(['I submitted it', 'Cancel this application']);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Record it' }));
+    await waitFor(() => expect(recordApplicationOutcome).toHaveBeenCalled());
+    expect(recordApplicationOutcome.mock.calls[0]![0]).toMatchObject({
+      body: { outcome: 'submitted', evidence_type: 'user_report' },
+    });
+  });
+
+  it('offers no outcome form once an application is finished', async () => {
+    const client = createFakeApi({
+      listApplications: async () => ({
+        items: [makeApplication({ status: 'rejected' })],
+        next_cursor: null,
+      }),
+    });
+    renderApp({ client, route: '/tracker' });
+
+    await screen.findByTestId('tracker-row');
+    expect(screen.queryByTestId('outcome-form')).toBeNull();
+  });
 });
 
 describe('device pairing', () => {
