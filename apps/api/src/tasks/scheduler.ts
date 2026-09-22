@@ -13,16 +13,20 @@
  *    "unreferenced artifacts expire after 24 hours";
  *  * prune expired idempotency records and revoked/expired sessions;
  *  * queue a `fetch_board` for every source that is due (M2), bounded by the
- *    source's interval plus jitter and by one in-flight scan per source.
+ *    source's interval plus jitter and by one in-flight scan per source;
+ *  * resume any workspace erasure a crash or a storage fault left unfinished
+ *    (AT26), so a deletion converges without anyone asking twice.
  */
 import { sql } from 'kysely';
 import { ARTIFACT_STAGING_TTL_HOURS } from '@job-getter/contracts';
+import type { Config } from '../config.js';
 import type { Db } from '../db/pool.js';
 import type { Logger } from '../logging.js';
 import type { StorageDriver } from '../files/storage.js';
 import { pruneIdempotencyRecords } from './idempotency.js';
 import { reclaimExpiredLeases } from './queue.js';
 import { scheduleDueScans } from '../discovery/scan-scheduler.js';
+import { resumePendingErasures } from '../privacy/workspace-deletion.js';
 
 export const ARTIFACT_STAGING_TTL_MS = ARTIFACT_STAGING_TTL_HOURS * 60 * 60 * 1000;
 
@@ -30,10 +34,13 @@ export interface SchedulerOptions {
   readonly db: Db;
   readonly storage: StorageDriver;
   readonly logger: Logger;
+  /** Whether a finished erasure may reopen local setup (see privacy/). */
+  readonly config: Pick<Config, 'isHosted'>;
   readonly reclaimIntervalMs?: number;
   readonly sweepIntervalMs?: number;
   readonly pruneIntervalMs?: number;
   readonly scanIntervalMs?: number;
+  readonly erasureIntervalMs?: number;
   /** Injectable for tests that assert the jitter window. */
   readonly random?: () => number;
 }
@@ -106,6 +113,7 @@ export function createScheduler(options: SchedulerOptions): Scheduler {
   const sweepIntervalMs = options.sweepIntervalMs ?? 5 * 60_000;
   const pruneIntervalMs = options.pruneIntervalMs ?? 10 * 60_000;
   const scanIntervalMs = options.scanIntervalMs ?? 60_000;
+  const erasureIntervalMs = options.erasureIntervalMs ?? 60_000;
 
   const timers: NodeJS.Timeout[] = [];
   let stopped = false;
@@ -138,6 +146,10 @@ export function createScheduler(options: SchedulerOptions): Scheduler {
     }));
   const scans = () =>
     guard('schedule_scans', () => scheduleDueScans(db, { random: options.random }));
+  const erasures = () =>
+    guard('resume_erasures', () =>
+      resumePendingErasures({ db, storage, logger, config: options.config }),
+    );
 
   return {
     start() {
@@ -153,8 +165,9 @@ export function createScheduler(options: SchedulerOptions): Scheduler {
       schedule(() => void sweep(), sweepIntervalMs);
       schedule(() => void prune(), pruneIntervalMs);
       schedule(() => void scans(), scanIntervalMs);
+      schedule(() => void erasures(), erasureIntervalMs);
       logger.info(
-        { reclaimIntervalMs, sweepIntervalMs, pruneIntervalMs, scanIntervalMs },
+        { reclaimIntervalMs, sweepIntervalMs, pruneIntervalMs, scanIntervalMs, erasureIntervalMs },
         'task scheduler started',
       );
     },
@@ -172,6 +185,7 @@ export function createScheduler(options: SchedulerOptions): Scheduler {
       await sweep();
       await prune();
       await scans();
+      await erasures();
     },
   };
 }

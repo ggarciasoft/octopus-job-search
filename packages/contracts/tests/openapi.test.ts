@@ -131,7 +131,8 @@ describe('generated OpenAPI document', () => {
     for (const route of ROUTES) {
       const operation = operationFor(route);
       const requestBody = operation['requestBody'] as Json | undefined;
-      if (route.method === 'GET' || route.method === 'DELETE') {
+      // A DELETE is bodyless unless it declares a body (deleteWorkspace does).
+      if (route.method === 'GET' || (route.method === 'DELETE' && !route.body)) {
         expect(requestBody, `${route.operationId} must not carry a body`).toBeUndefined();
         continue;
       }
@@ -139,6 +140,13 @@ describe('generated OpenAPI document', () => {
       const contentTypes = Object.keys(requestBody!['content'] as Json);
       expect(contentTypes).toEqual([route.multipart ? 'multipart/form-data' : 'application/json']);
     }
+  });
+
+  it('never declares a body on GET, and only deleteWorkspace declares one on DELETE', () => {
+    expect(ROUTES.filter((route) => route.method === 'GET' && route.body)).toEqual([]);
+    expect(
+      ROUTES.filter((route) => route.method === 'DELETE' && route.body).map((r) => r.operationId),
+    ).toEqual(['deleteWorkspace']);
   });
 
   it('references exported schemas instead of inlining them', () => {

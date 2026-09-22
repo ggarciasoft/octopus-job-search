@@ -120,7 +120,8 @@ export async function createHarness(options: HarnessOptions = {}): Promise<Harne
           audit_events, task_artifacts, idempotency_records, tasks, files,
           usage_ledger, provider_settings, profile_imports, preferences,
           profile_facts, profiles, sessions, memberships, workspaces, users,
-          worker_registrations, system_flags
+          worker_registrations, system_flags, deletion_ledger,
+          workspace_deletions
         RESTART IDENTITY CASCADE
       `);
     },

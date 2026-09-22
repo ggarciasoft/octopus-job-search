@@ -60,6 +60,7 @@ import {
   ScanView,
   SourceView,
 } from './schemas/jobs.js';
+import { DeleteWorkspaceRequest, WorkspaceDeletionView } from './schemas/workspace.js';
 
 export type AuthMode = 'public' | 'session' | 'device' | 'worker';
 
@@ -789,6 +790,33 @@ export const ROUTES: readonly RouteDefinition[] = [
     successStatus: 202,
     requiresIdempotencyKey: true,
     csrf: true,
+  },
+  {
+    operationId: 'deleteWorkspace',
+    method: 'DELETE',
+    path: '/workspace',
+    auth: 'session',
+    summary:
+      'Delete this workspace: access is revoked at once, then the files and rows are erased.',
+    // The one DELETE with a body: the password is the recent authentication,
+    // and a password must never travel in a URL.
+    body: DeleteWorkspaceRequest,
+    response: WorkspaceDeletionView,
+    successStatus: 202,
+    csrf: true,
+  },
+  {
+    operationId: 'getWorkspaceDeletion',
+    method: 'GET',
+    path: '/workspace/deletions/:id',
+    // Public by necessity: the request that created the receipt also revoked
+    // the session that could have read it. The receipt holds no PII, and its
+    // id is an unguessable UUID that only the deleting browser was given.
+    auth: 'public',
+    summary: 'Whether a workspace deletion has finished erasing. Holds no personal data.',
+    params: IdParam,
+    response: WorkspaceDeletionView,
+    successStatus: 200,
   },
   {
     operationId: 'deleteAnswerBankEntry',

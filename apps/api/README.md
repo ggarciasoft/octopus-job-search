@@ -335,6 +335,17 @@ transaction that caused it is a compile error.
   for a paired local runner) is `ON DELETE SET NULL` rather than `CASCADE`:
   deleting a workspace drops the association but must not destroy the operator's
   record of a running process.
+- **Workspace deletion has a receipt, not a task.** The contract says
+  `DELETE /workspace` returns a "deletion task", and `delete_workspace` is a
+  task type. But a `tasks` row is workspace data: the deletion would erase it,
+  and the user could not read it anyway, because their session is revoked first.
+  The route answers `202` with a `WorkspaceDeletionView` from
+  `workspace_deletions` (migration 0010), an operator-global table like the
+  deletion ledger. `GET /workspace/deletions/:id` reads it without a session;
+  it holds an id, a state, timestamps and a file count, nothing that identifies
+  anyone. Erasure runs inline and the scheduler resumes any that did not finish.
+  It is also the one `DELETE` with a body: the password it demands must not
+  travel in a URL.
 - **Completing a cancelled task.** If a worker completes work whose cancel flag
   was set, the validated result is accepted as `succeeded`; the flag is
   advisory and the work was genuinely done.

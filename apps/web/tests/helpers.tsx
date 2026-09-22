@@ -22,6 +22,7 @@ import {
   type ScanView,
   type SourceView,
   type TaskView,
+  type WorkspaceDeletionView,
 } from '@job-getter/contracts';
 import { QueryClient } from '@tanstack/react-query';
 import { render, type RenderResult } from '@testing-library/react';
@@ -599,6 +600,25 @@ export function createFakeApi(overrides: Partial<JobGetterApi> = {}): JobGetterA
     getDevice: vi.fn(async () => makeDevice()),
     revokeDevice: vi.fn(async () => undefined),
     exportWorkspace: vi.fn(async () => ({ task_id: TASK_ID, status: 'queued' as const })),
+    deleteWorkspace: vi.fn(async () => makeDeletion()),
+    getWorkspaceDeletion: vi.fn(async () => makeDeletion()),
+    ...overrides,
+  };
+}
+
+export const DELETION_ID = '13131313-1313-4131-8131-131313131313';
+
+export function makeDeletion(
+  overrides: Partial<WorkspaceDeletionView> = {},
+): WorkspaceDeletionView {
+  return {
+    deletion_id: DELETION_ID,
+    state: 'completed',
+    requested_at: '2026-09-22T10:00:00.000Z',
+    completed_at: '2026-09-22T10:00:01.000Z',
+    files_erased: 3,
+    failure_code: null,
+    setup_reopened: true,
     ...overrides,
   };
 }

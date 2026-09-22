@@ -58,6 +58,17 @@ export async function scheduleDueScans(
     .where('enabled', '=', true)
     .where('health_state', '<>', 'blocked')
     .where((eb) => eb.or([eb('next_scan_after', 'is', null), eb('next_scan_after', '<=', now)]))
+    // A workspace being deleted gets no new work: its sessions and devices are
+    // already revoked, and a scan queued now would only race the erasure.
+    .where((eb) =>
+      eb.exists(
+        eb
+          .selectFrom('workspaces')
+          .select('workspaces.id')
+          .whereRef('workspaces.id', '=', 'sources.workspace_id')
+          .where('workspaces.deletion_state', '=', 'active'),
+      ),
+    )
     .where((eb) =>
       eb.not(
         eb.exists(

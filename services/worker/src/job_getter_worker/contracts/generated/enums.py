@@ -313,3 +313,9 @@ class DeletedObjectKind(StrEnum):
     APPLICATION = "application"
     RESUME = "resume"
     PROFILE_FACT = "profile_fact"
+
+
+class WorkspaceDeletionState(StrEnum):
+    ERASING = "erasing"
+    COMPLETED = "completed"
+    FAILED = "failed"

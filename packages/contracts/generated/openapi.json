@@ -1909,6 +1909,25 @@
           }
         }
       },
+      "DeleteWorkspaceRequest": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "confirm",
+          "password"
+        ],
+        "properties": {
+          "confirm": {
+            "const": true,
+            "type": "boolean"
+          },
+          "password": {
+            "minLength": 1,
+            "maxLength": 200,
+            "type": "string"
+          }
+        }
+      },
       "DeviceExchangeRequest": {
         "additionalProperties": false,
         "type": "object",
@@ -10297,6 +10316,74 @@
           }
         }
       },
+      "WorkspaceDeletionView": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "deletion_id",
+          "state",
+          "requested_at",
+          "completed_at",
+          "files_erased",
+          "failure_code",
+          "setup_reopened"
+        ],
+        "properties": {
+          "deletion_id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "const": "erasing",
+                "type": "string"
+              },
+              {
+                "const": "completed",
+                "type": "string"
+              },
+              {
+                "const": "failed",
+                "type": "string"
+              }
+            ]
+          },
+          "requested_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "files_erased": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "failure_code": {
+            "anyOf": [
+              {
+                "pattern": "^[a-z0-9_]{1,60}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "setup_reopened": {
+            "type": "boolean"
+          }
+        }
+      },
       "WorkspaceExportManifest": {
         "additionalProperties": false,
         "type": "object",
@@ -17921,6 +18008,248 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/workspace": {
+      "delete": {
+        "operationId": "deleteWorkspace",
+        "summary": "Delete this workspace: access is revoked at once, then the files and rows are erased.",
+        "tags": [
+          "workspace"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Delete this workspace: access is revoked at once, then the files and rows are erased.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceDeletionView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body, query or header.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated: no valid session, device token or worker credential.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted for this workspace resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or not accessible from the authenticated workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale revision, duplicate command or idempotency key reuse with a different body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload exceeds the configured upload limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Structurally valid but invalid domain input.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota or rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "description": "Anti-CSRF token for cookie-authenticated mutations; origin is verified too.",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 200
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteWorkspaceRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workspace/deletions/{id}": {
+      "get": {
+        "operationId": "getWorkspaceDeletion",
+        "summary": "Whether a workspace deletion has finished erasing. Holds no personal data.",
+        "tags": [
+          "workspace"
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Whether a workspace deletion has finished erasing. Holds no personal data.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceDeletionView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body, query or header.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated: no valid session, device token or worker credential.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted for this workspace resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or not accessible from the authenticated workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale revision, duplicate command or idempotency key reuse with a different body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload exceeds the configured upload limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Structurally valid but invalid domain input.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota or rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ]
       }
     },
     "/api/v1/answer-bank/{id}": {

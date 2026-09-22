@@ -1692,5 +1692,30 @@ export const es: Record<MessageKey, string> = {
   'privacy.exportFailedBody': 'No se escribió nada. Inténtalo de nuevo.',
   'privacy.deleteHeading': 'Eliminar tu espacio de trabajo',
   'privacy.deleteBody':
-    'Todavía no está construido. Cuando lo esté, eliminar revocará el acceso de inmediato y borrará los archivos, y esta página mostrará si el borrado terminó. Mientras tanto no hay ningún botón aquí, porque uno que no hiciera nada sería peor que ninguno. El archivo de estado de implementación registra exactamente en qué punto está esto.',
+    'Esto no se puede deshacer. Si quieres conservar algo, crea antes una exportación arriba.',
+  'privacy.deleteEffectAccess':
+    'El acceso termina de inmediato: este navegador, cualquier otro con la sesión iniciada y todos los dispositivos emparejados.',
+  'privacy.deleteEffectErase':
+    'Tu perfil, empleos, CV, respuestas, historial de candidaturas y todos los archivos subidos o generados se borran de esta instalación.',
+  'privacy.deleteEffectAccount':
+    'Tu cuenta también se elimina. En una instalación local sin otra cuenta, la configuración inicial vuelve a abrirse.',
+  'privacy.deleteEffectBackups':
+    'Las copias de seguridad anteriores conservan tus datos hasta que caduquen, pero restaurar una vuelve a eliminar el espacio de trabajo.',
+  'privacy.deleteConfirmWord': 'ELIMINAR',
+  'privacy.deleteConfirmLabel': 'Escribe {word} para confirmar',
+  'privacy.deletePasswordLabel': 'Tu contraseña',
+  'privacy.deleteSubmit': 'Eliminar mi espacio de trabajo',
+  'privacy.deleting': 'Eliminando…',
+
+  'deletion.title': 'Eliminación del espacio de trabajo',
+  'deletion.erasingTitle': 'Acceso revocado; el borrado está en curso',
+  'deletion.erasingBody':
+    'Ya nadie puede iniciar sesión en este espacio de trabajo. Los archivos y registros se siguen borrando; esta página se actualiza sola.',
+  'deletion.completedTitle': 'Tu espacio de trabajo se ha eliminado',
+  'deletion.completedBody': 'Se borraron {files} archivo(s) y todos los registros el {when}.',
+  'deletion.failedTitle': 'El borrado no terminó',
+  'deletion.failedBody':
+    'El acceso se revocó y nadie puede iniciar sesión, pero el borrado de los archivos falló tras varios intentos. Quien administra esta instalación puede reintentarlo; dale la referencia de abajo.',
+  'deletion.reference': 'Referencia:',
+  'deletion.setupAgain': 'Configurar esta instalación de nuevo',
 };

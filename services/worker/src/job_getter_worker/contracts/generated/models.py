@@ -2211,3 +2211,22 @@ class ExportWorkspaceResult(BaseModel):
     bytes: Annotated[int, Field(ge=0)]
     sha256: Annotated[str, Field(max_length=64)]
     manifest: WorkspaceExportManifest
+
+
+class DeleteWorkspaceRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    confirm: Literal[True]
+    password: Annotated[str, Field(min_length=1, max_length=200)]
+
+
+class WorkspaceDeletionView(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    deletion_id: UuidString
+    state: Literal["erasing", "completed", "failed"]
+    requested_at: TimestampString
+    completed_at: TimestampString | None
+    files_erased: Annotated[int, Field(ge=0)]
+    failure_code: Annotated[str, Field(pattern=r"^[a-z0-9_]{1,60}$")] | None
+    setup_reopened: bool

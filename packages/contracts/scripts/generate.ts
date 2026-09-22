@@ -416,7 +416,9 @@ export function buildOpenApiDocument(): JsonSchema {
   };
 
   const requestBodyFor = (route: RouteDefinition): JsonValue | undefined => {
-    const bodyless = route.method === 'GET' || route.method === 'DELETE';
+    // A DELETE carries a body only when its route declares one; see
+    // `deleteWorkspace` in src/routes.ts, whose password cannot go in a URL.
+    const bodyless = route.method === 'GET' || (route.method === 'DELETE' && !route.body);
     if (!route.body || bodyless) return undefined;
     if (route.multipart) {
       return {
@@ -1627,7 +1629,9 @@ export function buildClient(): ClientBuild {
       argMembers.push(`  /** Query string parameters. */\n  readonly query?: ${expr};`);
     }
 
-    const bodyless = route.method === 'GET' || route.method === 'DELETE';
+    // A DELETE carries a body only when its route declares one; see
+    // `deleteWorkspace` in src/routes.ts, whose password cannot go in a URL.
+    const bodyless = route.method === 'GET' || (route.method === 'DELETE' && !route.body);
     const sendsEmptyBody = Boolean(route.body) && !bodyless && isEmptyClosedObject(route.body);
     const sendsBody = Boolean(route.body) && !bodyless && !sendsEmptyBody;
     if (sendsBody) {

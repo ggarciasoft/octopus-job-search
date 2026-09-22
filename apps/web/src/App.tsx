@@ -11,6 +11,7 @@ import { NotImplemented } from './components/NotImplemented';
 import { I18nProvider } from './i18n/I18nProvider';
 import { PLACEHOLDER_SCREENS } from './navigation';
 import { DashboardPage } from './routes/DashboardPage';
+import { DeletionReceiptPage } from './routes/DeletionReceiptPage';
 import { DiagnosticsPage } from './routes/DiagnosticsPage';
 import { CvStudioPage } from './routes/CvStudioPage';
 import { ApplicationsPage } from './routes/ApplicationsPage';
@@ -77,6 +78,8 @@ export function AppRoutes() {
     <Routes>
       <Route path="/setup" element={<SetupPage />} />
       <Route path="/login" element={<LoginPage />} />
+      {/* Outside RequireAuth: the deletion that produced it ended the session. */}
+      <Route path="/deleted/:id" element={<DeletionReceiptPage />} />
       <Route element={<RequireAuth />}>
         <Route element={<AppLayout />}>
           <Route index element={<DashboardPage />} />

@@ -28,6 +28,7 @@ import type {
   RemoteType,
   ScanStatus,
   SourceHealthState,
+  WorkspaceDeletionState,
   TaskState,
   TaskType,
   TriState,
@@ -545,6 +546,26 @@ export interface DeletionLedgerTable {
   created_at: TimestampColumn;
 }
 
+/**
+ * The receipt for a workspace deletion (AT26). Operator-global for the same
+ * reason as the ledger: it records that a workspace was erased, so it must
+ * outlive the workspace. Identifiers, timestamps and counts; no personal data.
+ */
+export interface WorkspaceDeletionsTable {
+  id: Generated<string>;
+  /** An identifier, not a reference. There is deliberately no FK. */
+  workspace_id: string;
+  state: Generated<WorkspaceDeletionState>;
+  requested_at: TimestampColumn;
+  completed_at: Date | null;
+  attempts: Generated<number>;
+  files_erased: Generated<number>;
+  failure_code: string | null;
+  setup_reopened: Generated<boolean>;
+  created_at: TimestampColumn;
+  updated_at: TimestampColumn;
+}
+
 export interface SchemaMigrationsTable {
   name: string;
   checksum: string;
@@ -580,6 +601,7 @@ export interface Database {
   application_events: ApplicationEventsTable;
   paired_devices: PairedDevicesTable;
   deletion_ledger: DeletionLedgerTable;
+  workspace_deletions: WorkspaceDeletionsTable;
   job_sources: JobSourcesTable;
   job_imports: JobImportsTable;
   schema_migrations: SchemaMigrationsTable;
@@ -634,10 +656,10 @@ export type WorkspaceScopedTable = (typeof WORKSPACE_SCOPED_TABLES)[number];
  * operational records that are not theirs; cascading them on delete would
  * destroy the operator's record of running infrastructure.
  *
- * M6 implements `export_workspace` and `delete_workspace`; this list is here
- * so that agent inherits the classification instead of re-deciding it. The
- * same classification is recorded on the tables themselves via COMMENT ON
- * TABLE, and `tests/db/schema.test.ts` asserts the two agree.
+ * The export (`workspace/export.ts`) and the deletion
+ * (`privacy/workspace-deletion.ts`) both follow this list. The same
+ * classification is recorded on the tables themselves via COMMENT ON TABLE, and
+ * `tests/db/schema.test.ts` asserts the two agree.
  */
 export const OPERATOR_GLOBAL_TABLES = [
   'system_flags',
@@ -647,6 +669,9 @@ export const OPERATOR_GLOBAL_TABLES = [
   // must outlive the workspace it names, so it is neither exported nor
   // cascaded (03_DATA_MODEL.md, "Privacy lifecycle").
   'deletion_ledger',
+  // The receipt for a workspace deletion. Same reasoning: it must outlive the
+  // workspace it reports on, and it holds no user data to export.
+  'workspace_deletions',
 ] as const;
 
 export type OperatorGlobalTable = (typeof OPERATOR_GLOBAL_TABLES)[number];

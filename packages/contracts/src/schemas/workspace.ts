@@ -150,3 +150,75 @@ export const ALL_DELETED_OBJECT_KINDS = [
   'resume',
   'profile_fact',
 ] as const satisfies readonly DeletedObjectKind[];
+
+// ---------------------------------------------------------------------------
+// Workspace deletion
+// ---------------------------------------------------------------------------
+
+/**
+ * `DELETE /workspace` (04_API_CONTRACTS.md: "explicit confirmation + recent
+ * authentication → deletion task; session invalidated").
+ *
+ * `confirm` is a literal so that no client can delete a workspace by sending
+ * an empty object, and the password is the recent authentication: a session
+ * cookie left on an unattended machine is not enough on its own. The password
+ * travels in the body because it must never appear in a URL, where proxies
+ * and logs keep it.
+ */
+export const DeleteWorkspaceRequest = Type.Object(
+  {
+    confirm: Type.Literal(true),
+    password: Type.String({ minLength: 1, maxLength: 200 }),
+  },
+  { additionalProperties: false },
+);
+export type DeleteWorkspaceRequest = Static<typeof DeleteWorkspaceRequest>;
+
+/**
+ * Where an erasure stands. `erasing` is the state between access being
+ * revoked (immediately, in the request) and the files and rows being gone.
+ * `failed` means the retries ran out and an operator has to look; the access
+ * revocation it follows is not undone.
+ */
+export const WorkspaceDeletionState = Type.Union([
+  Type.Literal('erasing'),
+  Type.Literal('completed'),
+  Type.Literal('failed'),
+]);
+export type WorkspaceDeletionState = Static<typeof WorkspaceDeletionState>;
+
+export const ALL_WORKSPACE_DELETION_STATES = [
+  'erasing',
+  'completed',
+  'failed',
+] as const satisfies readonly WorkspaceDeletionState[];
+
+/**
+ * The deletion receipt.
+ *
+ * 11_TESTING_ACCEPTANCE.md, AT26: "completion recorded without PII". Hence
+ * what is here: an id, a state, two timestamps and counts. No email, no file
+ * name, no employer — nothing that says whose workspace it was. The workspace
+ * it names no longer exists by the time the receipt reads `completed`, so the
+ * receipt is operator-global and is read without a session: the session was
+ * revoked by the same request that produced it.
+ */
+export const WorkspaceDeletionView = Type.Object(
+  {
+    deletion_id: Uuid,
+    state: WorkspaceDeletionState,
+    requested_at: Timestamp,
+    completed_at: Type.Union([Timestamp, Type.Null()]),
+    /** Stored objects removed from private storage. */
+    files_erased: Type.Integer({ minimum: 0 }),
+    /** A short machine code when `state` is `failed`; null otherwise. */
+    failure_code: Type.Union([Type.String({ pattern: '^[a-z0-9_]{1,60}$' }), Type.Null()]),
+    /**
+     * True once a local installation with no owner left has reopened one-time
+     * setup, so the page can say what happens next instead of guessing.
+     */
+    setup_reopened: Type.Boolean(),
+  },
+  { additionalProperties: false },
+);
+export type WorkspaceDeletionView = Static<typeof WorkspaceDeletionView>;

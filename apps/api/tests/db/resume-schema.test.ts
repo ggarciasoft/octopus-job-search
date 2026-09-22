@@ -35,6 +35,7 @@ beforeAll(async () => {
     '0007_privacy',
     '0008_job_user_edits',
     '0009_observe_confirmation',
+    '0010_workspace_deletion',
   ]);
 }, 180_000);
 

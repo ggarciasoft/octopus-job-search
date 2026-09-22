@@ -50,7 +50,7 @@ import {
 } from './devices.js';
 import { fillApplication } from './fill.js';
 import { observeApplication } from './observe.js';
-import { exportWorkspace } from './workspace.js';
+import { deleteWorkspace, exportWorkspace, getWorkspaceDeletion } from './workspace.js';
 import type { RouteContext, RouteHandler } from './context.js';
 
 /**
@@ -148,6 +148,8 @@ function handlers(): Readonly<Record<string, RouteHandler>> {
     getDevice,
     revokeDevice,
     exportWorkspace,
+    deleteWorkspace,
+    getWorkspaceDeletion,
   };
 }
 
@@ -162,6 +164,8 @@ const ROUTE_RATE_LIMITS: Readonly<Record<string, { max: number; timeWindow: stri
   // unauthenticated route that hands out a credential, so guessing at it must
   // be slow even though the code space is 192 bits.
   exchangeDevicePairing: { max: 10, timeWindow: '1 minute' },
+  // The password it takes is a credential guess like any other.
+  deleteWorkspace: { max: 5, timeWindow: '1 minute' },
 };
 
 export interface RegisterRoutesOptions {

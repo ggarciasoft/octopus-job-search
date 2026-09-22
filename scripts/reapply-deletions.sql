@@ -30,19 +30,40 @@
 --
 -- WHAT IT DOES NOT DO
 --
--- It deletes database rows. Stored file objects for deleted files are removed
--- by the same restore procedure's file step; this file has no access to the
--- storage volume and does not pretend otherwise.
+-- It deletes database rows. Stored objects for deleted files and workspaces
+-- are removed by restore.sh / restore.ps1 after the files volume is unpacked;
+-- this file has no access to the storage volume and does not pretend otherwise.
 -- =============================================================================
 
 BEGIN;
 
 -- A workspace deletion names no single row: it deleted all of them. The
--- cascade from `workspaces` does the rest.
+-- cascade from `workspaces` does the rest. The owners are noted first, because
+-- the account (an email address and a password hash) went with the workspace
+-- and the cascade does not reach `users`.
+CREATE TEMP TABLE reapplied_owners ON COMMIT DROP AS
+  SELECT w.owner_user_id AS user_id
+    FROM workspaces w
+    JOIN deletion_ledger d ON d.object_kind = 'workspace' AND d.workspace_id = w.id;
+
 DELETE FROM workspaces w
   USING deletion_ledger d
   WHERE d.object_kind = 'workspace'
     AND d.workspace_id = w.id;
+
+-- An owner who still belongs to another workspace keeps their account.
+DELETE FROM users u
+  USING reapplied_owners o
+  WHERE u.id = o.user_id
+    AND NOT EXISTS (SELECT 1 FROM memberships m WHERE m.user_id = u.id);
+
+-- A local installation left with no account goes back to first-run, exactly
+-- as the deletion itself left it (apps/api/src/privacy/workspace-deletion.ts).
+-- Hosted installations never bootstrap through setup, so the flag is inert
+-- there either way.
+DELETE FROM system_flags
+  WHERE key = 'setup_completed'
+    AND NOT EXISTS (SELECT 1 FROM users);
 
 DELETE FROM files f
   USING deletion_ledger d

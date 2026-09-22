@@ -1,7 +1,8 @@
 /**
- * POST /workspace/export.
+ * POST /workspace/export, DELETE /workspace and GET /workspace/deletions/:id.
+ * The deletion handlers are documented where they are defined, below.
  *
- * The archive is built here rather than queued to the Python worker. Export is
+ * The export archive is built here rather than queued to the Python worker. Export is
  * SQL plus stored files, both of which belong to the API
  * (02_ARCHITECTURE.md); the worker has neither, and handing it the whole
  * workspace as a task payload so it could hand it straight back would add a
@@ -15,11 +16,20 @@
  */
 import {
   type AcceptedResponse,
+  type DeleteWorkspaceRequest,
   type ExportWorkspaceResult,
   type WorkspaceMode,
 } from '@job-getter/contracts';
-import { internalError, payloadTooLarge } from '../errors.js';
+import { forbidden, internalError, notFound, payloadTooLarge } from '../errors.js';
 import { recordAuditEvent } from '../auth/scope.js';
+import { verifyPassword } from '../auth/password.js';
+import { clearSessionCookies } from '../auth/sessions.js';
+import {
+  eraseWorkspace,
+  findDeletionReceipt,
+  requestWorkspaceDeletion,
+  toDeletionView,
+} from '../privacy/workspace-deletion.js';
 import { readIdempotencyKey, sendOutcome, withIdempotency } from '../tasks/idempotency.js';
 import { storeFile } from '../files/service.js';
 import { buildWorkspaceExport, toExportResult } from '../workspace/export.js';
@@ -137,3 +147,58 @@ export const exportWorkspace: RouteHandler = async (context, request, reply) => 
 
 /** Re-exported for the tests, which assert the shape the task result carries. */
 export type { ExportWorkspaceResult };
+
+/**
+ * DELETE /workspace.
+ *
+ * 04_API_CONTRACTS.md: "explicit confirmation + recent authentication →
+ * deletion task; session invalidated". The confirmation is the literal
+ * `confirm: true` the schema demands, and the recent authentication is the
+ * password, checked here against the stored hash. A wrong password is 403,
+ * not 401: the session is still good, and a 401 would sign the user out of a
+ * page on which they only mistyped.
+ *
+ * Access is revoked before this answers. Erasure then runs inline, so a local
+ * installation normally answers with a `completed` receipt; if it does not
+ * finish, the receipt says `erasing` and the scheduler carries on.
+ */
+export const deleteWorkspace: RouteHandler = async (context, request, reply) => {
+  const scope = requireScope(context, request);
+  const principal = requireSession(request);
+  const body = request.body as DeleteWorkspaceRequest;
+
+  const user = await context.db
+    .selectFrom('users')
+    .select(['password_hash'])
+    .where('id', '=', principal.userId)
+    .executeTakeFirstOrThrow();
+  if (!(await verifyPassword(user.password_hash, body.password))) {
+    throw forbidden('That password is not correct. Nothing was deleted.');
+  }
+
+  const requested = await requestWorkspaceDeletion(context.db, scope.workspaceId);
+  clearSessionCookies(reply, context.config);
+  // The receipt id and nothing else: the log is not the place for whose
+  // workspace it was.
+  context.logger.info(
+    { request_id: request.id, deletion_id: requested.id },
+    'workspace deletion requested; access revoked',
+  );
+
+  const receipt = await eraseWorkspace(context, requested.id);
+  return reply.status(202).send(toDeletionView(receipt));
+};
+
+/**
+ * GET /workspace/deletions/:id.
+ *
+ * Public, because the request that created the receipt revoked the only
+ * session that could have read it. The receipt holds no personal data, and a
+ * random UUID is not something anyone else can guess.
+ */
+export const getWorkspaceDeletion: RouteHandler = async (context, request, reply) => {
+  const { id } = request.params as { id: string };
+  const receipt = await findDeletionReceipt(context.db, id);
+  if (!receipt) throw notFound('No such deletion.');
+  return reply.status(200).send(toDeletionView(receipt));
+};

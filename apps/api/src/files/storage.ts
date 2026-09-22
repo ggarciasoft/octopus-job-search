@@ -34,6 +34,13 @@ export interface StorageDriver {
   stat(key: string): Promise<StoredObjectInfo | null>;
   /** Removes the object. Absent objects are not an error. */
   delete(key: string): Promise<void>;
+  /**
+   * Removes every object stored under a workspace, whether or not a `files`
+   * row still names it: a crashed upload or a late worker artifact can leave
+   * bytes no row points at, and a workspace deletion must erase those too.
+   * An absent workspace is not an error.
+   */
+  deleteWorkspaceObjects(workspaceId: string): Promise<void>;
   /** Readiness probe: is the backing store usable right now? */
   healthCheck(): Promise<{ ok: boolean; detail: string }>;
 }
@@ -115,6 +122,15 @@ export class LocalStorageDriver implements StorageDriver {
     await rm(this.pathFor(key), { force: true });
   }
 
+  async deleteWorkspaceObjects(workspaceId: string): Promise<void> {
+    // The key format makes a workspace a directory of its own. Validated as a
+    // UUID first, so this can never be asked to remove the root or a sibling.
+    if (!isUuid(workspaceId)) throw new StorageKeyError(workspaceId);
+    const path = resolve(join(this.root, workspaceId));
+    if (!path.startsWith(this.root + sep)) throw new StorageKeyError(workspaceId);
+    await rm(path, { recursive: true, force: true });
+  }
+
   async healthCheck(): Promise<{ ok: boolean; detail: string }> {
     try {
       await mkdir(this.root, { recursive: true });
@@ -173,6 +189,10 @@ export class S3StorageDriver implements StorageDriver {
   }
 
   async delete(): Promise<void> {
+    return S3StorageDriver.unimplemented();
+  }
+
+  async deleteWorkspaceObjects(): Promise<void> {
     return S3StorageDriver.unimplemented();
   }
 

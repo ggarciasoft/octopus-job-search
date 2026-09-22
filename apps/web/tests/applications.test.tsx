@@ -492,11 +492,4 @@ describe('the privacy tab', () => {
       '/api/v1/files/33333333-3333-4333-8333-333333333333/download',
     );
   });
-
-  it('offers no delete button, because deletion is not built', async () => {
-    renderApp({ route: '/settings/privacy' });
-
-    expect(await screen.findByTestId('delete-not-built')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: /delete/i })).toBeNull();
-  });
 });

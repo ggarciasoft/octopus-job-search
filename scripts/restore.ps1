@@ -255,6 +255,7 @@ Confirm-JGAction -Prompt 'Continue with the restore?' -AssumeYes:$Yes
 
 $tableCount    = '?'
 $restoredCount = '?'
+$filesPruned = 'not run'
 
 try {
     # --- Database -------------------------------------------------------------
@@ -345,6 +346,35 @@ try {
         $restoredCount = ((& docker compose run --rm --no-deps --entrypoint sh api -c "find '$filesRoot' -type f | wc -l" 2>$null) -join '').Trim()
         if (-not $restoredCount) { $restoredCount = '?' }
         Write-JGOk "files volume now holds $restoredCount files (archive recorded $bkFiles)"
+
+        # --- Reapply the deletion ledger to the files volume ------------------
+        # reapply-deletions.sql removed the rows; the archive just brought the
+        # bytes back. A deleted workspace is a whole directory (storage keys are
+        # <workspace>/<file>), a deleted file is one object. Paths come from the
+        # ledger, which holds UUIDs only, and are checked against that shape
+        # again inside the container before anything is removed.
+        $ledgerPaths = & docker compose exec -T db psql -U $pgUser -d $pgDb -tA -v ON_ERROR_STOP=1 -c "SELECT CASE WHEN object_kind = 'workspace' THEN workspace_id::text ELSE workspace_id::text || '/' || object_id::text END FROM deletion_ledger WHERE object_kind IN ('workspace', 'file')" 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            $pathList = @($ledgerPaths | Where-Object { $_ -and $_.Trim() })
+            # No double quotes inside the command: Windows PowerShell 5.1 does not escape
+            # them for native programs. None are needed, because a path that got
+            # past the grep is UUIDs and one slash. PowerShell also prefixes piped
+            # text with a UTF-8 byte-order mark (bytes 357 273 277), which would
+            # make the first path fail the check; UUIDs are ASCII, so tr drops
+            # those bytes along with the carriage returns.
+            ($pathList -join "`n") | & docker compose run --rm --no-deps -T --entrypoint sh api -c "tr -d '\357\273\277\r' | grep -E '^[0-9a-f-]{36}(/[0-9a-f-]{36})?`$' | while read -r p; do rm -rf '$filesRoot'/`$p; done; exit 0"
+            if ($LASTEXITCODE -ne 0) { throw 'removing deleted objects from the files volume failed. Do NOT start the API: deleted files may be present.' }
+            $filesPruned = "yes - $($pathList.Count) ledger path(s) applied"
+            # Recounted, so the report says what is left rather than what was unpacked.
+            $restoredCount = ((& docker compose run --rm --no-deps --entrypoint sh api -c "find '$filesRoot' -type f | wc -l" 2>$null) -join '').Trim()
+            if (-not $restoredCount) { $restoredCount = '?' }
+            Write-JGOk "deleted workspaces and files removed from the files volume ($restoredCount files remain)"
+        }
+        else {
+            $filesPruned = 'NO - the deletion ledger could not be read'
+            Write-JGWarn 'Could not read the deletion ledger, so objects it names were NOT removed from'
+            Write-JGWarn 'the files volume. Restore the database (or run migrate) and re-run this step.'
+        }
     }
 }
 catch {
@@ -365,6 +395,7 @@ Write-Host ' Verified:'
 Write-Host '   archive checksums matched'
 if (-not $FilesOnly) { Write-Host "   pg_restore completed; public schema has $tableCount tables" }
 if (-not $DbOnly)    { Write-Host "   files volume holds $restoredCount files" }
+if (-not $DbOnly)    { Write-Host "   deleted objects removed from files: $filesPruned" }
 Write-Host ''
 if (-not $FilesOnly) { Write-Host "   deletion ledger: $ledgerReapplied" }
 Write-Host ''

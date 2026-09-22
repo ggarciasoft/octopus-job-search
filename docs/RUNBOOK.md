@@ -28,6 +28,7 @@ Every procedure is labelled:
 5. [Upgrade](#5-upgrade) ⚠️
 6. [Registry rate limits and TLS interception](#6-registry-rate-limits-and-tls-interception) ✅
 7. [Lost owner access](#7-lost-owner-access) ⚠️
+8. [Workspace deletion](#8-workspace-deletion) ✅
 
 ---
 
@@ -222,6 +223,11 @@ To a **separate installation** — the case the specification actually cares abo
 > `scripts/reapply-deletions.sql`, and does **not** start the API. If the dump
 > predates migration 0007 it prints the exact commands to finish the job instead.
 > AT25 checked this: an answer deleted after the backup stayed deleted.
+>
+> The files volume gets the same treatment. After unpacking it, the script
+> removes every object the ledger names: a deleted workspace's whole directory
+> and each deleted file. Before AT26 it did not, so a restored backup brought
+> back the bytes of deleted files even though their rows stayed deleted.
 
 **What a successful restore proves, and what it does not:**
 
@@ -515,6 +521,73 @@ Options, in order of preference:
 Do **not** re-run `scripts/setup.sh --force` expecting it to help: it rotates
 `SESSION_SECRET` (logging everyone out) and `ENCRYPTION_KEY` (making stored
 provider keys undecryptable) without reopening the closed setup route.
+
+The one thing that does reopen setup is the owner deleting their workspace
+(§8), which erases everything first. It is not a way to recover lost access.
+
+---
+
+## 8. Workspace deletion
+
+**Status: ✅ Verified 2026-09-22** on a throwaway Compose project: the deletion
+itself, and `restore.sh` of a pre-deletion backup re-deleting it, files
+included. **Retrying a failed erasure** (below) is ⚠️ covered by the test suite
+only.
+
+The owner deletes their workspace from **Settings → Privacy**, typing the
+confirmation word and their password (`DELETE /api/v1/workspace`). Nothing here
+needs an operator unless the erasure fails.
+
+### What happens, in order
+
+1. **Access ends, in one transaction.** The workspace is marked `deleting`;
+   every session and every paired device is revoked and the device tokens are
+   destroyed; queued and running tasks are cancelled, so a worker holding a
+   lease gets 409 on anything it sends; the deletion is written to
+   `deletion_ledger`; and a receipt row is written to `workspace_deletions`.
+2. **Erasure, in the same request.** Stored objects are removed (the whole
+   `<FILES_ROOT>/<workspace-id>/` directory, so orphaned objects go too), then
+   the workspace row, which cascades to every private table, then the owner
+   account.
+3. **On a local installation with no account left, setup reopens.** It still
+   needs `SETUP_TOKEN` from `.env` and a local or private-network address. The
+   token is the same one as before. To change it, edit `SETUP_TOKEN` in `.env`
+   and restart `api`; do not run `setup.sh --force`, which rotates the other
+   secrets too.
+4. The browser lands on `/deleted/<id>`, which reads the receipt without a
+   session. The receipt holds an id, a state, timestamps and a file count, and
+   nothing that says whose workspace it was.
+
+### If the erasure fails
+
+A storage fault leaves the receipt in `erasing`. Access is already revoked; the
+scheduler retries once a minute, and after five failed passes marks the receipt
+`failed` with `failure_code = 'erasure_failed'`. The API log names the receipt
+id and the underlying error (`workspace erasure pass failed`).
+
+```sql
+-- What is unfinished
+SELECT id, state, attempts, requested_at, failure_code
+  FROM workspace_deletions WHERE state <> 'completed';
+
+-- After fixing the cause, hand it back to the scheduler
+UPDATE workspace_deletions
+   SET state = 'erasing', failure_code = NULL, attempts = 0, updated_at = now() - interval '1 minute'
+ WHERE id = '<receipt id>';
+```
+
+Do **not** delete the workspace row by hand: the scheduler removes the stored
+objects first, because afterwards nothing records which objects were the
+workspace's.
+
+### Backups
+
+Deleting live data cannot edit a backup taken before it
+(`docs/spec/03_DATA_MODEL.md`). Restoring such a backup re-deletes the
+workspace: `restore.sh` replays the ledger against the database, removes the
+owner account, reopens setup if no account is left, and removes the workspace's
+directory from the restored files volume. The backup file itself still holds the
+data until it is deleted or expires.
 
 ---
 

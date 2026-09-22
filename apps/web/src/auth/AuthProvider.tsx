@@ -24,6 +24,12 @@ export interface AuthContextValue {
   /** Records the session returned by login or setup without a second round trip. */
   readonly setSession: (me: MeResponse) => void;
   readonly signOut: () => Promise<void>;
+  /**
+   * Drops everything this browser holds about the session without calling the
+   * API: for when the server has already ended it, as deleting the workspace
+   * does. Calling `logout` then would only earn a 401.
+   */
+  readonly forgetSession: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -64,6 +70,11 @@ export function AuthProvider({ children }: { readonly children: ReactNode }) {
     }
   }, [api, queryClient]);
 
+  const forgetSession = useCallback(() => {
+    queryClient.clear();
+    queryClient.setQueryData(ME_QUERY_KEY, null);
+  }, [queryClient]);
+
   const state = useMemo<AuthState>(() => {
     if (query.data) return { status: 'authenticated', me: query.data };
     if (query.isPending) return { status: 'loading' };
@@ -74,8 +85,8 @@ export function AuthProvider({ children }: { readonly children: ReactNode }) {
   }, [query.data, query.isPending, query.error]);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ state, refresh, setSession, signOut }),
-    [state, refresh, setSession, signOut],
+    () => ({ state, refresh, setSession, signOut, forgetSession }),
+    [state, refresh, setSession, signOut, forgetSession],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

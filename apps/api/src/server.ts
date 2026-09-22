@@ -44,7 +44,7 @@ async function main(): Promise<void> {
   const storage = createStorageDriver(config);
   const { app, context, ownsPool } = await buildApp(config, { logger, storage });
 
-  const scheduler = createScheduler({ db: context.db, storage, logger });
+  const scheduler = createScheduler({ db: context.db, storage, logger, config });
 
   let shuttingDown = false;
   const shutdown = async (signal: string): Promise<void> => {

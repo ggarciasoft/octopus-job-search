@@ -1,9 +1,11 @@
 import type { ExportWorkspaceResult, TaskView } from '@job-getter/contracts';
-import { Button, Callout, Spinner } from '@job-getter/ui';
+import { Button, Callout, Spinner, TextField } from '@job-getter/ui';
 import { useQuery } from '@tanstack/react-query';
-import { useRef, useState } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApi } from '../../api/ApiProvider';
 import { IdempotentIntent } from '../../api/idempotency';
+import { useAuth } from '../../auth/AuthProvider';
 import { ErrorNotice } from '../../components/ErrorNotice';
 import { useTranslation } from '../../i18n/I18nProvider';
 import { formatBytes } from '../../i18n/format';
@@ -18,10 +20,10 @@ import { formatBytes } from '../../i18n/format';
  * their data and later finds no provider key should have been told, not left
  * to wonder whether the export was truncated.
  *
- * **What is not built.** Workspace deletion is a later milestone. There is no
- * delete button here that would 404, and no "coming soon" control that looks
- * pressable — only a sentence saying where it is and where the record of that
- * lives.
+ * **What deleting does, before it is done.** Access ends at once, for this
+ * browser and every other one; the files and records are erased; the account
+ * goes too. The button stays disabled until the user has typed the word and
+ * their password, and the export sits above it on the same page.
  */
 const EXCLUSION_LABEL = {
   provider_secrets: 'privacy.excluded.providerSecrets',
@@ -127,13 +129,95 @@ export function PrivacyPage() {
         ) : null}
       </section>
 
-      <section className="flex flex-col gap-2">
-        <h3 className="font-semibold">{t('privacy.deleteHeading')}</h3>
-        {/* No button. A control that 404s is worse than a sentence. */}
-        <p className="max-w-3xl text-sm text-slate-700" data-testid="delete-not-built">
-          {t('privacy.deleteBody')}
-        </p>
-      </section>
+      <DeleteWorkspaceSection />
     </div>
+  );
+}
+
+/**
+ * DELETE /workspace, with the typed confirmation and the password it demands.
+ *
+ * The confirmation word is localised here, not sent: the API takes a literal
+ * `confirm: true`, and asking a Spanish-speaking user to type an English word
+ * would test their English, not their intent.
+ */
+function DeleteWorkspaceSection() {
+  const api = useApi();
+  const { t } = useTranslation();
+  const { forgetSession } = useAuth();
+  const navigate = useNavigate();
+  const [typed, setTyped] = useState('');
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<unknown>(null);
+
+  const word = t('privacy.deleteConfirmWord');
+  const ready = typed.trim() === word && password !== '';
+
+  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!ready) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const receipt = await api.deleteWorkspace({ body: { confirm: true, password } });
+      // The server has already ended the session; nothing here is valid now.
+      forgetSession();
+      navigate(`/deleted/${receipt.deletion_id}`, { replace: true, state: { receipt } });
+    } catch (caught) {
+      // A wrong password deleted nothing; keep what was typed except the password.
+      setPassword('');
+      setError(caught);
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section
+      className="flex flex-col gap-3 rounded border border-rose-200 bg-white p-4"
+      data-testid="delete-workspace"
+    >
+      <h3 className="font-semibold">{t('privacy.deleteHeading')}</h3>
+      <p className="max-w-3xl text-sm text-slate-700">{t('privacy.deleteBody')}</p>
+      <ul className="list-disc pl-5 text-sm text-slate-700">
+        <li>{t('privacy.deleteEffectAccess')}</li>
+        <li>{t('privacy.deleteEffectErase')}</li>
+        <li>{t('privacy.deleteEffectAccount')}</li>
+        <li>{t('privacy.deleteEffectBackups')}</li>
+      </ul>
+
+      {error === null ? null : <ErrorNotice error={error} />}
+
+      <form
+        className="flex max-w-md flex-col gap-3"
+        onSubmit={(event) => void onSubmit(event)}
+        noValidate
+      >
+        <TextField
+          label={t('privacy.deleteConfirmLabel', { word })}
+          autoComplete="off"
+          value={typed}
+          onChange={(event) => setTyped(event.currentTarget.value)}
+        />
+        <TextField
+          label={t('privacy.deletePasswordLabel')}
+          type="password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(event) => setPassword(event.currentTarget.value)}
+        />
+        <div>
+          <Button
+            type="submit"
+            variant="danger"
+            disabled={!ready}
+            busy={busy}
+            busyLabel={t('privacy.deleting')}
+          >
+            {t('privacy.deleteSubmit')}
+          </Button>
+        </div>
+      </form>
+    </section>
   );
 }

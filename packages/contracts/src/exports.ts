@@ -207,6 +207,8 @@ export const EXPORTED_SCHEMAS: Record<string, TSchema> = {
   ExportCounts: Workspace.ExportCounts,
   WorkspaceExportManifest: Workspace.WorkspaceExportManifest,
   ExportWorkspaceResult: Workspace.ExportWorkspaceResult,
+  DeleteWorkspaceRequest: Workspace.DeleteWorkspaceRequest,
+  WorkspaceDeletionView: Workspace.WorkspaceDeletionView,
 };
 
 /** Enumerations mirrored into Python so there is one source of truth. */
@@ -246,6 +248,7 @@ export const EXPORTED_ENUMS: Record<string, readonly string[]> = {
   ObservationUnknownReason: ObserveConfirmation.ALL_OBSERVATION_UNKNOWN_REASONS,
   ExportExclusion: Workspace.ALL_EXPORT_EXCLUSIONS,
   DeletedObjectKind: Workspace.ALL_DELETED_OBJECT_KINDS,
+  WorkspaceDeletionState: Workspace.ALL_WORKSPACE_DELETION_STATES,
 };
 
 /** Shared numeric constants that must not diverge between runtimes. */

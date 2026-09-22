@@ -65,6 +65,7 @@ from .enums import (
     TaskState,
     TaskType,
     UnresolvedReason,
+    WorkspaceDeletionState,
 )
 from .models import (
     AcceptedResponse,
@@ -95,6 +96,7 @@ from .models import (
     CreateProfileImportRequest,
     CreateResumeRequest,
     CreateSourceRequest,
+    DeleteWorkspaceRequest,
     DeviceExchangeRequest,
     DeviceExchangeResponse,
     DeviceView,
@@ -230,6 +232,7 @@ from .models import (
     UsageSettleResponse,
     UsageSummary,
     UuidString,
+    WorkspaceDeletionView,
     WorkspaceExportManifest,
     WorkspaceExportManifestWorkspace,
 )
@@ -296,6 +299,7 @@ __all__ = [
     "CreateProfileImportRequest",
     "CreateResumeRequest",
     "CreateSourceRequest",
+    "DeleteWorkspaceRequest",
     "DeletedObjectKind",
     "DeviceExchangeRequest",
     "DeviceExchangeResponse",
@@ -459,6 +463,8 @@ __all__ = [
     "UsageSettleResponse",
     "UsageSummary",
     "UuidString",
+    "WorkspaceDeletionState",
+    "WorkspaceDeletionView",
     "WorkspaceExportManifest",
     "WorkspaceExportManifestWorkspace",
 ]

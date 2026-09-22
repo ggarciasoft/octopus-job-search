@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/DeleteWorkspaceRequest.schema.json",
+  "title": "DeleteWorkspaceRequest",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "confirm",
+    "password"
+  ],
+  "properties": {
+    "confirm": {
+      "const": true,
+      "type": "boolean"
+    },
+    "password": {
+      "minLength": 1,
+      "maxLength": 200,
+      "type": "string"
+    }
+  }
+}

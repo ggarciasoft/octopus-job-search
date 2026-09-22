@@ -153,8 +153,8 @@ async function seedWorkspace(): Promise<string> {
 }
 
 describe('structural invariants (03_DATA_MODEL.md)', () => {
-  // `worker_registrations` and `deletion_ledger` both carry a `workspace_id`
-  // and are both operator-global rather than workspace-scoped, so neither is a
+  // `worker_registrations`, `deletion_ledger` and `workspace_deletions` all
+  // carry a `workspace_id` and are all operator-global rather than workspace-scoped, so neither is a
   // reference target. The ledger's exemption is the load-bearing one: it
   // records that a workspace was deleted, so it must outlive the workspace,
   // which rules out the composite foreign key the invariant exists to support.
@@ -169,7 +169,7 @@ describe('structural invariants (03_DATA_MODEL.md)', () => {
           SELECT 1 FROM information_schema.columns col
           WHERE col.table_name = c.relname AND col.column_name = 'workspace_id'
         )
-        AND c.relname NOT IN ('worker_registrations', 'deletion_ledger')
+        AND c.relname NOT IN ('worker_registrations', 'deletion_ledger', 'workspace_deletions')
     `);
     expect(rows.rows.length).toBeGreaterThan(8);
 
@@ -444,5 +444,62 @@ describe('the deletion ledger outlives what it records (03_DATA_MODEL.md)', () =
     expect(comment.rows[0]?.comment ?? '').toContain('operator-global');
     expect(OPERATOR_GLOBAL_TABLES as readonly string[]).toContain('deletion_ledger');
     expect(WORKSPACE_SCOPED_TABLES as readonly string[]).not.toContain('deletion_ledger');
+  });
+});
+
+describe('the workspace deletion receipt (AT26)', () => {
+  it('survives the workspace it reports on, like the ledger', async () => {
+    const workspace = await seedWorkspace();
+    await pool.query(`INSERT INTO workspace_deletions (workspace_id) VALUES ($1)`, [workspace]);
+
+    await pool.query('DELETE FROM memberships WHERE workspace_id = $1', [workspace]);
+    await pool.query('DELETE FROM workspaces WHERE id = $1', [workspace]);
+
+    const rows = await pool.query('SELECT 1 FROM workspace_deletions WHERE workspace_id = $1', [
+      workspace,
+    ]);
+    expect(rows.rowCount).toBe(1);
+  });
+
+  it('allows one erasure in flight per workspace', async () => {
+    const workspace = await seedWorkspace();
+    await pool.query(`INSERT INTO workspace_deletions (workspace_id) VALUES ($1)`, [workspace]);
+    await expect(
+      pool.query(`INSERT INTO workspace_deletions (workspace_id) VALUES ($1)`, [workspace]),
+    ).rejects.toMatchObject({ code: '23505' });
+  });
+
+  it('ties completed_at to completed and a failure code to failed', async () => {
+    const workspace = await seedWorkspace();
+    await expect(
+      pool.query(`INSERT INTO workspace_deletions (workspace_id, state) VALUES ($1, 'completed')`, [
+        workspace,
+      ]),
+    ).rejects.toMatchObject({ code: '23514' });
+    await expect(
+      pool.query(`INSERT INTO workspace_deletions (workspace_id, state) VALUES ($1, 'failed')`, [
+        workspace,
+      ]),
+    ).rejects.toMatchObject({ code: '23514' });
+  });
+
+  it('refuses free text as a failure code', async () => {
+    const workspace = await seedWorkspace();
+    await expect(
+      pool.query(
+        `INSERT INTO workspace_deletions (workspace_id, state, failure_code)
+         VALUES ($1, 'failed', 'could not delete /files/Jane Doe CV.pdf')`,
+        [workspace],
+      ),
+    ).rejects.toMatchObject({ code: '23514' });
+  });
+
+  it('is classified as operator-global on both sides', async () => {
+    const comment = await pool.query<{ comment: string | null }>(
+      `SELECT obj_description('public.workspace_deletions'::regclass, 'pg_class') AS comment`,
+    );
+    expect(comment.rows[0]?.comment ?? '').toContain('operator-global');
+    expect(OPERATOR_GLOBAL_TABLES as readonly string[]).toContain('workspace_deletions');
+    expect(WORKSPACE_SCOPED_TABLES as readonly string[]).not.toContain('workspace_deletions');
   });
 });

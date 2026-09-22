@@ -225,6 +225,7 @@ describe('scheduleDueScans', () => {
       db: harness.db,
       storage: harness.storage,
       logger: createLogger({ level: 'silent' }),
+      config: harness.config,
       random: () => 0,
     });
     await scheduler.runOnce();

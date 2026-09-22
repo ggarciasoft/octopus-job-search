@@ -1664,7 +1664,32 @@ export const en = {
   'privacy.download': 'Download the archive',
   'privacy.exportFailedTitle': 'The export did not finish',
   'privacy.exportFailedBody': 'Nothing was written. Try again.',
-  'privacy.deleteHeading': 'Deleting your workspace',
+  'privacy.deleteHeading': 'Delete your workspace',
   'privacy.deleteBody':
-    'Not built yet. When it is, deleting will revoke access immediately and erase the files, and this page will show whether the erasure completed. There is no button here in the meantime, because one that did nothing would be worse than none. The implementation status file records exactly where this stands.',
+    'This cannot be undone. If you want to keep anything, create an export above first.',
+  'privacy.deleteEffectAccess':
+    'Access ends at once: this browser, any other signed-in browser and every paired device.',
+  'privacy.deleteEffectErase':
+    'Your profile, jobs, CVs, answers, application history and every uploaded or generated file are erased from this installation.',
+  'privacy.deleteEffectAccount':
+    'Your account goes too. On a local installation with no other account, setup opens again.',
+  'privacy.deleteEffectBackups':
+    'Backups taken earlier still contain your data until they expire, but restoring one deletes the workspace again.',
+  'privacy.deleteConfirmWord': 'DELETE',
+  'privacy.deleteConfirmLabel': 'Type {word} to confirm',
+  'privacy.deletePasswordLabel': 'Your password',
+  'privacy.deleteSubmit': 'Delete my workspace',
+  'privacy.deleting': 'Deleting…',
+
+  'deletion.title': 'Workspace deletion',
+  'deletion.erasingTitle': 'Access is revoked; erasure is in progress',
+  'deletion.erasingBody':
+    'Nobody can sign in to this workspace any more. The files and records are still being erased; this page updates by itself.',
+  'deletion.completedTitle': 'Your workspace has been deleted',
+  'deletion.completedBody': '{files} file(s) and every record were erased at {when}.',
+  'deletion.failedTitle': 'Erasure did not finish',
+  'deletion.failedBody':
+    'Access was revoked and nobody can sign in, but erasing the files failed after several attempts. The person who runs this installation can retry it; give them the reference below.',
+  'deletion.reference': 'Reference:',
+  'deletion.setupAgain': 'Set up this installation again',
 } as const;

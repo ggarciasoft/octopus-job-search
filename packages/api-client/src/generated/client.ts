@@ -17,6 +17,7 @@ import type {
   CreateProfileImportRequest,
   CreateResumeRequest,
   CreateSourceRequest,
+  DeleteWorkspaceRequest,
   DeviceExchangeRequest,
   DeviceExchangeResponse,
   DeviceView,
@@ -50,6 +51,7 @@ import type {
   SetupStatus,
   SourceView,
   TaskView,
+  WorkspaceDeletionView,
 } from '@job-getter/contracts';
 
 /** Version prefix from `packages/contracts/src/routes.ts`. */
@@ -876,6 +878,29 @@ export class JobGetterApiClient {
     });
   }
 
+  /** Delete this workspace: access is revoked at once, then the files and rows are erased. (`DELETE /api/v1/workspace`) */
+  deleteWorkspace(args: DeleteWorkspaceArgs): Promise<DeleteWorkspaceResult> {
+    return this.#request<DeleteWorkspaceResult>({
+      method: 'DELETE',
+      prefix: API_PREFIX,
+      path: '/workspace',
+      json: args.body,
+      csrf: true,
+      signal: args.signal,
+    });
+  }
+
+  /** Whether a workspace deletion has finished erasing. Holds no personal data. (`GET /api/v1/workspace/deletions/:id`) */
+  getWorkspaceDeletion(args: GetWorkspaceDeletionArgs): Promise<GetWorkspaceDeletionResult> {
+    return this.#request<GetWorkspaceDeletionResult>({
+      method: 'GET',
+      prefix: API_PREFIX,
+      path: '/workspace/deletions/:id',
+      params: args.params,
+      signal: args.signal,
+    });
+  }
+
   /** Forget a stored answer. (`DELETE /api/v1/answer-bank/:id`) */
   deleteAnswerBankEntry(args: DeleteAnswerBankEntryArgs): Promise<DeleteAnswerBankEntryResult> {
     return this.#request<DeleteAnswerBankEntryResult>({
@@ -1469,6 +1494,26 @@ export interface ExportWorkspaceArgs {
 
 /** Result of `exportWorkspace`. */
 export type ExportWorkspaceResult = AcceptedResponse;
+
+/** Arguments for `DELETE /api/v1/workspace`. */
+export interface DeleteWorkspaceArgs {
+  /** JSON request body. */
+  readonly body: DeleteWorkspaceRequest;
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `deleteWorkspace`. */
+export type DeleteWorkspaceResult = WorkspaceDeletionView;
+
+/** Arguments for `GET /api/v1/workspace/deletions/:id`. */
+export interface GetWorkspaceDeletionArgs {
+  /** Path parameters. */
+  readonly params: { id: string };
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `getWorkspaceDeletion`. */
+export type GetWorkspaceDeletionResult = WorkspaceDeletionView;
 
 /** Arguments for `DELETE /api/v1/answer-bank/:id`. */
 export interface DeleteAnswerBankEntryArgs {

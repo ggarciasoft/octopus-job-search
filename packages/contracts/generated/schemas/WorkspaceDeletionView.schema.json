@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/WorkspaceDeletionView.schema.json",
+  "title": "WorkspaceDeletionView",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "deletion_id",
+    "state",
+    "requested_at",
+    "completed_at",
+    "files_erased",
+    "failure_code",
+    "setup_reopened"
+  ],
+  "properties": {
+    "deletion_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "state": {
+      "anyOf": [
+        {
+          "const": "erasing",
+          "type": "string"
+        },
+        {
+          "const": "completed",
+          "type": "string"
+        },
+        {
+          "const": "failed",
+          "type": "string"
+        }
+      ]
+    },
+    "requested_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "completed_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "files_erased": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "failure_code": {
+      "anyOf": [
+        {
+          "pattern": "^[a-z0-9_]{1,60}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "setup_reopened": {
+      "type": "boolean"
+    }
+  }
+}

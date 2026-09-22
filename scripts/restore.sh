@@ -358,6 +358,34 @@ if [ "$DB_ONLY" != "1" ]; then
   if [ "${RESTORED_COUNT}" != "?" ] && [ "${BK_FILES:-?}" != "?" ] && [ "${RESTORED_COUNT}" -lt "${BK_FILES}" ] 2>/dev/null; then
     warn "Fewer files on disk than the archive recorded. Investigate before serving."
   fi
+
+  # --- Reapply the deletion ledger to the files volume ------------------------
+  # reapply-deletions.sql removed the rows; the archive just brought the bytes
+  # back. A deleted workspace is a whole directory (storage keys are
+  # <workspace>/<file>), a deleted file is one object. Paths come from the
+  # ledger, which holds UUIDs only, and are checked against that shape again
+  # before anything is removed.
+  FILES_PRUNED="not run"
+  LEDGER_PATHS=$(docker compose exec -T db psql -U "$POSTGRES_USER_V" -d "$POSTGRES_DB_V" -tA -v ON_ERROR_STOP=1 \
+      -c "SELECT CASE WHEN object_kind = 'workspace' THEN workspace_id::text ELSE workspace_id::text || '/' || object_id::text END FROM deletion_ledger WHERE object_kind IN ('workspace', 'file')" \
+      2>/dev/null) && LEDGER_READ=1 || LEDGER_READ=0
+  # Captured before stripping: a pipeline's status is its last command's, and
+  # a psql failure must not read as an empty ledger.
+  LEDGER_PATHS=$(printf '%s' "$LEDGER_PATHS" | tr -d '\r')
+  if [ "$LEDGER_READ" = "1" ]; then
+    printf '%s\n' "$LEDGER_PATHS" | docker compose run --rm --no-deps -T --entrypoint sh api -c \
+        "grep -E '^[0-9a-f-]{36}(/[0-9a-f-]{36})?\$' | while read -r p; do rm -rf '${FILES_ROOT_V}'/\"\$p\"; done; exit 0" \
+      || die "removing deleted objects from the files volume failed. Do NOT start the API: deleted files may be present."
+    FILES_PRUNED="yes - $(printf '%s\n' "$LEDGER_PATHS" | grep -c . || true) ledger path(s) applied"
+    # Recounted, so the report says what is left rather than what was unpacked.
+    RESTORED_COUNT=$(docker compose run --rm --no-deps --entrypoint sh api \
+        -c "find '${FILES_ROOT_V}' -type f | wc -l" 2>/dev/null | tr -d '\r ' || printf '?')
+    ok "deleted workspaces and files removed from the files volume (${RESTORED_COUNT} files remain)"
+  else
+    FILES_PRUNED="NO - the deletion ledger could not be read"
+    warn "Could not read the deletion ledger, so objects it names were NOT removed from"
+    warn "the files volume. Restore the database (or run migrate) and re-run this step."
+  fi
 fi
 
 # --- Report -------------------------------------------------------------------
@@ -370,6 +398,7 @@ log " Verified:"
 log "   archive checksums matched"
 [ "$FILES_ONLY" != "1" ] && log "   pg_restore completed; public schema has ${TABLE_COUNT:-?} tables"
 [ "$DB_ONLY" != "1" ]    && log "   files volume holds ${RESTORED_COUNT:-?} files"
+[ "$DB_ONLY" != "1" ]    && log "   deleted objects removed from files: ${FILES_PRUNED:-not run}"
 log ""
 if [ "$FILES_ONLY" != "1" ]; then log "   deletion ledger: ${LEDGER_REAPPLIED:-not run}"; fi
 log ""
