@@ -27,6 +27,7 @@ import type {
   FillApplicationRequest,
   FillSessionGrant,
   FillSessionView,
+  FillTargetList,
   JobDetailView,
   JobImportRequest,
   JobView,
@@ -869,6 +870,16 @@ export class JobGetterApiClient {
     });
   }
 
+  /** Approved applications this extension could open a fill session for now. (`GET /api/v1/fill-targets`) */
+  listFillTargets(args: ListFillTargetsArgs = {}): Promise<ListFillTargetsResult> {
+    return this.#request<ListFillTargetsResult>({
+      method: 'GET',
+      prefix: API_PREFIX,
+      path: '/fill-targets',
+      signal: args.signal,
+    });
+  }
+
   /** Bind one approved packet to one tab origin for ten minutes. (`POST /api/v1/fill-sessions`) */
   createFillSession(args: CreateFillSessionArgs): Promise<CreateFillSessionResult> {
     return this.#request<CreateFillSessionResult>({
@@ -1546,6 +1557,14 @@ export interface RevokeDeviceArgs {
 
 /** Result of `revokeDevice`. */
 export type RevokeDeviceResult = void;
+
+/** Arguments for `GET /api/v1/fill-targets`. */
+export interface ListFillTargetsArgs {
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `listFillTargets`. */
+export type ListFillTargetsResult = FillTargetList;
 
 /** Arguments for `POST /api/v1/fill-sessions`. */
 export interface CreateFillSessionArgs {

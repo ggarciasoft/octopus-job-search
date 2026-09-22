@@ -28,6 +28,7 @@ import {
   type ApplicationView,
   type FillSessionGrant,
   type FillSessionView,
+  type FillTargetList,
   type PacketAnswer,
 } from '@job-getter/contracts';
 import {
@@ -356,6 +357,122 @@ describe('POST /fill-sessions', () => {
       .where('id', '=', first.session_id)
       .executeTakeFirstOrThrow();
     expect(row.ended_reason).toBe('cancelled');
+  });
+});
+
+describe('GET /fill-targets', () => {
+  function listTargets(token: string) {
+    return harness.app.inject(asDevice(token, { method: 'GET', url: '/api/v1/fill-targets' }));
+  }
+
+  async function targets(token: string): Promise<FillTargetList> {
+    const response = await listTargets(token);
+    expect(response.statusCode, response.body).toBe(200);
+    return response.json() as FillTargetList;
+  }
+
+  it('lists an approved application as a pointer, never as a packet', async () => {
+    const { view, device } = await approved();
+    const { items } = await targets(device.token);
+
+    expect(items).toHaveLength(1);
+    const [target] = items;
+    expect(target!.application_id).toBe(view.id);
+    expect(target!.content_hash).toBe(view.current_packet!.content_hash);
+    expect(target!.destination.url).toBe(view.current_packet!.destination.url);
+    expect(target!.destination.origin).toBe(view.current_packet!.destination.origin);
+    expect(target!.job.title).not.toBe('');
+    expect(target!.approval_expires_at).not.toBeNull();
+    // Answers and the CV travel only in a grant, which is bound to a tab.
+    expect(Object.keys(target!).sort()).toEqual([
+      'application_id',
+      'approval_expires_at',
+      'content_hash',
+      'destination',
+      'job',
+    ]);
+    expect(JSON.stringify(items)).not.toContain('Because the work is interesting.');
+  });
+
+  it('lists exactly what POST /fill-sessions then accepts', async () => {
+    const { device } = await approved();
+    const [target] = (await targets(device.token)).items;
+    const response = await harness.app.inject(
+      asDevice(device.token, {
+        method: 'POST',
+        url: '/api/v1/fill-sessions',
+        payload: {
+          application_id: target!.application_id,
+          origin: target!.destination.origin,
+          content_hash: target!.content_hash,
+        },
+      }),
+    );
+    expect(response.statusCode, response.body).toBe(201);
+  });
+
+  it('drops an application once a fill is in progress', async () => {
+    const { view, device } = await approved();
+    await grant(device.token, view);
+    expect((await targets(device.token)).items).toEqual([]);
+  });
+
+  it('drops an application whose approval was withdrawn', async () => {
+    const { view, device } = await approved();
+    const edited = await harness.app.inject(
+      authed(session, {
+        method: 'POST',
+        url: `/api/v1/applications/${view.id}/packets`,
+        headers: { 'idempotency-key': idempotencyKey() },
+        payload: {
+          expected_revision: view.revision,
+          resume_id: view.current_packet!.resume_id,
+          answers: [answer({ answer: 'A different reason.' })],
+        },
+      }),
+    );
+    expect(edited.statusCode).toBe(202);
+    expect((await targets(device.token)).items).toEqual([]);
+  });
+
+  it('withdraws an expired approval on its own read, not just hides it', async () => {
+    const { view, device } = await approved();
+    await harness.db
+      .updateTable('application_packets')
+      .set({ approved_at: new Date(Date.now() - 2000), expires_at: new Date(Date.now() - 1000) })
+      .where('id', '=', view.current_packet!.id)
+      .execute();
+
+    expect((await targets(device.token)).items).toEqual([]);
+    // The same reconciliation the web app's read performs, so the list and
+    // the review screen cannot disagree about whether this is approved.
+    expect((await readApplication(view.id)).status).toBe('ready_for_review');
+  });
+
+  it('omits a destination the device was not paired for', async () => {
+    const { device } = await approved({ allowedOrigins: ['https://elsewhere.example'] });
+    expect((await targets(device.token)).items).toEqual([]);
+  });
+
+  it('refuses a local runner', async () => {
+    const { device } = await approved({ kind: 'local_runner' });
+    expect((await listTargets(device.token)).statusCode).toBe(422);
+  });
+
+  it('refuses a session cookie: a page riding the user’s session learns nothing', async () => {
+    await approved();
+    const response = await harness.app.inject(
+      authed(session, { method: 'GET', url: '/api/v1/fill-targets' }),
+    );
+    expect(response.statusCode).toBe(401);
+  });
+
+  it('refuses a revoked device on its next request (AT23)', async () => {
+    const { device } = await approved();
+    await harness.app.inject(
+      authed(session, { method: 'DELETE', url: `/api/v1/devices/${device.id}` }),
+    );
+    expect((await listTargets(device.token)).statusCode).toBe(401);
   });
 });
 

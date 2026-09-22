@@ -19,11 +19,14 @@
  * attempt for ten minutes and a fill on the wrong page is someone's real
  * application.
  */
-import type { FillSessionGrant } from '@job-getter/contracts';
+import type { FillSessionGrant, FillTarget } from '@job-getter/contracts';
 import {
   createFillSession,
   downloadFillSessionResume,
   endFillSession,
+  exchangePairingCode,
+  FillSessionApiError,
+  listFillTargets,
   reportFillSession,
   type ApiOptions,
   type ResumeBytes,
@@ -37,6 +40,7 @@ import {
   withBlockedAttachment,
 } from './session.js';
 import { ADAPTER_NAME, ADAPTER_VERSION } from './adapters/greenhouse.js';
+import { normaliseBaseUrl, normalisePairingCode } from './targets.js';
 
 // A minimal structural view of the parts of the extension API this file uses,
 // typed here rather than through `@types/chrome`, which is not in the lock.
@@ -58,6 +62,7 @@ interface ChromeApi {
     local: {
       get(keys: string[]): Promise<Record<string, unknown>>;
       set(items: Record<string, unknown>): Promise<void>;
+      remove(keys: string[]): Promise<void>;
     };
   };
   tabs: {
@@ -87,6 +92,9 @@ export interface StoredPairing {
   readonly token: string;
 }
 
+/** Everything a pairing leaves in storage, so forgetting it leaves nothing. */
+const PAIRING_KEYS = ['baseUrl', 'token', 'deviceId', 'expiresAt'];
+
 /**
  * The tab and origin the open session is bound to.
  *
@@ -111,8 +119,102 @@ export async function readPairing(api: ChromeApi = chrome): Promise<StoredPairin
   return { baseUrl, token };
 }
 
-export async function savePairing(pairing: StoredPairing, api: ChromeApi = chrome): Promise<void> {
-  await api.storage.local.set({ baseUrl: pairing.baseUrl, token: pairing.token });
+export async function forgetPairing(api: ChromeApi = chrome): Promise<void> {
+  await api.storage.local.remove(PAIRING_KEYS);
+}
+
+export type PairResult = { readonly ok: true } | { readonly ok: false; readonly message: string };
+
+export interface PairOptions {
+  readonly api?: ChromeApi;
+  readonly fetch?: typeof globalThis.fetch;
+  /** How this browser names itself in Settings → Devices. */
+  readonly publicId?: string;
+}
+
+/**
+ * Redeem a pairing code from Settings → Devices, and keep the token.
+ *
+ * This replaces pasting a token. The person never sees one: the code they
+ * copy is single-use and dies in five minutes, and the token it buys goes
+ * straight from the response into `chrome.storage.local`, which no page and
+ * no content script can read. The code itself is not stored anywhere.
+ *
+ * Host permission for the installation must already be held — see
+ * `ensureApiPermission`, which has to run on the popup's own click.
+ */
+export async function pairWithCode(
+  baseUrl: string,
+  code: string,
+  options: PairOptions = {},
+): Promise<PairResult> {
+  const api = options.api ?? chrome;
+  const normalised = normaliseBaseUrl(baseUrl);
+  if (normalised === null) {
+    return { ok: false, message: 'That is not an http or https address.' };
+  }
+  const pairingCode = normalisePairingCode(code);
+  if (pairingCode === '') return { ok: false, message: 'Paste the pairing code.' };
+
+  let exchanged;
+  try {
+    exchanged = await exchangePairingCode(
+      { baseUrl: normalised, fetch: options.fetch },
+      {
+        pairing_code: pairingCode,
+        device_public_id: options.publicId ?? `job-getter-extension/${crypto.randomUUID()}`,
+      },
+    );
+  } catch (error) {
+    if (error instanceof FillSessionApiError) return { ok: false, message: error.message };
+    return { ok: false, message: `Could not reach ${normalised}. Is it running?` };
+  }
+
+  await api.storage.local.set({
+    baseUrl: normalised,
+    token: exchanged.token,
+    deviceId: exchanged.device_id,
+    expiresAt: exchanged.expires_at,
+  });
+  return { ok: true };
+}
+
+export type TargetsResult =
+  | { readonly kind: 'unpaired'; readonly message: string | null }
+  | { readonly kind: 'ok'; readonly baseUrl: string; readonly items: readonly FillTarget[] }
+  | { readonly kind: 'error'; readonly baseUrl: string; readonly message: string };
+
+/**
+ * What the popup can offer: the approved applications, or why there are none.
+ *
+ * A 401 means the token is dead — revoked in the web app, or thirty days
+ * old. Keeping it would leave the popup offering fills that can only fail, so
+ * it is forgotten and the person is asked to pair again.
+ */
+export async function loadTargets(
+  options: { api?: ChromeApi; fetch?: typeof globalThis.fetch } = {},
+): Promise<TargetsResult> {
+  const api = options.api ?? chrome;
+  const pairing = await readPairing(api);
+  if (pairing === null) return { kind: 'unpaired', message: null };
+
+  try {
+    const list = await listFillTargets({ ...pairing, fetch: options.fetch });
+    return { kind: 'ok', baseUrl: pairing.baseUrl, items: list.items };
+  } catch (error) {
+    if (error instanceof FillSessionApiError && error.status === 401) {
+      await forgetPairing(api);
+      return {
+        kind: 'unpaired',
+        message: 'This browser’s pairing was revoked or has expired. Pair it again.',
+      };
+    }
+    const message =
+      error instanceof FillSessionApiError
+        ? error.message
+        : `Could not reach ${pairing.baseUrl}. Is it running?`;
+    return { kind: 'error', baseUrl: pairing.baseUrl, message };
+  }
 }
 
 /**

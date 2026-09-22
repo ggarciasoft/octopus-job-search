@@ -4,8 +4,10 @@
  *
  * `@job-getter/api-client` is session-and-cookie shaped, which is exactly what
  * this caller must not be. The extension authenticates with `x-device-token`
- * and a per-session nonce, sends no credentials, and reaches only the four
- * `/fill-sessions` routes — the entire API surface a device token can touch.
+ * and a per-session nonce, sends no credentials, and reaches only the
+ * `/fill-sessions` routes and `GET /fill-targets` — the entire API surface a
+ * device token can touch — plus `POST /devices/exchange`, once, to obtain the
+ * token in the first place.
  *
  * `credentials: 'omit'` is not a default worth inheriting silently. If the user
  * is signed in to their own installation in another tab, an extension request
@@ -17,8 +19,11 @@ import {
   DEVICE_TOKEN_HEADER,
   FILL_SESSION_NONCE_HEADER,
   type CreateFillSessionRequest,
+  type DeviceExchangeRequest,
+  type DeviceExchangeResponse,
   type FillSessionGrant,
   type FillSessionView,
+  type FillTargetList,
   type ReportFillSessionRequest,
 } from '@job-getter/contracts';
 
@@ -48,12 +53,13 @@ export interface ApiOptions {
 }
 
 async function request<T>(
-  options: ApiOptions,
+  options: Omit<ApiOptions, 'token'> & { readonly token: string | null },
   path: string,
   init: { method: string; body?: unknown; nonce?: string },
 ): Promise<T> {
   const doFetch = options.fetch ?? globalThis.fetch;
-  const headers: Record<string, string> = { [DEVICE_TOKEN_HEADER]: options.token };
+  const headers: Record<string, string> = {};
+  if (options.token !== null) headers[DEVICE_TOKEN_HEADER] = options.token;
   if (init.body !== undefined) headers['content-type'] = 'application/json';
   if (init.nonce !== undefined) headers[FILL_SESSION_NONCE_HEADER] = init.nonce;
 
@@ -68,7 +74,19 @@ async function request<T>(
   if (response.status === 204) return undefined as T;
 
   const text = await response.text();
-  const parsed: unknown = text === '' ? {} : JSON.parse(text);
+  let parsed: unknown;
+  try {
+    parsed = text === '' ? {} : JSON.parse(text);
+  } catch {
+    // Most often the address is right but it is not this product: a web
+    // server answering with an HTML page. Say so rather than throw a
+    // SyntaxError at the person.
+    throw new FillSessionApiError({
+      status: response.status,
+      code: 'NOT_JOB_GETTER',
+      message: 'That address answered, but not as a Job Getter installation.',
+    });
+  }
 
   if (!response.ok) {
     const error = (parsed as { error?: { code?: string; message?: string } }).error ?? {};
@@ -79,6 +97,25 @@ async function request<T>(
     });
   }
   return parsed as T;
+}
+
+/**
+ * Redeem a pairing code for a device token. The one call made without a token.
+ *
+ * The code was minted in the person's signed-in web session and is
+ * single-use, so this is the extension proving it was handed the code by
+ * them. The token that comes back is returned once and never again.
+ */
+export function exchangePairingCode(
+  options: Omit<ApiOptions, 'token'>,
+  body: DeviceExchangeRequest,
+): Promise<DeviceExchangeResponse> {
+  return request({ ...options, token: null }, '/devices/exchange', { method: 'POST', body });
+}
+
+/** Approved applications this device could open a fill session for now. */
+export function listFillTargets(options: ApiOptions): Promise<FillTargetList> {
+  return request(options, '/fill-targets', { method: 'GET' });
 }
 
 export function createFillSession(

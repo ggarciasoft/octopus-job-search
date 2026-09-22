@@ -1,5 +1,5 @@
-import type { DeviceView } from '@job-getter/contracts';
-import { Badge, Button, Callout, EmptyState, TextField } from '@job-getter/ui';
+import type { DeviceKind, DeviceView } from '@job-getter/contracts';
+import { Badge, Button, Callout, EmptyState, RadioGroup, TextField } from '@job-getter/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useApi } from '../../api/ApiProvider';
@@ -21,14 +21,19 @@ import { DEVICE_STATUS_LABEL, DEVICE_STATUS_TONE } from '../../applications/labe
  *  * **Revoking is immediate and irreversible.** The row stays, marked revoked,
  *    because a device that was once trusted is part of the history.
  *  * **The token is never displayed here at all.** It is transmitted once, to
- *    the runner, in exchange for the code.
+ *    the runner or the extension, in exchange for the code.
+ *
+ * The kind is chosen here rather than guessed later because the API holds the
+ * two to different routes: only an `extension` may open a fill session, and
+ * only a `local_runner` is given work through the task queue.
  */
 export function DevicesPage() {
   const api = useApi();
   const { t, locale } = useTranslation();
+  const [kind, setKind] = useState<DeviceKind>('extension');
   const [label, setLabel] = useState('');
   const [origins, setOrigins] = useState('');
-  const [code, setCode] = useState<string | null>(null);
+  const [code, setCode] = useState<{ value: string; kind: DeviceKind } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
 
@@ -47,12 +52,12 @@ export function DevicesPage() {
         .filter((value) => value !== '');
       const response = await api.createDevicePairing({
         body: {
-          device_kind: 'local_runner',
+          device_kind: kind,
           label: label.trim(),
           ...(parsed.length === 0 ? {} : { allowed_origins: parsed }),
         },
       });
-      setCode(response.pairing_code);
+      setCode({ value: response.pairing_code, kind });
       setLabel('');
       setOrigins('');
       await devicesQuery.refetch();
@@ -87,6 +92,24 @@ export function DevicesPage() {
 
       <section className="flex flex-col gap-3 rounded border border-slate-200 bg-white p-4">
         <h3 className="font-semibold">{t('devices.pairHeading')}</h3>
+        <RadioGroup<DeviceKind>
+          legend={t('devices.kind')}
+          name="device-kind"
+          value={kind}
+          onValueChange={setKind}
+          options={[
+            {
+              value: 'extension',
+              label: t('devices.kind.extension'),
+              description: t('devices.kind.extensionDescription'),
+            },
+            {
+              value: 'local_runner',
+              label: t('devices.kind.localRunner'),
+              description: t('devices.kind.localRunnerDescription'),
+            },
+          ]}
+        />
         <TextField
           label={t('devices.label')}
           description={t('devices.labelDescription')}
@@ -109,9 +132,15 @@ export function DevicesPage() {
           <Callout tone="warning" title={t('devices.codeTitle')}>
             <p>{t('devices.codeBody')}</p>
             <p className="mt-2 break-all font-mono text-lg" data-testid="pairing-code">
-              {code}
+              {code.value}
             </p>
-            <p className="mt-2 text-sm">{t('devices.codeCommand')}</p>
+            <p className="mt-2 text-sm" data-testid="pairing-instructions">
+              {code.kind === 'extension'
+                ? // The extension talks to the same origin this page came
+                  // from; nginx proxies `/api` behind it.
+                  t('devices.codeExtension', { address: window.location.origin })
+                : t('devices.codeCommand')}
+            </p>
           </Callout>
         )}
       </section>

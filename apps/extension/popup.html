@@ -4,37 +4,126 @@
     <meta charset="utf-8" />
     <title>Job Getter</title>
     <style>
-      body { font: 13px system-ui, sans-serif; margin: 0; padding: 12px; width: 320px; color: #0f172a; }
-      h1 { font-size: 14px; margin: 0 0 8px; }
-      p { margin: 0 0 8px; }
-      label { display: block; margin: 8px 0 2px; font-weight: 600; }
-      input { width: 100%; box-sizing: border-box; padding: 6px; border: 1px solid #94a3b8; border-radius: 4px; }
-      button { margin-top: 10px; padding: 6px 10px; border-radius: 4px; border: 1px solid #0369a1; background: #0284c7; color: white; cursor: pointer; }
-      .note { color: #475569; }
-      .status { margin-top: 10px; padding: 8px; border-radius: 4px; background: #f1f5f9; }
+      body {
+        font:
+          13px system-ui,
+          sans-serif;
+        margin: 0;
+        padding: 12px;
+        width: 340px;
+        color: #0f172a;
+      }
+      h1 {
+        font-size: 14px;
+        margin: 0 0 8px;
+      }
+      h2 {
+        font-size: 12px;
+        margin: 12px 0 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #475569;
+      }
+      p {
+        margin: 0 0 8px;
+      }
+      label {
+        display: block;
+        margin: 8px 0 2px;
+        font-weight: 600;
+      }
+      input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 6px;
+        border: 1px solid #94a3b8;
+        border-radius: 4px;
+      }
+      button {
+        margin-top: 10px;
+        padding: 6px 10px;
+        border-radius: 4px;
+        border: 1px solid #0369a1;
+        background: #0284c7;
+        color: white;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.6;
+        cursor: default;
+      }
+      button.secondary {
+        background: white;
+        color: #0369a1;
+      }
+      button.link {
+        border: 0;
+        background: none;
+        color: #475569;
+        padding: 0;
+        text-decoration: underline;
+      }
+      ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      li {
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        padding: 8px;
+        margin-bottom: 6px;
+      }
+      li button {
+        margin-top: 6px;
+      }
+      .title {
+        font-weight: 600;
+      }
+      .note {
+        color: #475569;
+      }
+      .meta {
+        color: #475569;
+        font-size: 12px;
+        word-break: break-all;
+      }
+      .status {
+        margin-top: 10px;
+        padding: 8px;
+        border-radius: 4px;
+        background: #f1f5f9;
+      }
     </style>
   </head>
   <body>
     <h1>Job Getter</h1>
     <p class="note">
-      Fills an application you already approved, on the page you are looking at.
-      It never presses submit — you do.
+      Fills an application you already approved, on the page you are looking at. It never presses
+      submit — you do.
     </p>
-    <div id="pairing">
+    <form id="pairing" hidden>
+      <p class="note">
+        In Job Getter, open Settings → Devices, choose “Browser extension” and create a pairing
+        code. It works once and expires in five minutes.
+      </p>
       <label for="base-url">Your installation</label>
-      <input id="base-url" type="url" placeholder="http://127.0.0.1:3000" />
-      <label for="token">Pairing token</label>
-      <input id="token" type="password" placeholder="From Settings → Devices" />
-      <button id="pair">Pair this browser</button>
+      <input id="base-url" type="url" placeholder="http://127.0.0.1:3000" required />
+      <label for="code">Pairing code</label>
+      <input id="code" type="password" autocomplete="off" spellcheck="false" required />
+      <button id="pair" type="submit">Pair this browser</button>
+    </form>
+    <div id="fill" hidden>
+      <p class="meta" id="paired-with"></p>
+      <h2>For this page</h2>
+      <ul id="here"></ul>
+      <p class="note" id="here-empty" hidden>Nothing approved for this page.</p>
+      <h2>Other approved applications</h2>
+      <ul id="elsewhere"></ul>
+      <p class="note" id="elsewhere-empty" hidden>None.</p>
+      <button id="unpair" class="link" type="button">Forget this pairing</button>
     </div>
-    <div id="fill">
-      <label for="application">Application id</label>
-      <input id="application" type="text" placeholder="From the review screen" />
-      <label for="hash">Packet content hash</label>
-      <input id="hash" type="text" placeholder="Shown beside the approval" />
-      <button id="start">Fill this page</button>
-    </div>
-    <div class="status" id="status" hidden></div>
+    <div class="status" id="status" role="status" hidden></div>
     <script type="module" src="./src/popup.ts"></script>
   </body>
 </html>

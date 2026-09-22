@@ -6,8 +6,8 @@
  * packet_hash, nonce and ten-minute expiry. API allows only current approved
  * packets."
  *
- * These four routes are the whole API surface a device token can reach. What
- * they refuse is the design:
+ * These routes, and `GET /fill-targets` beside them, are the whole API surface
+ * a device token can reach. What they refuse is the design:
  *
  *  * **A session cookie cannot call them.** `auth: 'device'` resolves the
  *    `x-device-token` header and nothing else, so a page that makes the user's
@@ -30,28 +30,41 @@
 import {
   FILL_SESSION_TTL_SECONDS,
   FILL_SESSION_NONCE_HEADER,
+  FILL_TARGET_LIMIT,
   type ApplicationStatus,
   type CreateFillSessionRequest,
   type FillSessionGrant,
   type FillSessionState,
   type FillSessionView,
+  type FillTarget,
+  type FillTargetList,
   type ReportFillSessionRequest,
 } from '@job-getter/contracts';
 import type { FastifyRequest } from 'fastify';
 import { conflict, notFound, unauthenticated, unprocessable } from '../errors.js';
 import { recordAuditEvent } from '../auth/scope.js';
 import type { WorkspaceScope } from '../auth/scope.js';
-import type { ApplicationPacketRow, FillSessionRow } from '../db/types.js';
+import type {
+  ApplicationPacketRow,
+  ApplicationRow,
+  FillSessionRow,
+  PairedDeviceRow,
+} from '../db/types.js';
 import { contentDispositionFor, downloadContentType } from '../files/service.js';
 import { generateToken, sha256Hex } from '../util/crypto.js';
 import { requireDevice } from '../devices/service.js';
 import { requireJob } from '../matching/matches.js';
 import {
   fillableFields,
+  fillRefusal,
   packetAttachment,
   requireFillablePacket,
 } from '../applications/fillable.js';
-import { transitionApplication } from '../applications/service.js';
+import {
+  loadApplicationContexts,
+  reconcileApplications,
+  transitionApplication,
+} from '../applications/service.js';
 import { resolveAllowedOrigins } from './fill.js';
 import { requireDeviceScope, type RouteHandler } from './context.js';
 
@@ -158,6 +171,74 @@ async function loadSession(
   return row;
 }
 
+/** A local runner is given work through the task queue, never through these routes. */
+function requireExtension(device: PairedDeviceRow): void {
+  if (device.kind !== 'extension') {
+    throw unprocessable('Only a paired browser extension can open a fill session.', {
+      device_id: `This device is a "${device.kind}". A local runner is given work through the task queue.`,
+    });
+  }
+}
+
+/** Mirrors `resolveAllowedOrigins`, without throwing: a list skips, a session refuses. */
+function devicePermitsOrigin(device: PairedDeviceRow, origin: string): boolean {
+  const declared = (device.allowed_origins as string[] | null) ?? [];
+  return declared.length === 0 || declared.includes(origin);
+}
+
+/**
+ * GET /fill-targets — what this extension could fill right now.
+ *
+ * Replaces pasting an application id and a packet hash into the popup. Each
+ * row is decided by `fillRefusal`, the same function `POST /fill-sessions`
+ * throws with, after the same reconciliation — so an approval that lapsed or
+ * a profile that moved since the web app last rendered is withdrawn here, on
+ * the extension's read, rather than listed and then refused.
+ *
+ * It returns pointers, not packets: no answers and no CV. Those travel only in
+ * a grant, which is bound to one tab's origin.
+ */
+export const listFillTargets: RouteHandler = async (context, request) => {
+  const { scope, principal } = requireDeviceScope(context, request);
+  const device = await requireDevice(scope, principal.deviceId);
+  requireExtension(device);
+
+  const approved = (await scope
+    .selectFrom('applications')
+    .selectAll()
+    .where('status', '=', 'approved')
+    .orderBy('updated_at', 'desc')
+    .limit(FILL_TARGET_LIMIT)
+    .execute()) as ApplicationRow[];
+
+  const now = new Date();
+  const reconciled = await reconcileApplications(
+    context.db,
+    scope,
+    await loadApplicationContexts(scope, approved, now),
+  );
+
+  const items: FillTarget[] = [];
+  for (const loaded of reconciled) {
+    const packet = loaded.packet as ApplicationPacketRow | null;
+    if (packet === null || fillRefusal(loaded, now) !== null) continue;
+    if (!devicePermitsOrigin(device, packet.destination_origin)) continue;
+    items.push({
+      application_id: loaded.application.id,
+      content_hash: packet.content_hash,
+      job: { job_id: loaded.job.id, company: loaded.job.company, title: loaded.job.title },
+      destination: {
+        url: packet.destination_url,
+        origin: packet.destination_origin,
+        connector: packet.connector,
+        connector_version: packet.connector_version,
+      },
+      approval_expires_at: packet.expires_at?.toISOString() ?? null,
+    });
+  }
+  return { items } satisfies FillTargetList;
+};
+
 /**
  * POST /fill-sessions — bind one approved packet to one tab, for ten minutes.
  */
@@ -167,11 +248,7 @@ export const createFillSession: RouteHandler = async (context, request, reply) =
   const now = new Date();
 
   const device = await requireDevice(scope, principal.deviceId);
-  if (device.kind !== 'extension') {
-    throw unprocessable('Only a paired browser extension can open a fill session.', {
-      device_id: `This device is a "${device.kind}". A local runner is given work through the task queue.`,
-    });
-  }
+  requireExtension(device);
 
   const { application, packet, answers } = await requireFillablePacket(
     context.db,

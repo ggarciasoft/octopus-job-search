@@ -29,6 +29,7 @@ import type { WorkspaceScope } from '../auth/scope.js';
 import {
   attachmentFileId,
   loadApplicationContexts,
+  type ApplicationContext,
   packetStaleness,
   reconcileApplications,
   requireApplication,
@@ -76,6 +77,25 @@ export async function requireFillablePacket(
     throw staleRevision('This application changed since you read it.');
   }
 
+  const refusal = fillRefusal(loaded, new Date());
+  if (refusal !== null) throw conflict(refusal);
+
+  const packet = loaded.packet!;
+  const answers = (packet.answers as PacketAnswer[] | null) ?? [];
+  return { application, packet, answers };
+}
+
+/**
+ * Why a reconciled application may not be filled now, or `null` if it may.
+ *
+ * Separate from `requireFillablePacket` so that `GET /fill-targets` can ask
+ * the same question of many applications without throwing on each: a list
+ * that decided eligibility by its own rules would sooner or later offer the
+ * extension something `POST /fill-sessions` then refuses.
+ */
+export function fillRefusal(loaded: ApplicationContext, now: Date): string | null {
+  const { application } = loaded;
+
   // "Disable a second attempt until resolved" (07_APPLICATION_AUTOMATION.md).
   // An application whose outcome nobody could establish is the one case where
   // filling again could mean applying twice to the same job — the first
@@ -84,38 +104,35 @@ export async function requireFillablePacket(
   // called out separately from the general status check because the reason
   // matters and "this one is outcome_unknown" does not explain itself.
   if (application.status === 'outcome_unknown') {
-    throw conflict(
+    return (
       'Nobody could confirm whether this application went through, so it will not ' +
-        'be filled again — a second attempt could be a second application. ' +
-        'Record what happened first.',
+      'be filled again — a second attempt could be a second application. ' +
+      'Record what happened first.'
     );
   }
   if (application.status !== 'approved') {
-    throw conflict(
-      `Only an approved application can be filled; this one is "${application.status}".`,
-    );
+    return `Only an approved application can be filled; this one is "${application.status}".`;
   }
 
-  const packet = loaded.packet as ApplicationPacketRow | null;
+  const packet = loaded.packet;
   if (packet === null || packet.approved_at === null) {
-    throw conflict('This packet has not been approved.');
+    return 'This packet has not been approved.';
   }
   if (application.current_packet_id !== packet.id) {
-    throw conflict('That packet has been superseded by a newer revision.');
+    return 'That packet has been superseded by a newer revision.';
   }
 
-  const staleness = packetStaleness(packet, loaded.live!, new Date());
+  const staleness = packetStaleness(packet, loaded.live!, now);
   if (staleness.length > 0) {
-    throw conflict(`This packet is out of date (${staleness.join(', ')}) and must be rebuilt.`);
+    return `This packet is out of date (${staleness.join(', ')}) and must be rebuilt.`;
   }
 
   const answers = (packet.answers as PacketAnswer[] | null) ?? [];
   const unresolved = unresolvedQuestionKeys(answers);
   if (unresolved.length > 0) {
-    throw conflict(`${unresolved.length} required question(s) still need an answer.`);
+    return `${unresolved.length} required question(s) still need an answer.`;
   }
-
-  return { application, packet, answers };
+  return null;
 }
 
 /**

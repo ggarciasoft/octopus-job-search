@@ -50,6 +50,7 @@ import {
   CreateFillSessionRequest,
   FillSessionGrant,
   FillSessionView,
+  FillTargetList,
   ReportFillSessionRequest,
 } from './schemas/fill-sessions.js';
 import { ObserveApplicationRequest } from './tasks/observe-confirmation.js';
@@ -806,6 +807,15 @@ export const ROUTES: readonly RouteDefinition[] = [
   // victim's browser would attach. An extension's `Origin` is its own
   // `chrome-extension://` id, which no same-origin rule could usefully check
   // against the API's configured origin.
+  {
+    operationId: 'listFillTargets',
+    method: 'GET',
+    path: '/fill-targets',
+    auth: 'device',
+    summary: 'Approved applications this extension could open a fill session for now.',
+    response: FillTargetList,
+    successStatus: 200,
+  },
   {
     operationId: 'createFillSession',
     method: 'POST',

@@ -406,6 +406,48 @@ describe('device pairing', () => {
     expect(screen.queryByTestId('device-token')).toBeNull();
   });
 
+  it('pairs a browser extension by default, and says where to paste the code', async () => {
+    const client = createFakeApi();
+    renderApp({ client, route: '/settings/devices' });
+
+    await screen.findByRole('heading', { name: 'Paired devices', level: 2 });
+    expect(screen.getByRole('radio', { name: /Browser extension/ })).toHaveProperty(
+      'checked',
+      true,
+    );
+    await userEvent.type(screen.getByLabelText('Name this device'), 'Chrome');
+    await userEvent.click(screen.getByRole('button', { name: 'Create a pairing code' }));
+
+    await screen.findByTestId('pairing-code');
+    expect(client.createDevicePairing).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: expect.objectContaining({ device_kind: 'extension', label: 'Chrome' }),
+      }),
+    );
+    const instructions = screen.getByTestId('pairing-instructions').textContent ?? '';
+    expect(instructions).toContain('extension');
+    // The address the extension must be given is this page's own.
+    expect(instructions).toContain(window.location.origin);
+  });
+
+  it('pairs a local runner when that is chosen, with the runner’s instructions', async () => {
+    const client = createFakeApi();
+    renderApp({ client, route: '/settings/devices' });
+
+    await screen.findByRole('heading', { name: 'Paired devices', level: 2 });
+    await userEvent.click(screen.getByRole('radio', { name: /Local runner/ }));
+    await userEvent.type(screen.getByLabelText('Name this device'), 'Work laptop');
+    await userEvent.click(screen.getByRole('button', { name: 'Create a pairing code' }));
+
+    await screen.findByTestId('pairing-code');
+    expect(client.createDevicePairing).toHaveBeenCalledWith(
+      expect.objectContaining({ body: expect.objectContaining({ device_kind: 'local_runner' }) }),
+    );
+    expect(screen.getByTestId('pairing-instructions').textContent).toContain(
+      'job-getter-runner pair',
+    );
+  });
+
   it('keeps a revoked device visible rather than removing it', async () => {
     const client = createFakeApi({
       listDevices: async () => ({

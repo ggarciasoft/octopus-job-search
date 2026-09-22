@@ -1614,7 +1614,14 @@ export const es: Record<MessageKey, string> = {
   'devices.title': 'Dispositivos emparejados',
   'devices.intro':
     'Un token de dispositivo permite que un proceso fuera de este navegador actúe sobre tus datos. Empareja solo máquinas que controles y revoca lo que ya no uses.',
-  'devices.pairHeading': 'Emparejar un ejecutor local',
+  'devices.pairHeading': 'Emparejar un dispositivo',
+  'devices.kind': '¿Qué vas a emparejar?',
+  'devices.kind.extension': 'Extensión del navegador',
+  'devices.kind.extensionDescription':
+    'La extensión de Job Getter en tu propio Chrome. Rellena la página que estás viendo.',
+  'devices.kind.localRunner': 'Ejecutor local',
+  'devices.kind.localRunnerDescription':
+    'El ejecutor de escritorio, que rellena formularios en una ventana de navegador propia.',
   'devices.label': 'Nombra este dispositivo',
   'devices.labelDescription': 'Para distinguir dos máquinas antes de revocar una.',
   'devices.origins': 'Orígenes que puede rellenar (opcional)',
@@ -1627,6 +1634,8 @@ export const es: Record<MessageKey, string> = {
     'Se muestra una vez. Solo se guarda un resumen criptográfico, así que no puede mostrarse de nuevo; crea otro si lo pierdes. Caduca en cinco minutos.',
   'devices.codeCommand':
     'Ejecuta job-getter-runner pair en la máquina y escribe el código cuando lo pida.',
+  'devices.codeExtension':
+    'Abre la extensión de Job Getter en Chrome, escribe esta dirección y pega el código: {address}',
   'devices.listHeading': 'Dispositivos',
   'devices.emptyTitle': 'Sin dispositivos',
   'devices.emptyBody': 'Nada fuera de este navegador puede actuar sobre tus datos.',

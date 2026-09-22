@@ -114,6 +114,45 @@ export const CreateFillSessionRequest = Type.Object(
 export type CreateFillSessionRequest = Static<typeof CreateFillSessionRequest>;
 
 /**
+ * One approved application the calling extension could fill right now.
+ *
+ * This is what lets the popup offer a list instead of asking for an
+ * application id and a packet hash to be pasted. It is a pointer, not a
+ * packet: the job's name so the person can recognise it, where it is to be
+ * filled, and the hash the extension will name when it asks for a session.
+ * No answers, no CV, no profile — those arrive only in a grant, which is bound
+ * to a tab.
+ *
+ * A target is listed only if `POST /fill-sessions` would accept it for this
+ * device: the application is `approved`, its current packet is approved,
+ * fresh and has every required question answered, and the device was paired
+ * for the destination's origin. The two are decided by the same function, so
+ * the list cannot offer something the session route would then refuse.
+ */
+export const FillTarget = Type.Object(
+  {
+    application_id: Uuid,
+    content_hash: Type.String({ minLength: 64, maxLength: 64 }),
+    job: FillJobIdentity,
+    /** The packet's own destination. Never a caller-supplied URL. */
+    destination: PacketDestination,
+    /** When the approval lapses and the packet must be approved again. */
+    approval_expires_at: Type.Union([Timestamp, Type.Null()]),
+  },
+  { additionalProperties: false },
+);
+export type FillTarget = Static<typeof FillTarget>;
+
+export const FillTargetList = Type.Object(
+  { items: Type.Array(FillTarget, { maxItems: 50 }) },
+  { additionalProperties: false },
+);
+export type FillTargetList = Static<typeof FillTargetList>;
+
+/** The list is short by nature; anything beyond this is not a list to pick from. */
+export const FILL_TARGET_LIMIT = 50;
+
+/**
  * The grant, returned once.
  *
  * Everything the extension is allowed to know, and nothing else. This is

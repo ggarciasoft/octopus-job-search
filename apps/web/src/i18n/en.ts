@@ -1591,7 +1591,14 @@ export const en = {
   'devices.title': 'Paired devices',
   'devices.intro':
     'A device token lets a process outside this browser act on your data. Pair only machines you control, and revoke anything you no longer use.',
-  'devices.pairHeading': 'Pair a local runner',
+  'devices.pairHeading': 'Pair a device',
+  'devices.kind': 'What are you pairing?',
+  'devices.kind.extension': 'Browser extension',
+  'devices.kind.extensionDescription':
+    'The Job Getter extension in your own Chrome. It fills a page you are looking at.',
+  'devices.kind.localRunner': 'Local runner',
+  'devices.kind.localRunnerDescription':
+    'The desktop runner, which fills forms in a browser window of its own.',
   'devices.label': 'Name this device',
   'devices.labelDescription': 'So you can tell two machines apart before revoking one.',
   'devices.origins': 'Origins it may fill (optional)',
@@ -1603,6 +1610,8 @@ export const en = {
   'devices.codeBody':
     'Shown once. Only a digest is stored, so this cannot be displayed again; create another code if you lose it. It expires in five minutes.',
   'devices.codeCommand': 'Run job-getter-runner pair on the machine, and type the code when asked.',
+  'devices.codeExtension':
+    'Open the Job Getter extension in Chrome, enter this address and paste the code: {address}',
   'devices.listHeading': 'Devices',
   'devices.emptyTitle': 'No devices',
   'devices.emptyBody': 'Nothing outside this browser can act on your data.',
