@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Job Getter",
+  "version": "0.0.0",
+  "description": "Fill an application form you already approved, on a page you are already looking at. Never submits.",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": [],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "action": { "default_popup": "popup.html", "default_title": "Job Getter" },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}

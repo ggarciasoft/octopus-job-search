@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Job Getter</title>
+    <style>
+      body { font: 13px system-ui, sans-serif; margin: 0; padding: 12px; width: 320px; color: #0f172a; }
+      h1 { font-size: 14px; margin: 0 0 8px; }
+      p { margin: 0 0 8px; }
+      label { display: block; margin: 8px 0 2px; font-weight: 600; }
+      input { width: 100%; box-sizing: border-box; padding: 6px; border: 1px solid #94a3b8; border-radius: 4px; }
+      button { margin-top: 10px; padding: 6px 10px; border-radius: 4px; border: 1px solid #0369a1; background: #0284c7; color: white; cursor: pointer; }
+      .note { color: #475569; }
+      .status { margin-top: 10px; padding: 8px; border-radius: 4px; background: #f1f5f9; }
+    </style>
+  </head>
+  <body>
+    <h1>Job Getter</h1>
+    <p class="note">
+      Fills an application you already approved, on the page you are looking at.
+      It never presses submit — you do.
+    </p>
+    <div id="pairing">
+      <label for="base-url">Your installation</label>
+      <input id="base-url" type="url" placeholder="http://127.0.0.1:3000" />
+      <label for="token">Pairing token</label>
+      <input id="token" type="password" placeholder="From Settings → Devices" />
+      <button id="pair">Pair this browser</button>
+    </div>
+    <div id="fill">
+      <label for="application">Application id</label>
+      <input id="application" type="text" placeholder="From the review screen" />
+      <label for="hash">Packet content hash</label>
+      <input id="hash" type="text" placeholder="Shown beside the approval" />
+      <button id="start">Fill this page</button>
+    </div>
+    <div class="status" id="status" hidden></div>
+    <script type="module" src="./src/popup.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,266 @@
+[
+  {
+    "page": "greenhouse-application.html",
+    "rows": [
+      {
+        "selector": "#first_name",
+        "label": "First name",
+        "kind": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "selector": "#last_name",
+        "label": "Last name",
+        "kind": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "selector": "#email",
+        "label": "Email",
+        "kind": "email",
+        "required": true,
+        "options": []
+      },
+      {
+        "selector": "#phone",
+        "label": "Phone",
+        "kind": "tel",
+        "required": false,
+        "options": []
+      },
+      {
+        "selector": "#resume",
+        "label": "Resume/CV",
+        "kind": "file",
+        "required": true,
+        "options": []
+      },
+      {
+        "selector": "#why_this_role",
+        "label": "Why do you want this role?",
+        "kind": "textarea",
+        "required": true,
+        "options": []
+      },
+      {
+        "selector": "#notice_period",
+        "label": "Notice period",
+        "kind": "select",
+        "required": false,
+        "options": ["Immediately", "2 weeks", "30 days", "90 days"],
+        "option_values": ["immediate", "2w", "30d", "90d"]
+      },
+      {
+        "selector": "input[type=\"radio\"][name=\"work_auth\"]",
+        "label": "Are you legally authorised to work in Spain?",
+        "kind": "radio",
+        "required": true,
+        "options": ["Yes", "No", "Yes, with sponsorship"],
+        "option_values": ["yes", "no", "sponsor"]
+      },
+      {
+        "selector": "input[type=\"checkbox\"][name=\"stack\"]",
+        "label": "Which of these have you worked with?",
+        "kind": "checkbox",
+        "required": false,
+        "options": ["Python", "Go", "Rust"],
+        "option_values": ["python", "go", "rust"]
+      },
+      {
+        "selector": "#gender",
+        "label": "Gender",
+        "kind": "select",
+        "required": false,
+        "options": ["Female", "Male", "Another", "Decline to self-identify"],
+        "option_values": ["f", "m", "x", "decline"]
+      },
+      {
+        "selector": "#reference_code",
+        "label": "Internal referral code",
+        "kind": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "selector": "#location_picker",
+        "label": "Current location",
+        "kind": "custom",
+        "required": false,
+        "options": []
+      },
+      {
+        "selector": "#portfolio_url",
+        "label": "Portfolio URL",
+        "kind": "url",
+        "required": false,
+        "options": []
+      },
+      {
+        "selector": "#portfolio_url_alt",
+        "label": "Portfolio url",
+        "kind": "url",
+        "required": false,
+        "options": []
+      }
+    ],
+    "identity": {
+      "company": "Northwind Robotics",
+      "title": "Senior Platform Engineer"
+    },
+    "fingerprint": "v1:1d8d820a24ed1f1f5516e6301e6a5fd4",
+    "keys": [
+      "first_name",
+      "last_name",
+      "email",
+      "phone",
+      "resume_cv",
+      "why_do_you_want_this_role",
+      "notice_period",
+      "are_you_legally_authorised_to_work_in_spain",
+      "which_of_these_have_you_worked_with",
+      "gender",
+      "internal_referral_code",
+      "current_location",
+      "portfolio_url",
+      ""
+    ]
+  },
+  {
+    "page": "greenhouse-application-changed.html",
+    "rows": [
+      {
+        "selector": "#first_name",
+        "label": "First name",
+        "kind": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "selector": "#last_name",
+        "label": "Last name",
+        "kind": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "selector": "#email",
+        "label": "Email",
+        "kind": "email",
+        "required": true,
+        "options": []
+      },
+      {
+        "selector": "#phone",
+        "label": "Phone",
+        "kind": "tel",
+        "required": false,
+        "options": []
+      },
+      {
+        "selector": "#resume",
+        "label": "Resume/CV",
+        "kind": "file",
+        "required": true,
+        "options": []
+      },
+      {
+        "selector": "#why_this_role",
+        "label": "Why do you want this role?",
+        "kind": "textarea",
+        "required": true,
+        "options": []
+      },
+      {
+        "selector": "#notice_period",
+        "label": "Notice period",
+        "kind": "select",
+        "required": false,
+        "options": ["Immediately", "2 weeks", "30 days", "90 days"],
+        "option_values": ["immediate", "2w", "30d", "90d"]
+      },
+      {
+        "selector": "input[type=\"radio\"][name=\"work_auth\"]",
+        "label": "Are you legally authorised to work in Spain?",
+        "kind": "radio",
+        "required": true,
+        "options": ["Yes", "No", "Yes, with sponsorship"],
+        "option_values": ["yes", "no", "sponsor"]
+      },
+      {
+        "selector": "input[type=\"checkbox\"][name=\"stack\"]",
+        "label": "Which of these have you worked with?",
+        "kind": "checkbox",
+        "required": false,
+        "options": ["Python", "Go", "Rust"],
+        "option_values": ["python", "go", "rust"]
+      },
+      {
+        "selector": "#gender",
+        "label": "Gender",
+        "kind": "select",
+        "required": false,
+        "options": ["Female", "Male", "Another", "Decline to self-identify"],
+        "option_values": ["f", "m", "x", "decline"]
+      },
+      {
+        "selector": "#reference_code",
+        "label": "Internal referral code",
+        "kind": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "selector": "#location_picker",
+        "label": "Current location",
+        "kind": "custom",
+        "required": false,
+        "options": []
+      },
+      {
+        "selector": "#portfolio_url",
+        "label": "Portfolio URL",
+        "kind": "url",
+        "required": false,
+        "options": []
+      },
+      {
+        "selector": "#portfolio_url_alt",
+        "label": "Portfolio url",
+        "kind": "url",
+        "required": false,
+        "options": []
+      },
+      {
+        "selector": "#security_clearance",
+        "label": "Do you hold a security clearance?",
+        "kind": "text",
+        "required": true,
+        "options": []
+      }
+    ],
+    "identity": {
+      "company": "Northwind Robotics",
+      "title": "Senior Platform Engineer"
+    },
+    "fingerprint": "v1:65ae6622d6ebb6a0811cc758a0e20f80",
+    "keys": [
+      "first_name",
+      "last_name",
+      "email",
+      "phone",
+      "resume_cv",
+      "why_do_you_want_this_role",
+      "notice_period",
+      "are_you_legally_authorised_to_work_in_spain",
+      "which_of_these_have_you_worked_with",
+      "gender",
+      "internal_referral_code",
+      "current_location",
+      "portfolio_url",
+      "",
+      "do_you_hold_a_security_clearance"
+    ]
+  }
+]

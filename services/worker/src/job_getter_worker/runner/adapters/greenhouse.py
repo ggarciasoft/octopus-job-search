@@ -8,7 +8,7 @@ for the CV.
 
 **What "tested" means here, exactly.** The snippets below are exercised against
 a synthetic Greenhouse-shaped page in
-``fixtures/forms/greenhouse-application.html``, driven by a real Chromium. They
+``fixtures/ats-pages/greenhouse-application.html``, driven by a real Chromium. They
 have not been run against a live Greenhouse board, and no application has been
 submitted through them. The support matrix must say that rather than "Greenhouse
 supported"; "support badges must reflect actual tested adapters"
