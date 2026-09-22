@@ -828,6 +828,17 @@ export const ROUTES: readonly RouteDefinition[] = [
     successStatus: 200,
   },
   {
+    operationId: 'downloadFillSessionResume',
+    method: 'GET',
+    path: '/fill-sessions/:id/resume',
+    auth: 'device',
+    summary: 'The CV this packet was approved with, for the session that holds it.',
+    params: IdParam,
+    response: Type.Unknown(),
+    successStatus: 200,
+    binaryResponse: true,
+  },
+  {
     operationId: 'reportFillSession',
     method: 'POST',
     path: '/fill-sessions/:id/report',

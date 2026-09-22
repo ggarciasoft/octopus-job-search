@@ -4,9 +4,9 @@ Fills an application packet **you already approved**, into a form **you are
 already looking at**, and stops. It has no code path that presses submit.
 
 > **Status: not usable as a product yet.** It builds, it is tested against a
-> synthetic page, and it has never filled a live employer's form. The CV is not
-> attached automatically (see "What is missing"), and pairing is a token you
-> paste by hand. Nothing here should be read as "Greenhouse supported".
+> synthetic page, and on 2026-09-22 it filled one in a real Chrome — CV
+> attached — but it has never met a live employer's form. Pairing is a token
+> you paste by hand. Nothing here should be read as "Greenhouse supported".
 
 ## Building it
 
@@ -47,7 +47,11 @@ kills it, and any open fill session with it, on the next request.
 3. The content script reads the page and reports what it saw. It is given no
    credential and makes no decisions.
 4. The service worker plans the fill with `@job-getter/fill-planner`, the same
-   planner the Python desktop runner uses, and sends back a list of values.
+   planner the Python desktop runner uses, and sends back a list of values —
+   plus the CV's bytes, fetched through the session. The content script never
+   learns where the file came from or how to ask for it again. If the page
+   refuses the file, that becomes an unresolved question rather than a silent
+   omission, so you are never left believing a CV was sent.
 5. The content script types them and reports what landed. The API records the
    same states and the same `fill_paused` event the desktop runner produces.
 6. **You** press the employer's submit button.
@@ -91,10 +95,6 @@ uv run python ../../fixtures/fill-planner/generate-page.py   # needs Chromium
 
 ## What is missing
 
-- **The CV is not attached.** The grant names the file and its digest, but
-  fetching the bytes needs a session-scoped download route that does not exist
-  yet. Until it does, the file input is reported as unresolved and you attach
-  the CV yourself — which is the documented fallback, not a silent failure.
 - **Pairing is manual.** The extension cannot call `/devices/exchange` itself,
   so the token is pasted.
 - **The application id and packet hash are pasted too.** There is no list of

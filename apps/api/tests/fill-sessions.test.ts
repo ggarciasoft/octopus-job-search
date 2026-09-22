@@ -2,9 +2,10 @@
  * Fill sessions: the scoped credential the browser extension fills with
  * (M5, PR12).
  *
- * The extension itself does not exist yet. What exists is the thing that
- * decides what it will ever be allowed to do, and these are the refusals that
- * decision is made of:
+ * The extension is tested in `apps/extension`, and on 2026-09-22 it filled a
+ * real form in a real Chrome through these routes. What is tested here is the
+ * API's half: what it will hand over, to whom, and what it does with the
+ * answer. Mostly that means the refusals:
  *
  *  * **AT23** — revoking a device denies its very next request *and* kills the
  *    live session it already holds. A ten-minute session that outlived its
@@ -512,6 +513,114 @@ describe('AT24: a malicious page cannot reach the token, profile or destination'
       },
     } as ApplicationView);
     expect(issued.origin).toBe(base);
+  });
+});
+
+describe('GET /fill-sessions/:id/resume', () => {
+  function download(token: string, sessionId: string, nonce?: string) {
+    return harness.app.inject(
+      asDevice(token, {
+        method: 'GET',
+        url: `/api/v1/fill-sessions/${sessionId}/resume`,
+        ...(nonce === undefined ? {} : { headers: { [FILL_SESSION_NONCE_HEADER]: nonce } }),
+      }),
+    );
+  }
+
+  it('serves the CV the packet was approved with, as an attachment', async () => {
+    const { view, device } = await approved();
+    const issued = await grant(device.token, view);
+
+    const response = await download(device.token, issued.session_id, issued.nonce);
+    expect(response.statusCode, response.body).toBe(200);
+    // The bytes are the uploaded CV, not a description of it.
+    expect(response.rawPayload.subarray(0, 5).toString()).toBe('%PDF-');
+    // Never inline: a CV that is somehow HTML must not execute in this origin.
+    expect(response.headers['content-disposition']).toContain('attachment');
+    expect(response.headers['x-content-type-options']).toBe('nosniff');
+    expect(response.headers['cache-control']).toBe('private, no-store');
+  });
+
+  it('needs the nonce, not just the device token', async () => {
+    const { view, device } = await approved();
+    const issued = await grant(device.token, view);
+
+    expect((await download(device.token, issued.session_id)).statusCode).toBe(401);
+    expect(
+      (await download(device.token, issued.session_id, 'wrong-but-long-enough-nonce')).statusCode,
+    ).toBe(401);
+  });
+
+  it('offers no way to name a different file', async () => {
+    const { view, device } = await approved();
+    const issued = await grant(device.token, view);
+
+    // The id in the path is the session's. There is no file parameter at all,
+    // so a caller cannot ask for anything but this packet's own CV — the same
+    // property the runner's lease-scoped file endpoint has.
+    const response = await harness.app.inject(
+      asDevice(device.token, {
+        method: 'GET',
+        url: `/api/v1/fill-sessions/${issued.session_id}/resume?file_id=${view.current_packet!.resume_id}`,
+        headers: { [FILL_SESSION_NONCE_HEADER]: issued.nonce },
+      }),
+    );
+    // The query string is simply not read; the same CV comes back.
+    expect(response.statusCode).toBe(200);
+    expect(response.rawPayload.subarray(0, 5).toString()).toBe('%PDF-');
+  });
+
+  it('stops serving once the session has ended', async () => {
+    const { view, device } = await approved();
+    const issued = await grant(device.token, view);
+
+    await harness.app.inject(
+      asDevice(device.token, {
+        method: 'DELETE',
+        url: `/api/v1/fill-sessions/${issued.session_id}`,
+        headers: { [FILL_SESSION_NONCE_HEADER]: issued.nonce },
+      }),
+    );
+
+    const response = await download(device.token, issued.session_id, issued.nonce);
+    expect(response.statusCode).toBe(409);
+  });
+
+  it('stops serving once the session has expired', async () => {
+    const { view, device } = await approved();
+    const issued = await grant(device.token, view);
+
+    await harness.db
+      .updateTable('fill_sessions')
+      .set({
+        created_at: new Date(Date.now() - (FILL_SESSION_TTL_SECONDS + 60) * 1000),
+        expires_at: new Date(Date.now() - 1000),
+      })
+      .where('id', '=', issued.session_id)
+      .execute();
+
+    expect((await download(device.token, issued.session_id, issued.nonce)).statusCode).toBe(409);
+  });
+
+  it('stops serving the moment the device is revoked (AT23)', async () => {
+    const { view, device } = await approved();
+    const issued = await grant(device.token, view);
+
+    await harness.app.inject(
+      authed(session, { method: 'DELETE', url: `/api/v1/devices/${device.id}` }),
+    );
+
+    // "No new packet access" includes the CV. The token no longer
+    // authenticates, and the session it held is ended besides.
+    expect((await download(device.token, issued.session_id, issued.nonce)).statusCode).toBe(401);
+  });
+
+  it('is not reachable by a second paired device', async () => {
+    const { view, device } = await approved();
+    const issued = await grant(device.token, view);
+    const other = await pairExtension();
+
+    expect((await download(other.token, issued.session_id, issued.nonce)).statusCode).toBe(404);
   });
 });
 

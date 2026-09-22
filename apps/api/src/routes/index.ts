@@ -52,6 +52,7 @@ import {
 import { fillApplication } from './fill.js';
 import {
   createFillSession,
+  downloadFillSessionResume,
   endFillSession,
   getFillSession,
   reportFillSession,
@@ -147,6 +148,7 @@ function handlers(): Readonly<Record<string, RouteHandler>> {
     fillApplication,
     createFillSession,
     getFillSession,
+    downloadFillSessionResume,
     reportFillSession,
     endFillSession,
     observeApplication,

@@ -10,7 +10,12 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import type { FillSessionGrant } from '@job-getter/contracts';
-import { decide, formFingerprint, formFingerprintMaterial } from '../src/session.js';
+import {
+  decide,
+  formFingerprint,
+  formFingerprintMaterial,
+  withBlockedAttachment,
+} from '../src/session.js';
 
 const ORIGIN = 'https://boards.greenhouse.io';
 
@@ -207,7 +212,7 @@ describe('decide', () => {
     expect(decision.kind).toBe('fill');
     if (decision.kind !== 'fill') return;
 
-    expect(decision.attachmentSelector).toBeNull();
+    expect(decision.attachment).toBeNull();
     expect(decision.report.unresolved_fields[0]).toMatchObject({ reason: 'file_upload_blocked' });
     expect(decision.report.outcome).toBe('needs_input');
   });
@@ -225,6 +230,39 @@ describe('decide', () => {
     );
     expect(decision.kind).toBe('fill');
     if (decision.kind !== 'fill') return;
-    expect(decision.attachmentSelector).toBe('#cv');
+    expect(decision.attachment).toMatchObject({
+      selector: '#cv',
+      questionKey: 'resume',
+      required: true,
+    });
+  });
+});
+
+describe('withBlockedAttachment', () => {
+  it('turns a CV that would not attach into an unresolved question', () => {
+    const session = grant({
+      resume_file_id: '00000000-0000-4000-8000-000000000005',
+      resume_sha256: 'b'.repeat(64),
+      resume_filename: 'cv.pdf',
+    });
+    const decision = run(
+      [NAME_ROW, { selector: '#cv', label: 'Resume/CV', kind: 'file', required: true }],
+      {},
+      session,
+    );
+    expect(decision.kind).toBe('fill');
+    if (decision.kind !== 'fill') return;
+    // Planned, so the report says nothing about it yet.
+    expect(decision.report.outcome).toBe('awaiting_user_submit');
+
+    // The page would not take it. The person must be told, or they would
+    // believe a CV was sent.
+    const blocked = withBlockedAttachment(decision.report, decision.attachment!);
+    expect(blocked.outcome).toBe('needs_input');
+    expect(blocked.unresolved_fields.at(-1)).toMatchObject({
+      question_key: 'resume_cv',
+      reason: 'file_upload_blocked',
+      required: true,
+    });
   });
 });

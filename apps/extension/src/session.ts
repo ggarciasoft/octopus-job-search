@@ -42,7 +42,18 @@ export type Decision =
       /** Type these, then report. */
       readonly kind: 'fill';
       readonly instructions: readonly FillInstruction[];
-      readonly attachmentSelector: string | null;
+      /**
+       * The file control, when the page has one and the packet names a CV.
+       * Carried in full rather than as a selector, because a CV that fails to
+       * attach has to be reported as *that question*, unresolved, and the
+       * person told — not dropped.
+       */
+      readonly attachment: {
+        readonly selector: string;
+        readonly questionKey: string;
+        readonly label: string | null;
+        readonly required: boolean;
+      } | null;
       readonly report: ReportFillSessionRequest;
     }
   | {
@@ -134,7 +145,15 @@ export function decide(
   return {
     kind: 'fill',
     instructions: typed.map(toInstruction),
-    attachmentSelector: attachment?.field.selector ?? null,
+    attachment:
+      attachment === null
+        ? null
+        : {
+            selector: attachment.field.selector,
+            questionKey: attachment.field.key,
+            label: attachment.field.label === '' ? null : attachment.field.label,
+            required: attachment.field.required,
+          },
     report: {
       ...base,
       // Filled outcomes are overwritten by what the content script actually
@@ -163,6 +182,35 @@ export function originOf(url: string): string | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * The report to send when the CV could not be attached.
+ *
+ * "Where browser/site restrictions prevent it, show a download-and-attach
+ * step." A file input the extension planned to fill and then could not is the
+ * same situation as one it never could: an unresolved question, which the API
+ * turns into a question in the next packet revision. Silently omitting it
+ * would leave the person believing a CV was sent.
+ */
+export function withBlockedAttachment(
+  report: ReportFillSessionRequest,
+  attachment: { questionKey: string; label: string | null; required: boolean },
+): ReportFillSessionRequest {
+  return {
+    ...report,
+    unresolved_fields: [
+      ...report.unresolved_fields,
+      {
+        question_key: attachment.questionKey,
+        label: attachment.label,
+        required: attachment.required,
+        reason: 'file_upload_blocked',
+        options: [],
+      },
+    ],
+    outcome: attachment.required ? 'needs_input' : report.outcome,
+  };
 }
 
 /** Fields the page offered, for the popup to explain what will happen. */

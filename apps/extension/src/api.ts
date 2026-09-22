@@ -108,3 +108,47 @@ export function reportFillSession(
 export function endFillSession(options: ApiOptions, id: string, nonce: string): Promise<void> {
   return request(options, `/fill-sessions/${id}`, { method: 'DELETE', nonce });
 }
+
+export interface ResumeBytes {
+  readonly name: string;
+  readonly bytes: number[];
+}
+
+/**
+ * The CV this session's packet was approved with.
+ *
+ * The filename comes from `content-disposition`, which the API has already
+ * sanitised — the extension does not get to invent one, and it does not read
+ * the employer's page for it either.
+ */
+export async function downloadFillSessionResume(
+  options: ApiOptions,
+  id: string,
+  nonce: string,
+  fallbackName: string,
+): Promise<ResumeBytes> {
+  const doFetch = options.fetch ?? globalThis.fetch;
+  const response = await doFetch(`${options.baseUrl}/api/v1/fill-sessions/${id}/resume`, {
+    method: 'GET',
+    headers: { [DEVICE_TOKEN_HEADER]: options.token, [FILL_SESSION_NONCE_HEADER]: nonce },
+    credentials: 'omit',
+  });
+  if (!response.ok) {
+    throw new FillSessionApiError({
+      status: response.status,
+      code: 'RESUME_UNAVAILABLE',
+      message: `The CV could not be downloaded (${response.status}).`,
+    });
+  }
+  const buffer = await response.arrayBuffer();
+  return {
+    name: filenameFrom(response.headers.get('content-disposition')) ?? fallbackName,
+    bytes: Array.from(new Uint8Array(buffer)),
+  };
+}
+
+function filenameFrom(header: string | null): string | null {
+  if (header === null) return null;
+  const quoted = /filename="([^"]+)"/.exec(header);
+  return quoted?.[1] ?? null;
+}

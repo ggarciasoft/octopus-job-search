@@ -41,7 +41,8 @@ import type { FastifyRequest } from 'fastify';
 import { conflict, notFound, unauthenticated, unprocessable } from '../errors.js';
 import { recordAuditEvent } from '../auth/scope.js';
 import type { WorkspaceScope } from '../auth/scope.js';
-import type { FillSessionRow } from '../db/types.js';
+import type { ApplicationPacketRow, FillSessionRow } from '../db/types.js';
+import { contentDispositionFor, downloadContentType } from '../files/service.js';
 import { generateToken, sha256Hex } from '../util/crypto.js';
 import { requireDevice } from '../devices/service.js';
 import { requireJob } from '../matching/matches.js';
@@ -304,6 +305,69 @@ export const getFillSession: RouteHandler = async (context, request) => {
   const row = await loadSession(scope, id, principal.deviceId);
   verifyNonce(request, row);
   return view(row, new Date());
+};
+
+/**
+ * GET /fill-sessions/:id/resume — the CV this packet was approved with.
+ *
+ * The one file a fill session may fetch, and it is not named by the caller:
+ * the id in the path is the *session's*, and the file is resolved from the
+ * packet that session was granted against. There is no parameter in which a
+ * page could ask for a different file, which is the same property the runner's
+ * lease-scoped file endpoint has and for the same reason.
+ *
+ * Served as an attachment with `nosniff`, like every other download here, so
+ * a CV that is somehow HTML cannot execute in the API's origin.
+ */
+export const downloadFillSessionResume: RouteHandler = async (context, request, reply) => {
+  const { scope, principal } = requireDeviceScope(context, request);
+  const { id } = request.params as { id: string };
+  const now = new Date();
+
+  const row = await loadSession(scope, id, principal.deviceId);
+  verifyNonce(request, row);
+
+  // An ended or expired session may not still be fetching the person's CV.
+  const state = fillSessionState(row, now);
+  if (state !== 'active') {
+    throw conflict(`This fill session is ${state}, so it cannot download anything.`);
+  }
+
+  const packet = (await scope
+    .selectFrom('application_packets')
+    .selectAll()
+    .where('id', '=', row.packet_id)
+    .executeTakeFirst()) as ApplicationPacketRow | undefined;
+  if (packet === undefined) throw notFound('That packet no longer exists.');
+
+  const attachment = await packetAttachment(scope, packet);
+  if (attachment.fileId === null) throw notFound('This packet has no CV to attach.');
+
+  const file = await scope
+    .selectFrom('files')
+    .selectAll()
+    .where('id', '=', attachment.fileId)
+    .where('state', '!=', 'deleting')
+    .executeTakeFirst();
+  if (!file) throw notFound('This packet has no CV to attach.');
+
+  const stream = await context.storage.createReadStream(file.storage_key).catch(() => null);
+  if (stream === null) throw notFound('This packet has no CV to attach.');
+
+  await scope
+    .updateTable('fill_sessions')
+    .set({ last_seen_at: now })
+    .where('id', '=', row.id)
+    .execute();
+
+  return reply
+    .status(200)
+    .header('content-type', downloadContentType(file.mime))
+    .header('content-disposition', contentDispositionFor(file.original_name))
+    .header('content-length', String(file.bytes))
+    .header('x-content-type-options', 'nosniff')
+    .header('cache-control', 'private, no-store')
+    .send(stream);
 };
 
 /**

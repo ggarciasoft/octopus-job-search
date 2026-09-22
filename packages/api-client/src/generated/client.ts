@@ -891,6 +891,18 @@ export class JobGetterApiClient {
     });
   }
 
+  /** The CV this packet was approved with, for the session that holds it. (`GET /api/v1/fill-sessions/:id/resume`) */
+  downloadFillSessionResume(args: DownloadFillSessionResumeArgs): Promise<DownloadFillSessionResumeResult> {
+    return this.#request<DownloadFillSessionResumeResult>({
+      method: 'GET',
+      prefix: API_PREFIX,
+      path: '/fill-sessions/:id/resume',
+      params: args.params,
+      binary: true,
+      signal: args.signal,
+    });
+  }
+
   /** Report what was filled and what the page still needs; ends the session. (`POST /api/v1/fill-sessions/:id/report`) */
   reportFillSession(args: ReportFillSessionArgs): Promise<ReportFillSessionResult> {
     return this.#request<ReportFillSessionResult>({
@@ -1554,6 +1566,16 @@ export interface GetFillSessionArgs {
 
 /** Result of `getFillSession`. */
 export type GetFillSessionResult = FillSessionView;
+
+/** Arguments for `GET /api/v1/fill-sessions/:id/resume`. */
+export interface DownloadFillSessionResumeArgs {
+  /** Path parameters. */
+  readonly params: { id: string };
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `downloadFillSessionResume`. */
+export type DownloadFillSessionResumeResult = Blob;
 
 /** Arguments for `POST /api/v1/fill-sessions/:id/report`. */
 export interface ReportFillSessionArgs {

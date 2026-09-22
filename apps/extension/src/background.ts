@@ -20,9 +20,22 @@
  * application.
  */
 import type { FillSessionGrant } from '@job-getter/contracts';
-import { createFillSession, endFillSession, reportFillSession, type ApiOptions } from './api.js';
+import {
+  createFillSession,
+  downloadFillSessionResume,
+  endFillSession,
+  reportFillSession,
+  type ApiOptions,
+  type ResumeBytes,
+} from './api.js';
 import { verifySender, type ContentMessage, type WorkerMessage } from './messages.js';
-import { decide, formFingerprint, formFingerprintMaterial, originOf } from './session.js';
+import {
+  decide,
+  formFingerprint,
+  formFingerprintMaterial,
+  originOf,
+  withBlockedAttachment,
+} from './session.js';
 import { ADAPTER_NAME, ADAPTER_VERSION } from './adapters/greenhouse.js';
 
 // A minimal structural view of the parts of the extension API this file uses,
@@ -232,26 +245,54 @@ export async function fillActiveTab(
       return { ok: false, message: decision.reason };
     }
 
+    // The CV, if this packet has one and the page has somewhere to put it.
+    // Fetched here, in the service worker, and handed to the content script
+    // as bytes: the tab never learns where the file came from or how to ask
+    // for it again.
+    let attachment: ResumeBytes | null = null;
+    if (decision.attachment !== null && grant.resume_file_id !== null) {
+      try {
+        attachment = await downloadFillSessionResume(
+          options,
+          grant.session_id,
+          grant.nonce,
+          grant.resume_filename ?? 'cv.pdf',
+        );
+      } catch {
+        // "Where browser/site restrictions prevent it, show a
+        // download-and-attach step." A CV that cannot be fetched is the same
+        // situation: the field is left for the person rather than the run
+        // being abandoned.
+        attachment = null;
+      }
+    }
+
     const filled = await api.tabs.sendMessage(tabId, {
       type: 'page/fill',
       values: decision.instructions,
-      // The CV is M5's next step: the session names the file, and fetching
-      // its bytes needs a session-scoped download route that does not exist
-      // yet. Until it does, the file input is reported unresolved rather than
-      // half-attached, and the person attaches it themselves.
-      attachment: null,
-      attachmentSelector: decision.attachmentSelector,
+      attachment,
+      attachmentSelector: decision.attachment?.selector ?? null,
     });
     if (filled.type !== 'page/filled') {
       await endFillSession(options, grant.session_id, grant.nonce);
       return { ok: false, message: 'The page did not report what was filled.' };
     }
 
-    await reportFillSession(options, grant.session_id, grant.nonce, decision.report);
+    // What the page actually accepted, not what was planned for it.
+    const attached =
+      decision.attachment === null ||
+      filled.filled.some(
+        (field) => field.key === decision.attachment!.selector && field.outcome === 'filled',
+      );
+    const report = attached
+      ? decision.report
+      : withBlockedAttachment(decision.report, decision.attachment!);
+
+    await reportFillSession(options, grant.session_id, grant.nonce, report);
     return {
       ok: true,
       message:
-        decision.report.outcome === 'needs_input'
+        report.outcome === 'needs_input'
           ? 'Filled what the packet answers. Some questions still need you.'
           : 'Filled. Check it, then press the employer’s own submit button.',
     };
