@@ -23,8 +23,8 @@
 
     What it STILL does not verify: that a restored application can download
     its ORIGINAL CV byte-identically, and that packet hashes and history
-    survive (AT11, AT25). Those need a populated installation and are a pilot
-    exercise, not something a script can assert.
+    survive (AT11, AT25). Those are checked through the application, not by a
+    script; AT25 did so on 2026-09-22 (docs/RUNBOOK.md -> "Rehearse it").
 
 .PARAMETER From
     Backup to restore. Accepts .tar.gz.age, .tar.gz.gpg, .tar.gz, or an
@@ -59,8 +59,8 @@
                 archive unpacked with the expected file count.
       DOES      Save, merge and reapply the deletion ledger, so data deleted
                 after the backup stays deleted.
-      DOES NOT  AT25 (profile, files, hashes and history restored) - that
-                needs a populated installation, not a script.
+      DOES NOT  AT25 (profile, files, hashes and history restored) by
+                itself - that is checked through the application afterwards.
                 Validate the pilot recovery targets (<=24h data loss, restore
                 within 4h). Those are UNVALIDATED TARGETS from
                 docs/spec/10_DEPLOYMENT.md, not measured results.
@@ -241,7 +241,7 @@ if (-not $FilesOnly) {
         Write-JGOk "saved $(@($rows | Where-Object { $_ -match 'INSERT INTO' }).Count) deletion-ledger row(s) from the target"
     }
     else {
-        Write-JGInfo 'the target has no deletion_ledger table yet (pre-M4 schema); nothing to save'
+        Write-JGInfo 'the target has no deletion_ledger table (an empty or pre-M4 database); nothing to save'
     }
 }
 
@@ -369,8 +369,8 @@ Write-Host ''
 if (-not $FilesOnly) { Write-Host "   deletion ledger: $ledgerReapplied" }
 Write-Host ''
 Write-Host ' NOT verified, because a script cannot assert them:'
-Write-Host '   original CV downloads byte-identical (AT11 - needs a populated install)'
-Write-Host '   packet hashes and history preserved  (AT25 - needs a populated install)'
+Write-Host '   original CV downloads byte-identical (AT11 - check through the app)'
+Write-Host '   packet hashes and history preserved  (AT25 - check through the app)'
 Write-Host ''
 Write-Host ' Recovery targets from docs/spec/10_DEPLOYMENT.md - at most 24 hours data'
 Write-Host ' loss, restore within 4 hours - are UNVALIDATED TARGETS. This run is not'

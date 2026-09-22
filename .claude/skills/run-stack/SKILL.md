@@ -159,40 +159,38 @@ A worker that started correctly logs `worker.started` with `capabilities` and
 
 ## A second, throwaway stack
 
-Some checks need a fresh installation (AT28 did), and the owner's stack holds
-real data. A second Compose project works, but `-p <name>` alone is **not
-isolated**: `docker-compose.yml` fixes the names of the volumes
-(`job-getter-db-data`, `job-getter-files-data`) **and the network**
-(`job-getter`). A second project therefore mounts the owner's data, or joins
-the owner's network, where `db` and `api` each resolve to either stack's
-container. That happened once. The sandbox API read the owner's database until
-it was stopped.
+Some checks need a fresh installation (AT25 and AT28 did), and the owner's
+stack holds real data. Use a second Compose project. Since 2026-09-22 every
+volume and network name in `docker-compose.yml` is
+`${COMPOSE_PROJECT_NAME}-...`, so `-p <name>` or `COMPOSE_PROJECT_NAME` alone
+isolates it, and no extra override file is needed. Before that change, a second
+project mounted the owner's volumes or joined the owner's network. AT28's
+sandbox API read the owner's database that way until it was stopped.
 
-Rename all three in an extra override file. `.local/at28/compose.at28.yml` is
-one:
-
-```yaml
-networks:
-  default:
-    name: jg-at28
-volumes:
-  db-data:
-    name: jg-at28-db-data
-  files-data:
-    name: jg-at28-files-data
-```
+Check anyway, every time:
 
 ```bash
-export APP_ORIGIN=http://127.0.0.1:3100 WEB_PORT=3100 API_PORT=3101
-F="-p jg-at28 -f docker-compose.yml -f docker-compose.override.yml -f .local/at28/compose.at28.yml"
-docker compose $F config | grep -E "name: (jg|job-getter)"   # nothing may say job-getter
-docker compose $F up -d --no-build
-docker exec jg-at28-api-1 getent hosts db                    # must be the sandbox db's IP
+export COMPOSE_PROJECT_NAME=jg-scratch APP_ORIGIN=http://127.0.0.1:3200 WEB_PORT=3200 API_PORT=3201
+docker compose config | grep -E "^    name:"      # all must start with jg-scratch
+docker compose up -d --no-build --wait
+docker exec jg-scratch-api-1 getent hosts db     # the sandbox db's IP
+docker network inspect jg-scratch --format '{{range .Containers}}{{.Name}} {{end}}'
 ```
 
-`docker compose $F down -v` removes only the renamed volumes. It reuses the
-owner's `SETUP_TOKEN` from `.env`, which is harmless because the route closes
-per database.
+Export the variable instead of passing `-p`: `scripts/backup.sh`,
+`restore.sh` and `migrate.sh` call plain `docker compose`, and they then act on
+the sandbox too. `docker compose down -v` in the same shell removes only the
+sandbox's volumes. Re-run the `config` check first if you have any doubt about
+which shell you are in.
+
+The sandbox reuses the owner's `.env`, `SETUP_TOKEN` included, which is harmless
+because the setup route closes per database. For a truly _separate_
+installation with its own secrets (AT25's restore target), use a git worktree
+under `.local/`. Copy in the working `docker-compose.yml`,
+`docker-compose.override.yml` and `.local/runtime-ca-bundle.pem`, then run
+`sh scripts/setup.sh --yes` there and set its ports and `APP_ORIGIN` in that
+`.env`. `.local/at25/at25.py` fills a fresh installation through the API,
+snapshots it, and compares two snapshots.
 
 ## What this stack cannot do here
 

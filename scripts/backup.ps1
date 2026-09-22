@@ -172,6 +172,12 @@ try {
     $pgVersion = ((& docker compose exec -T db psql -U $pgUser -d $pgDb -tAc 'SHOW server_version' 2>$null) -join '').Trim()
     if (-not $pgVersion) { $pgVersion = 'unknown' }
 
+    # The ledger is an ordinary table (migration 0007), so the dump carries it
+    # whenever the schema has it. Recorded rather than assumed: a dump of a
+    # pre-0007 database has none.
+    $ledgerProbe = ((& docker compose exec -T db psql -U $pgUser -d $pgDb -tAc "SELECT to_regclass('public.deletion_ledger') IS NOT NULL" 2>$null) -join '').Trim()
+    $ledgerInDump = if ($ledgerProbe -eq 't') { 'true' } else { 'false' }
+
     # --- Files ----------------------------------------------------------------
     Write-JGInfo "Archiving the files volume ($filesRoot)..."
     $filesPath = Join-Path $stage 'files.tar.gz'
@@ -209,12 +215,12 @@ try {
   "stack_quiesced": $quiesced,
   "encryption_key_fingerprint": "$encFingerprint",
   "contains_env_file": false,
-  "deletion_ledger_included": false,
+  "deletion_ledger_included": $ledgerInDump,
   "notes": [
     "The .env file and therefore ENCRYPTION_KEY are NOT in this backup, by design.",
     "encryption_key_fingerprint is sha256(ENCRYPTION_KEY) truncated to 8 hex chars; it is a match indicator, not the key.",
     "stack_quiesced=false means api/worker were running during the dump; database and files may be seconds apart.",
-    "deletion_ledger_included=false: the deletion ledger is M4 work and does not exist yet. See scripts/restore.ps1."
+    "deletion_ledger_included says whether the dump carries the deletion ledger; scripts/restore.ps1 merges it with the target's and reapplies it."
   ]
 }
 "@

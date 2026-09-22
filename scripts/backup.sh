@@ -198,6 +198,13 @@ ok "database.dump ($(wc -c < "${STAGE}/database.dump" | tr -d ' ') bytes)"
 PG_SERVER_VERSION=$(docker compose exec -T db psql -U "$POSTGRES_USER_V" -d "$POSTGRES_DB_V" \
                       -tAc 'SHOW server_version' 2>/dev/null | tr -d '\r' || printf 'unknown')
 
+# The ledger is an ordinary table (migration 0007), so the dump carries it
+# whenever the schema has it. Recorded rather than assumed: a dump of a
+# pre-0007 database has none.
+LEDGER_IN_DUMP=$(docker compose exec -T db psql -U "$POSTGRES_USER_V" -d "$POSTGRES_DB_V" \
+                   -tAc "SELECT to_regclass('public.deletion_ledger') IS NOT NULL" 2>/dev/null | tr -d '\r ' || printf 'f')
+if [ "$LEDGER_IN_DUMP" = "t" ]; then LEDGER_IN_DUMP=true; else LEDGER_IN_DUMP=false; fi
+
 # --- Files --------------------------------------------------------------------
 info "Archiving the files volume (${FILES_ROOT_V})..."
 
@@ -237,12 +244,12 @@ cat > "${STAGE}/manifest.json" <<MANIFEST
   "stack_quiesced": ${QUIESCED},
   "encryption_key_fingerprint": "${ENC_FP}",
   "contains_env_file": false,
-  "deletion_ledger_included": false,
+  "deletion_ledger_included": ${LEDGER_IN_DUMP},
   "notes": [
     "The .env file and therefore ENCRYPTION_KEY are NOT in this backup, by design.",
     "encryption_key_fingerprint is sha256(ENCRYPTION_KEY) truncated to 8 hex chars; it is a match indicator, not the key.",
     "stack_quiesced=false means api/worker were running during the dump; database and files may be seconds apart.",
-    "deletion_ledger_included=false: the deletion ledger is M4 work and does not exist yet. See scripts/restore.sh."
+    "deletion_ledger_included says whether the dump carries the deletion ledger; scripts/restore.sh merges it with the target's and reapplies it."
   ]
 }
 MANIFEST

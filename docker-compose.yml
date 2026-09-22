@@ -333,14 +333,26 @@ volumes:
   # Named volumes, not bind mounts: `docker compose down` must preserve data
   # (docs/spec/10_DEPLOYMENT.md). `docker compose down -v` destroys everything
   # here - see the warning at the top of this file.
+  #
+  # The names come from the Compose project name, which Compose substitutes
+  # into ${COMPOSE_PROJECT_NAME} (from `-p`, the COMPOSE_PROJECT_NAME variable,
+  # or `name:` at the top of this file). For the default project they are
+  # job-getter-db-data and so on, the names they have always had, so an
+  # existing installation keeps its data. A second project started with
+  # `-p <other>` gets volumes of its own. When these names were literals, it
+  # silently mounted the first project's data.
   # ---------------------------------------------------------------------------
   db-data:
-    name: job-getter-db-data
+    name: ${COMPOSE_PROJECT_NAME}-db-data
   files-data:
-    name: job-getter-files-data
+    name: ${COMPOSE_PROJECT_NAME}-files-data
   ollama-models:
-    name: job-getter-ollama-models
+    name: ${COMPOSE_PROJECT_NAME}-ollama-models
 
+# Per project for the same reason. When this was the literal `job-getter`, a
+# second project joined the first one's network, and `db` and `api` each
+# resolved to either project's container: a sandbox API once read the owner's
+# database this way.
 networks:
   default:
-    name: job-getter
+    name: ${COMPOSE_PROJECT_NAME}

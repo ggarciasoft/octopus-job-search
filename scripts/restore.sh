@@ -28,11 +28,12 @@
 #   5. Only then does it hand back control - and it still does not start the
 #      API for you.
 #
-# What it STILL does not verify: that a restored application can download its
-# ORIGINAL CV byte-identically, and that packet hashes and history survive
-# (AT11, AT25). Those need a populated installation and are a pilot exercise,
-# not something a shell script can assert. This script verifies archive
-# checksums, the ledger replay, row counts and file counts, and says so.
+# What it does not verify by itself: that a restored application can download
+# its ORIGINAL CV byte-identically, and that packet hashes and history survive
+# (AT11, AT25). Those are checked through the application, not by a shell
+# script; AT25 did so on 2026-09-22 (docs/RUNBOOK.md -> "Rehearse it"). This
+# script verifies archive checksums, the ledger replay, row counts and file
+# counts, and says so.
 # ---------------------------------------------------------------------------
 # =============================================================================
 set -eu
@@ -79,9 +80,9 @@ WHAT A SUCCESSFUL RUN DOES AND DOES NOT PROVE
     DOES    The archive matched its checksums; pg_restore reported success;
             the file archive unpacked with the expected file count.
     DOES NOT
-            It does not prove AT25 (profile, files, hashes and application
-            history restored) - that scenario needs M1-M4 features that are
-            not built.
+            It does not by itself prove AT25 (profile, files, hashes and
+            application history restored): that is checked through the
+            application afterwards. See docs/RUNBOOK.md -> "Rehearse it".
             It saves, merges and reapplies the deletion ledger, so data
             deleted after the backup stays deleted.
             It does not validate the pilot recovery targets (<=24h data loss,
@@ -234,7 +235,7 @@ if [ "$FILES_ONLY" != "1" ]; then
     LEDGER_SAVED=1
     ok "saved ${LEDGER_ROWS} deletion-ledger row(s) from the target"
   else
-    info "the target has no deletion_ledger table yet (pre-M4 schema); nothing to save"
+    info "the target has no deletion_ledger table (an empty or pre-M4 database); nothing to save"
   fi
 fi
 
@@ -373,8 +374,8 @@ log ""
 if [ "$FILES_ONLY" != "1" ]; then log "   deletion ledger: ${LEDGER_REAPPLIED:-not run}"; fi
 log ""
 log " NOT verified, because a shell script cannot assert them:"
-log "   original CV downloads byte-identical (AT11 - needs a populated install)"
-log "   packet hashes and history preserved  (AT25 - needs a populated install)"
+log "   original CV downloads byte-identical (AT11 - check through the app)"
+log "   packet hashes and history preserved  (AT25 - check through the app)"
 log ""
 log " Recovery targets from docs/spec/10_DEPLOYMENT.md - at most 24 hours data"
 log " loss, restore within 4 hours - are UNVALIDATED TARGETS. This run is not"

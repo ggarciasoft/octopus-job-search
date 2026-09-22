@@ -153,8 +153,11 @@ build.
 
 ## 3. Backup and restore
 
-**Status: ⚠️ Unverified.** Both scripts are syntax-checked; neither has been run
-against a populated installation.
+**Status: ✅ Verified (POSIX scripts), 2026-09-22.** `backup.sh` (gpg and
+`--no-encrypt`), `restore.sh` (to a separate installation, and over the
+source) and `migrate.sh` ran against a populated installation for AT25. See
+`IMPLEMENTATION_STATUS.md`, "AT25". `backup.ps1`, `restore.ps1` and
+`--age-recipient` remain ⚠️ Unverified.
 
 ### Backup
 
@@ -207,28 +210,27 @@ To a **separate installation** — the case the specification actually cares abo
 4. `docker compose up -d db`
 5. `sh scripts/restore.sh --from <backup> --drop-existing`
 6. `sh scripts/migrate.sh` — brings an older dump to the current schema.
-7. **Read the deletion-ledger warning** (below).
+7. Read what the script reports about the deletion ledger (below).
 8. Only then `docker compose up -d`, and `sh scripts/smoke.sh`.
 
-> ### ⚠️ The deletion ledger is not reapplied
+> ### The deletion ledger is reapplied before you start the API
 >
 > `docs/spec/10_DEPLOYMENT.md` requires a restore to reapply the deletion ledger
 > **before reopening access**, so data a user deleted after the backup was taken
-> is not resurrected.
->
-> **The deletion ledger is M4 work and does not exist.** `scripts/restore.sh`
-> prints this warning, does **not** start the API, and explicitly declines to
-> describe its result as a verified restore. If anything was deleted after the
-> backup timestamp, restoring may bring it back. Decide deliberately whether
-> that is acceptable before serving.
+> is not resurrected. `scripts/restore.sh` saves the target's ledger before it
+> touches the database, merges it back in after the restore, runs
+> `scripts/reapply-deletions.sql`, and does **not** start the API. If the dump
+> predates migration 0007 it prints the exact commands to finish the job instead.
+> AT25 checked this: an answer deleted after the backup stayed deleted.
 
-**What a successful restore proves — and does not:**
+**What a successful restore proves, and what it does not:**
 
-| Proves                          | Does not prove                                                |
-| ------------------------------- | ------------------------------------------------------------- |
-| Checksums matched               | AT25 (profile, files, hashes, history restored) — needs M1–M4 |
-| `pg_restore` completed          | AT11 (original CV downloads byte-identical) — needs M1/M3     |
-| File count matches the manifest | That the deletion ledger was honoured — it does not exist     |
+| The script proves                 | Checked separately, through the application                     |
+| --------------------------------- | --------------------------------------------------------------- |
+| Checksums matched                 | AT25 (profile, files, hashes, history restored): passed         |
+| `pg_restore` completed            | AT11 (original CV downloads byte-identical): passed within AT25 |
+| File count matches the manifest   |                                                                 |
+| The deletion ledger was reapplied |                                                                 |
 
 **Recovery targets** from `docs/spec/10_DEPLOYMENT.md` — at most 24 hours data
 loss, restore within 4 hours — are **unvalidated targets**, not measured results.
@@ -239,6 +241,26 @@ The spec says to validate before claiming them; that has not happened.
 A backup you have never restored is a hypothesis. Restore into a scratch
 installation, time it, and record the result here. That is also what turns the
 recovery targets from claims into measurements.
+
+A scratch installation on the same machine is a second Compose project. Every
+volume and network name follows the project name, so `-p` (or
+`COMPOSE_PROJECT_NAME`) is enough to keep it off your real data. Check before
+starting it:
+
+```bash
+export COMPOSE_PROJECT_NAME=jg-rehearsal WEB_PORT=3200 API_PORT=3201 APP_ORIGIN=http://127.0.0.1:3200
+docker compose config | grep -E "^    name:"   # every name must start with jg-rehearsal
+```
+
+The scripts honour the same variable, so `sh scripts/backup.sh` and
+`sh scripts/restore.sh` run in that shell act on the scratch project.
+`docker compose down -v` in that shell removes only its volumes.
+
+**Rehearsed 2026-09-22 (AT25):** a small installation took 11 s to back up and
+18 s to restore. It came back identical through the API, with every file
+byte-identical. `.local/at25/at25.py` (local only) is the driver. Those timings
+say nothing about a large installation, so the recovery targets above are still
+unvalidated.
 
 ---
 
