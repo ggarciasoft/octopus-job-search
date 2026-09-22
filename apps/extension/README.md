@@ -12,8 +12,15 @@ already looking at**, and stops. It has no code path that presses submit.
 ## Building it
 
 ```bash
-pnpm --filter @job-getter/extension build
+pnpm install
+pnpm extension:build
 ```
+
+That builds the workspace packages it imports first. On a fresh clone,
+`pnpm --filter @job-getter/extension build` on its own fails, because
+`@job-getter/contracts` is consumed from its `dist/`, which does not exist yet.
+For the whole install, pairing included, see
+[`docs/INSTALL.md`](../../docs/INSTALL.md).
 
 Two Vite passes, and the second one is not optional:
 

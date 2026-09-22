@@ -15,6 +15,7 @@
     "lint": "pnpm -r lint",
     "test": "pnpm --filter @job-getter/contracts build && pnpm --filter @job-getter/api-client build && pnpm -r test",
     "dev": "pnpm -r --parallel dev",
+    "extension:build": "pnpm --filter \"@job-getter/extension...\" build",
     "migrate": "pnpm --filter @job-getter/api migrate",
     "format": "prettier --write \"**/*.{ts,tsx,json,md,yaml,yml}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,json,md,yaml,yml}\""

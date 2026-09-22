@@ -67,10 +67,9 @@ These are permanent design positions, not unfinished features:
 
 ## Quickstart
 
-**These commands are from `docs/spec/10_DEPLOYMENT.md`. As of this commit the
-last two have not been observed to succeed** — see
-[`IMPLEMENTATION_STATUS.md`](IMPLEMENTATION_STATUS.md). They are the intended
-and documented path, written down now so the contract is clear.
+**The full walkthrough, including the browser extension and how well each step
+has been verified, is [`docs/INSTALL.md`](docs/INSTALL.md).** The short version,
+from `docs/spec/10_DEPLOYMENT.md`, verified on Windows 11 with Docker Desktop:
 
 **Requirements:** Docker with Compose v2, and about 8 GB of RAM _without_ a local
 model. Local model requirements depend entirely on which model you choose and
@@ -111,7 +110,8 @@ sh scripts/smoke.sh          # pwsh -File scripts/smoke.ps1 on Windows
 ```
 
 That script is the M0 exit criterion. It exits non-zero and prints the actual
-response body on any failure. **It has never passed yet.**
+response body on any failure. It passes through the nginx proxy on
+`127.0.0.1:3000`.
 
 ### Your data
 
@@ -226,6 +226,7 @@ Every script has `--help`. POSIX `sh` versions run on Linux, macOS and Git Bash;
 | Document                                               | What is in it                                                                    |
 | ------------------------------------------------------ | -------------------------------------------------------------------------------- |
 | [`IMPLEMENTATION_STATUS.md`](IMPLEMENTATION_STATUS.md) | **Start here.** What works, what does not, what has actually been run            |
+| [`docs/INSTALL.md`](docs/INSTALL.md)                   | Install, first run, the extension or desktop runner, a first fill                |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md)                   | Dev setup, the contracts-are-generated rule, test layers, connector requirements |
 | [`SECURITY.md`](SECURITY.md)                           | How to report a vulnerability, and the threat model                              |
 | [`docs/DECISIONS.md`](docs/DECISIONS.md)               | ADR log — why things are the way they are                                        |
