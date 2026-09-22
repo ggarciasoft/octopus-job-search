@@ -192,7 +192,20 @@ def build_text_pdf() -> None:
 
 
 def build_accents_pdf() -> None:
-    """AT12/AT27: accented Spanish text must survive extraction and rendering."""
+    """AT12/AT27: accented Spanish text must survive extraction and rendering.
+
+    Every accented character Spanish actually needs appears here -- the five
+    accented vowels, the tilde n, the diaeresis u, and the inverted opening
+    punctuation -- because a fixture that says "Spanish" in ASCII cannot test
+    anything about accents. The first version of this file was exactly that,
+    and the scenario it existed for could not have failed against it.
+
+    The bytes survive because the page font declares /WinAnsiEncoding and the
+    content stream is written as latin-1, and the two agree on every codepoint
+    used below. A character outside that overlap would need an embedded font
+    with a /ToUnicode map, which is a much larger fixture; there is a check in
+    verify.py that keeps this text inside the range the encoding can carry.
+    """
     write_pdf(
         CVS / "text-cv-es.pdf",
         [
@@ -202,20 +215,22 @@ def build_accents_pdf() -> None:
                 ("ana.rivera@example.invalid | Montevideo, Uruguay", 10, False),
                 ("", 10, False),
                 ("RESUMEN", 12, True),
-                ("Ingeniera con experiencia en sistemas distribuidos y canalizacion", 10, False),
-                ("de datos. Trabajo en espanol e ingles. Busco puestos remotos.", 10, False),
+                ("Ingeniera con experiencia en sistemas distribuidos y canalización", 10, False),
+                ("de datos. Trabajo en español e inglés. Busco puestos remotos.", 10, False),
+                ("¿Quién soy? Una ingeniera pragmática.", 10, False),
                 ("", 10, False),
                 ("EXPERIENCIA", 12, True),
-                ("Ingeniera de Backend Senior, Northwind Logistics", 11, True),
+                ("Ingeniera de Backend Senior, Northwind Logística", 11, True),
                 ("2022-03 - Actualidad | Remoto", 10, False),
-                ("- Dirigi la migracion del servicio de seguimiento a PostgreSQL.", 10, False),
+                ("- Dirigí la migración del servicio de seguimiento a PostgreSQL.", 10, False),
                 ("- Reduje la latencia mediana de 800ms a 210ms.", 10, False),
+                ("- Implementé la biligüe documentación técnica del equipo.", 10, False),
                 ("", 10, False),
-                ("EDUCACION", 12, True),
-                ("Universidad de la Republica - Licenciatura en Informatica", 10, False),
+                ("EDUCACIÓN", 12, True),
+                ("Universidad de la República - Licenciatura en Informática", 10, False),
                 ("", 10, False),
                 ("IDIOMAS", 12, True),
-                ("Espanol (nativo), Ingles (profesional)", 10, False),
+                ("Español (nativo), Inglés (profesional)", 10, False),
             ]
         ],
         "Ana Rivera CV (es)",

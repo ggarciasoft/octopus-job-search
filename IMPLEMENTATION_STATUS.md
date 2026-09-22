@@ -1,6 +1,6 @@
 # Implementation status
 
-**Last updated: 2026-09-21** · **M0, M1, M2, M3 complete; M4 in progress** — the application backend, the paired local runner and the M4 screens are landed and tested, including a real Chromium filling a synthetic Greenhouse form and stopping before submit. One complete sandbox workflow has now run on the Compose stack — packet, approval, a real Chromium filling a synthetic form and pausing, an outcome and an export — and the five M4 screens have been rendered in a browser for the first time. Workspace deletion is not built and no adapter has met a live board. Two gaps the acceptance scenarios exposed are now closed: the daily AI budget, specified since M0 and enforced by nothing, and the submit observation, which did not exist at all. AT16, AT18, AT21 and AT22 pass, taking the scenarios to 22 of 28. Next: **the remaining nine pilot workflows, which are the owner's to run**, and the four pilot-gate scenarios still open (AT12, AT25, AT27–AT28).
+**Last updated: 2026-09-21** · **M0, M1, M2, M3 complete; M4 in progress** — the application backend, the paired local runner and the M4 screens are landed and tested, including a real Chromium filling a synthetic Greenhouse form and stopping before submit. One complete sandbox workflow has now run on the Compose stack — packet, approval, a real Chromium filling a synthetic form and pausing, an outcome and an export — and the five M4 screens have been rendered in a browser for the first time. Workspace deletion is not built and no adapter has met a live board. Three gaps the acceptance scenarios exposed are now closed: the daily AI budget, specified since M0 and enforced by nothing; the submit observation, which did not exist at all; and the Spanish CV fixture, which spelled its Spanish without a single accent. AT12, AT16, AT18, AT21, AT22 and AT27 pass, taking the scenarios to 24 of 28. Next: **the remaining nine pilot workflows, which are the owner's to run**, and the two pilot-gate scenarios still open (AT25 and AT28).
 
 This file is required by `docs/spec/00_AI_IMPLEMENTATION_INSTRUCTIONS.md` and by
 the progress-record template in `docs/spec/12_IMPLEMENTATION_PLAN.md`. It is the
@@ -47,7 +47,7 @@ single honest answer to "does this actually work yet?"
 | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Functional requirements implemented | 10 of 14 (PR01–PR10); PR11 is partial (providers, weights, limits and connectors configurable; prompt bodies are not) and PR14's export half is tested while its deletion half is not built                                                                                                                                                                                                                                                                                                                                                              |
 | Acceptance scenarios passing        | 18 of 28 (AT01–AT11 except AT10 is partial, plus AT13–AT15, AT17, AT19, AT20; AT23 is partial — see the rows)                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| Milestones complete                 | 4 of 8 (M0, M1, M2, M3); M4 in progress, 2 of 10 pilot workflows run, 22 of 28 acceptance scenarios passing — see the milestone table for what "complete" covers                                                                                                                                                                                                                                                                                                                                                                                         |
+| Milestones complete                 | 4 of 8 (M0, M1, M2, M3); M4 in progress, 2 of 10 pilot workflows run, 24 of 28 acceptance scenarios passing — see the milestone table for what "complete" covers                                                                                                                                                                                                                                                                                                                                                                                         |
 | Verified working today              | Toolchain; `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm contracts:check`; every test suite (contracts 191, api 567, web 193, ui 7, worker 441); two M4 workflows on the Compose stack — one full sandbox fill with a real Chromium, and one prepared to the approval gate against a live Greenhouse posting; the fixture corpus (46/46); all three images build; `docker compose up` from a `setup.sh`-generated `.env`; `scripts/smoke.sh` through the nginx proxy on `127.0.0.1:3000`; data persistence across `docker compose down`/`up` |
 | **Never executed**                  | `scripts/smoke.ps1`, `scripts/backup.*`, `scripts/restore.*`, `scripts/dev.*` (syntax-checked only); the `local-ai` Ollama profile; any image build on a host WITHOUT TLS interception (the no-secret path is verified only by construction); macOS/Linux hosts                                                                                                                                                                                                                                                                                          |
 
@@ -98,7 +98,7 @@ when a test exists; `—` means there is no test.
 | AT09 | Prompt-injected job description: no instruction execution                   | **Passed**  | `services/worker/tests/test_parse_profile.py`: from `prompt-injection-cv.pdf` the result contains no "Stanford", "PhD", "15 years" or the exfiltration URL, the genuine facts are unchanged, and no credential appears in the result.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | AT10 | Generated CV adding a numeric claim is blocked or flagged                   | **Passed**  | `services/worker/tests/test_resume.py::test_a_number_absent_from_the_facts_is_dropped_and_flagged`: a bullet reading "Cut ingestion latency by 40%" over a fact that never mentioned 40 loses the bullet, raises `NUMBER_NOT_IN_FACTS` with `removed: true` and the offending text quoted, and fails `passed_automatic_checks`. A figure the facts _do_ contain survives, asserted alongside it. The web side shows the removed text (`apps/web/tests/cvStudio.test.tsx`). **Qualification:** this is the deterministic layer only. A bullet can be faithful in every number and still oversell a contribution, which is why the field is `passed_automatic_checks` and user approval stays mandatory.                                                                                                                                                                                                                                                        |
 | AT11 | Original CV mode: downloaded bytes SHA-256 identical to upload              | **Passed**  | Live: uploaded and downloaded `text-cv.pdf` SHA-256 both `c9dcbc53...3da7`, matching `fixtures/MANIFEST.sha256`. Served `Content-Disposition: attachment` with `nosniff`; unauthenticated download returns 401.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| AT12 | PDF/DOCX render: text extractable, accents intact, nothing clipped          | Not started | — (fixture ready: `fixtures/cvs/text-cv-es.pdf`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| AT12 | PDF/DOCX render: text extractable, accents intact, nothing clipped          | **Passed**  | Asserted on the files themselves, read back the way a recipient would: `services/worker/tests/test_render_output.py` prints a Spanish CV through a real Chromium, reads it with pypdf and the DOCX with python-docx, and compares the text against the document that was rendered. **Extractable** (not an image), **accents intact** (all nine characters Spanish needs, asserted individually so a failure names the one lost), and **nothing clipped** — a deliberately long CV must report more than one page and still contain its _last_ line, which is what catches a fixed height or an `overflow: hidden` creeping into the template. Both formats are also compared against each other, because a CV that differs between them is two CVs. Verified live: a Spanish CV generated on the Compose stack, downloaded and read back, all accents intact in both formats and nothing missing. **The fixture had to be fixed first — see below.**         |
 | AT13 | Editing a packet after approval rejects the old approval                    | **Passed**  | `apps/api/tests/applications.test.ts`: after approving packet 1, changing an answer writes packet 2 with a different hash, the application returns to `ready_for_review` with no approval, and re-presenting packet 1's id and hash is refused with 409. `apps/api/tests/db/application-schema.test.ts` adds the database half: `approved_hash` may only ever equal this packet's own `content_hash`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | AT14 | Unknown required form question pauses without guessing                      | **Passed**  | Both halves. Packet: `apps/api/tests/applications.test.ts` — a required question with a null answer lands in `needs_input`, is reported unresolved, stays null and blocks approval. Filling: `services/worker/tests/test_runner_greenhouse.py` — against a real Chromium, the referral-code field the packet cannot answer is left empty, the run reports `needs_input`, and `apps/api/tests/fill.test.ts` shows the API writing that question into a new packet revision with the old approval withdrawn.                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | AT15 | Two simultaneous fill requests: only one session, second conflicts          | **Passed**  | `apps/api/tests/fill.test.ts`: a second `POST /applications/:id/fill` while a `fill_local` task is queued or leased is refused with 409. The check is on the task queue, not on a flag, so a runner that is mid-fill still blocks the second request.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
@@ -113,12 +113,12 @@ when a test exists; `—` means there is no test.
 | AT24 | Malicious page message cannot reach token/profile                           | Not started | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | AT25 | Backup/restore: profile, files, hashes and history restored                 | Not started | — (`scripts/restore.sh` explicitly declines to claim this; it needs M1–M4 data to be meaningful)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | AT26 | Delete workspace: access revoked, files erased, completion recorded         | Not started | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| AT27 | English/Spanish flow: labels, Unicode, dates, documents correct             | **Partial** | The catalogue half is covered: `apps/web/tests/i18n.test.tsx` asserts identical key sets, identical placeholders, no empty string and no raw key leaking into a rendered Spanish screen. Live, Chromium with `locale=es-ES` rendered the login screen in Spanish on the Compose stack. What is untested is the rest of the scenario: a full flow in Spanish, accented text through a generated document, and date formatting on real data. Fixture ready: `fixtures/cvs/text-cv-es.pdf`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| AT27 | English/Spanish flow: labels, Unicode, dates, documents correct             | **Passed**  | Three layers, none of which covers the others. Catalogue: `apps/web/tests/i18n.test.tsx` — identical key sets, no empty string, no raw key on a rendered Spanish screen. Dates and numbers: `apps/web/tests/format.test.ts` (17 cases) — Spanish puts the day first and the month in words, groups with `.` and decimalises with `,`, does **not** group a four-digit number (CLDR `minimumGroupingDigits: 2`), and separates a currency from its symbol with a non-breaking space; an absent or unparseable date returns null rather than `Invalid Date`. Flow over real data: `apps/web/tests/spanishFlow.test.tsx` — accented employer, title and city rendered byte-for-byte across two screens, the date in Spanish order on a data-driven row, `lang="es"` on the document, and the same employer name **untranslated** in English. Documents: the AT12 work above, in Spanish throughout, verified live.                                               |
 | AT28 | No AI configured: manual profile, job import and tracker usable             | Not started | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 
 **Release gate status:** the M4 pilot gate (AT01–AT18, AT20–AT22, AT25,
-AT27–AT28) and the M6 hosted gate (all scenarios) are both **not met**. 22 of
-the 28 scenarios pass; the pilot gate still needs AT12, AT25 and AT27–AT28.
+AT27–AT28) and the M6 hosted gate (all scenarios) are both **not met**. 24 of
+the 28 scenarios pass; the pilot gate still needs AT25 and AT28.
 
 ---
 
@@ -817,6 +817,105 @@ display are the user's rather than the source's.
 What this does **not** do: the duplicate the pilot already created is still two
 rows. The fix prevents new ones; it does not merge a pair that exists, and
 nothing in the product offers to.
+
+### AT12 and AT27: the fixture that spelled Spanish without accents (verified 2026-09-21)
+
+**The finding came before the tests.** `fixtures/cvs/text-cv-es.pdf` is the
+fixture both scenarios point at, and its generator said so in as many words:
+
+> `"""AT12/AT27: accented Spanish text must survive extraction and rendering."""`
+
+It contained no accented character at all. `canalizacion`, `espanol`,
+`Dirigi la migracion`, `Universidad de la Republica`, `Espanol (nativo), Ingles
+(profesional)` — Spanish-shaped ASCII, every accent stripped. The row in this
+file had recorded it as "fixture ready" since M1. The test guarding it,
+`test_spanish_pdf_keeps_its_text`, asserted `"Universidad de la Republica" in
+document.text` and passed, proving that Spanish-looking words came back and
+nothing whatsoever about accents. The scenario it existed for **could not have
+failed against it**.
+
+Nothing was wrong with the machinery. The page font already declares
+`/WinAnsiEncoding` and the content stream is written as latin-1, and the two
+agree on every codepoint Spanish needs; the accents had simply never been
+typed. The fixture now carries all nine — `á é í ó ú ñ ü Ó ¿` — and
+`fixtures/verify.py` asserts each one individually, so a failure names the
+character that was lost rather than reporting that some string is missing.
+
+| Check                                                    | Observed output                                                                                                  |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Non-ASCII characters in the old fixture's extracted text | **none.** `[]`                                                                                                   |
+| Non-ASCII characters in the new fixture's extracted text | `á é í ó ú ñ ü Ó ¿` — every one Spanish needs.                                                                   |
+| `fixtures/verify.py`                                     | `55/55 checks passed`, including nine new per-character checks and the byte-identical determinism check.         |
+| The manifest                                             | Caught the changed bytes before it was updated — `bytes differ: cvs/text-cv-es.pdf` — which is the gate working. |
+
+**AT12 asserts the files, not the renderer's inputs.** Every other resume test
+checks what goes into the renderer; `services/worker/tests/test_render_output.py`
+(12 cases) checks what comes out. A real Chromium prints the PDF, pypdf reads it
+back, python-docx reads the DOCX back, and the text is compared against the
+document that was rendered. Each of the scenario's three clauses is a distinct
+way a CV looks right on screen and is wrong in the file the employer opens:
+
+- **Extractable.** A PDF of an image passes every visual check and is unreadable
+  to the applicant tracking system that parses it first. Nobody finds out.
+- **Accents intact.** `Muñoz` arriving as `Muoz` is a person's name, misspelled,
+  on an application they sent under it.
+- **Nothing clipped.** The long-CV test renders fourteen roles, requires the
+  result to report more than one page, and then asks for the document's _last_
+  line by name. That is what catches a fixed height, an `overflow: hidden`, or a
+  single-page print option creeping into the template — each of which would end
+  a CV mid-sentence without erroring.
+
+The two formats are also compared against each other, because a CV that differs
+between the PDF and the DOCX is two CVs: the employer receives one and the user
+reviewed the other.
+
+**AT27 needed three layers, and had one.** The catalogue half was already
+covered. What was missing was whether a date or a number is _right_ in Spanish —
+a screen of correct Spanish labels can still print `9/21/2026` and `1,234.5` to
+someone who reads `21/9/2026` and `1.234,5` — and whether accented text survives
+as _data_ rather than as a label.
+
+`apps/web/tests/format.test.ts` (17 cases) covers the first. One assertion is
+worth naming because the obvious expectation is wrong: **Spanish does not group
+a four-digit number.** CLDR gives it `minimumGroupingDigits: 2`, so `1234,5` is
+correct and `1.234,5` is not; writing the "consistent" expectation into the test
+would have introduced an error in the name of tidiness. Currency likewise
+separates the amount from `US$` with a non-breaking space (U+00A0), asserted as
+an escape because the two spaces are indistinguishable in a diff.
+
+`apps/web/tests/spanishFlow.test.tsx` covers the second, over real data: an
+accented employer, title and city rendered byte-for-byte across two screens, a
+date in Spanish order on a data-driven row, `lang="es"` on the document, and —
+the one that says what the product believes — the same employer name
+**untranslated** when the locale switches to English. The name is theirs, not a
+string we own, and translating it would be inventing a company.
+
+| Check (live, on the Compose stack)              | Observed output                                                                                  |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Confirm accented facts, generate `language: es` | `ready`; document language `es`; headings `['Habilidades', 'Experiencia', 'Idiomas']`.           |
+| Download both formats                           | Both present, both with the right magic bytes.                                                   |
+| The PDF, read back with pypdf                   | Text extractable; all eight accented characters present; nothing the document claims is missing. |
+| The DOCX, read back with python-docx            | Same: all eight present, nothing missing.                                                        |
+
+| Command                           | Observed output                                                                    |
+| --------------------------------- | ---------------------------------------------------------------------------------- |
+| `pnpm test` (whole workspace)     | **Exit 0**: contracts 191, api 611, web **216**, ui 7. Run with the stack stopped. |
+| `uv run pytest` (worker)          | **471 passed** in 81.60s, including 12 new tests driving a real Chromium.          |
+| `uv run ruff check .` / `--check` | `All checks passed!`; `100 files already formatted`.                               |
+| `uv run mypy` (worker)            | `Success: no issues found in 99 source files` (strict).                            |
+| `pnpm typecheck` / `pnpm lint`    | **Exit 0** across all five projects.                                               |
+| `fixtures/verify.py`              | `55/55 checks passed`.                                                             |
+| `npx prettier --check .`          | `All matched files use Prettier code style!`                                       |
+
+What this does **not** do. The accented characters stop at the Latin-1 overlap
+that `/WinAnsiEncoding` can carry, so the PDF fixture cannot exercise a name in
+Cyrillic, Greek or CJK; doing that needs an embedded font with a `/ToUnicode`
+map, which is a much larger fixture and a different problem from the one AT12
+names. Only the generated CV is covered end to end in Spanish — a user who
+uploads an original-mode CV gets their own bytes back unchanged (AT11), which is
+a different guarantee. And no human has read a Spanish screen: the flow is
+asserted in jsdom, and the one live Spanish render recorded here is the login
+screen from the M4 session.
 
 ### AT16 and AT18: the submit observation, and exactly-once where it matters (verified 2026-09-21)
 

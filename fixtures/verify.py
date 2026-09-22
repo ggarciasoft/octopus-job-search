@@ -61,7 +61,24 @@ def main() -> int:
     print("text-cv-es.pdf")
     es = pdf_text(CVS / "text-cv-es.pdf")
     check("Ingeniera de Backend Senior" in es, "Spanish title is extractable (AT27)")
-    check("migracion" in es, "Spanish body text is extractable")
+    # The whole point of this fixture. It previously said "Spanish" entirely in
+    # ASCII -- "migracion", "espanol", "Republica" -- so the scenario it exists
+    # for could not have failed against it. Every accented character Spanish
+    # needs is asserted individually, because losing one to an encoding round
+    # trip is exactly the failure AT12 and AT27 are looking for.
+    for character, name in [
+        ("á", "a acute"),
+        ("é", "e acute"),
+        ("í", "i acute"),
+        ("ó", "o acute"),
+        ("ú", "u acute"),
+        ("ñ", "n tilde"),
+        ("ü", "u diaeresis"),
+        ("Ó", "O acute (capital)"),
+        ("¿", "inverted question mark"),
+    ]:
+        check(character in es, f"{name} survives extraction (AT12/AT27)")
+    check("migración" in es, "Spanish body text is extractable, accents and all")
 
     print("prompt-injection-cv.pdf")
     injected = pdf_text(CVS / "prompt-injection-cv.pdf")

@@ -42,12 +42,23 @@ def test_text_pdf_extracts_pages_with_locators() -> None:
     assert document.char_count > MIN_PLAUSIBLE_CHARS
 
 
-def test_spanish_pdf_keeps_its_text() -> None:
+def test_spanish_pdf_keeps_its_text_accents_and_all() -> None:
+    """AT12/AT27 start here: an accent lost on the way in is lost for good.
+
+    The fixture used to spell its Spanish without accents, so this test passed
+    while proving nothing about them. It now asserts the characters themselves,
+    not merely that some Spanish-looking words came back.
+    """
     document = extract_document(
         read_cv("text-cv-es.pdf"), source_name="text-cv-es.pdf", limits=LIMITS
     )
     assert "Ingeniera de Backend Senior" in document.text
-    assert "Universidad de la Republica" in document.text
+    assert "Universidad de la República" in document.text
+    assert "migración" in document.text
+    assert "¿Quién soy?" in document.text
+    assert "Español (nativo), Inglés (profesional)" in document.text
+    assert "biligüe" in document.text
+    assert "EDUCACIÓN" in document.text
 
 
 def test_docx_reads_table_rows_not_only_paragraphs() -> None:
