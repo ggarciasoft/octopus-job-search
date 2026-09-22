@@ -163,7 +163,11 @@ describe('generated Pydantic models', () => {
     const end = rest.search(/\n[A-Z_]+: Final/);
     const block = end === -1 ? rest : rest.slice(0, end);
     for (const type of implemented) expect(block).toContain(`"${type}"`);
-    expect(python.constants).toContain('RUNNER_ONLY_CAPABILITIES: Final = ("fill_local",)');
+    // Both browser tasks are runner-only: a headless container has no desktop
+    // browser, and neither of these may ever be claimed by one.
+    expect(python.constants).toContain(
+      'RUNNER_ONLY_CAPABILITIES: Final = ("fill_local", "observe_confirmation")',
+    );
   });
 
   it('re-exports everything from __init__ with an __all__ entry', () => {

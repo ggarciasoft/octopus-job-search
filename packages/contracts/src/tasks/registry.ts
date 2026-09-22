@@ -14,6 +14,7 @@ export const TaskType = Type.Union([
   Type.Literal('render_cv'),
   Type.Literal('build_packet'),
   Type.Literal('fill_local'),
+  Type.Literal('observe_confirmation'),
   Type.Literal('export_workspace'),
   Type.Literal('delete_workspace'),
   Type.Literal('discover_boards'),
@@ -29,6 +30,7 @@ export const ALL_TASK_TYPES = [
   'render_cv',
   'build_packet',
   'fill_local',
+  'observe_confirmation',
   'export_workspace',
   'delete_workspace',
   'discover_boards',
@@ -44,6 +46,7 @@ export const IMPLEMENTED_TASK_TYPES = [
   'render_cv',
   // Implemented by the paired local runner, never by the container worker.
   'fill_local',
+  'observe_confirmation',
 ] as const satisfies readonly TaskType[];
 
 export const TaskState = Type.Union([
@@ -67,13 +70,26 @@ export const ALL_TASK_STATES = [
  * fill_local is deliberately NOT a container-worker capability: it is only
  * claimable by a paired local desktop runner (02_ARCHITECTURE.md, ADR05).
  */
-export const RUNNER_ONLY_CAPABILITIES = ['fill_local'] as const satisfies readonly TaskType[];
+export const RUNNER_ONLY_CAPABILITIES = [
+  'fill_local',
+  'observe_confirmation',
+] as const satisfies readonly TaskType[];
 
 export const LEASE_SECONDS = 120;
 export const HEARTBEAT_SECONDS = 30;
 export const DEFAULT_MAX_ATTEMPTS = 3;
-/** Browser filling is never blindly retried (invariant: page may have changed). */
-export const NO_RETRY_TASK_TYPES = ['fill_local'] as const satisfies readonly TaskType[];
+/**
+ * Never blindly retried.
+ *
+ * Filling, because the page may have changed under the first attempt. And
+ * observing, because a second look is a second chance to guess at an outcome
+ * the first one correctly declined to guess at — "never retry
+ * filling/submission automatically in that state" (07_APPLICATION_AUTOMATION).
+ */
+export const NO_RETRY_TASK_TYPES = [
+  'fill_local',
+  'observe_confirmation',
+] as const satisfies readonly TaskType[];
 export const ARTIFACT_STAGING_TTL_HOURS = 24;
 
 export const TaskProgress = Type.Object(

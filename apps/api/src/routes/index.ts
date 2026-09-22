@@ -49,6 +49,7 @@ import {
   revokeDevice,
 } from './devices.js';
 import { fillApplication } from './fill.js';
+import { observeApplication } from './observe.js';
 import { exportWorkspace } from './workspace.js';
 import type { RouteContext, RouteHandler } from './context.js';
 
@@ -137,6 +138,7 @@ function handlers(): Readonly<Record<string, RouteHandler>> {
     recordApplicationOutcome,
     listApplicationEvents,
     fillApplication,
+    observeApplication,
     listAnswerBank,
     putAnswerBankEntry,
     deleteAnswerBankEntry,

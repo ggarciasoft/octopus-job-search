@@ -71,6 +71,17 @@ class Adapter(Protocol):
 
     def parse_inspection(self, raw: Any) -> FormSchema: ...
 
+    @property
+    def confirmation_script(self) -> str:
+        """Read a post-submission confirmation from the page, or return null.
+
+        Evaluated after the person has submitted, never before. An adapter that
+        cannot recognise a confirmation returns ``null`` and the observation is
+        reported as ``unknown`` -- which is a fact about the page, not a
+        failure, and not a claim that nothing was submitted.
+        """
+        ...
+
 
 #: Kinds the shared parser understands from an HTML input `type`.
 _INPUT_KINDS: dict[str, FieldKind] = {

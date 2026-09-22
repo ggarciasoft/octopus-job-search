@@ -35,6 +35,7 @@ import {
   type MatchJobResult,
   type ParseProfileResult,
   type FillLocalResult,
+  type ObserveConfirmationResult,
   type RenderCvResult,
 } from '@job-getter/contracts';
 import type { Db, DbExecutor, DbTransaction } from '../db/pool.js';
@@ -50,6 +51,10 @@ import { applyFetchJobFailure, applyFetchJobResult } from '../discovery/imports.
 import { applyMatchJobResult } from '../matching/matches.js';
 import { applyRenderCvFailure, applyRenderCvResult } from '../resumes/service.js';
 import { applyFillLocalFailure, applyFillLocalResult } from '../applications/fill.js';
+import {
+  applyObserveConfirmationFailure,
+  applyObserveConfirmationResult,
+} from '../applications/observe.js';
 
 /**
  * Applies a validated task result to the domain rows it owns.
@@ -79,6 +84,8 @@ async function applyDomainResult(
     await applyRenderCvResult(trx, task, result as RenderCvResult);
   } else if (task.type === 'fill_local') {
     await applyFillLocalResult(trx, task, result as FillLocalResult);
+  } else if (task.type === 'observe_confirmation') {
+    await applyObserveConfirmationResult(trx, task, result as ObserveConfirmationResult);
   }
 }
 
@@ -99,6 +106,10 @@ async function applyDomainFailure(
     await applyRenderCvFailure(trx, task, code, message);
   } else if (task.type === 'fill_local') {
     await applyFillLocalFailure(trx, task, code, message);
+  } else if (task.type === 'observe_confirmation') {
+    // Not a failed application: a browser that died mid-watch has said nothing
+    // about whether the person's submission went through.
+    await applyObserveConfirmationFailure(trx, task, code, message);
   }
   // `match_job` has no domain row to mark: a score that could not be computed
   // simply does not exist, and the job keeps reading "not checked". Inventing

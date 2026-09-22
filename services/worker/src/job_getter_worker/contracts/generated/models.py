@@ -552,6 +552,7 @@ class ClaimRequest(BaseModel):
                 "render_cv",
                 "build_packet",
                 "fill_local",
+                "observe_confirmation",
                 "export_workspace",
                 "delete_workspace",
                 "discover_boards"
@@ -586,6 +587,7 @@ class ClaimResponse(BaseModel):
         "render_cv",
         "build_packet",
         "fill_local",
+        "observe_confirmation",
         "export_workspace",
         "delete_workspace",
         "discover_boards"
@@ -704,6 +706,7 @@ class TaskView(BaseModel):
         "render_cv",
         "build_packet",
         "fill_local",
+        "observe_confirmation",
         "export_workspace",
         "delete_workspace",
         "discover_boards"
@@ -2090,6 +2093,58 @@ class FillApplicationRequest(BaseModel):
     expected_revision: Annotated[int, Field(ge=1)]
     packet_id: UuidString
     device_id: UuidString
+
+
+class ObserveConfirmationInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    application_id: UuidString
+    packet_id: UuidString
+    device_id: UuidString
+    destination: PacketDestination
+    allowed_origins: Annotated[list[Annotated[str, Field(max_length=500)]], Field(max_length=20)]
+    timeout_seconds: Annotated[int, Field(ge=5, le=600)]
+    adapter: Annotated[str, Field(max_length=40)] | None
+    capture_evidence: bool
+
+
+class ObservedConfirmation(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    confirmation_text: Annotated[str, Field(max_length=2000)] | None
+    reference: Annotated[str, Field(max_length=200)] | None
+    url: Annotated[str, Field(max_length=2000)] | None
+    observed_at: TimestampString
+
+
+class ObserveConfirmationResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    application_id: UuidString
+    packet_id: UuidString
+    outcome: Literal["observed", "unknown"]
+    confirmation: ObservedConfirmation | None
+    unknown_reason: Literal[
+        "timed_out",
+        "no_confirmation_found",
+        "left_allowed_origin",
+        "unsupported",
+        "runner_error"
+    ] | None
+    watched_seconds: Annotated[int, Field(ge=0, le=3600)]
+    page_url: Annotated[str, Field(max_length=2000)] | None
+    adapter: Annotated[str, Field(max_length=40)] | None
+    adapter_version: Annotated[str, Field(max_length=40)] | None
+    screenshot_file_id: UuidString | None
+
+
+class ObserveApplicationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    expected_revision: Annotated[int, Field(ge=1)]
+    packet_id: UuidString
+    device_id: UuidString
+    timeout_seconds: Annotated[int, Field(ge=5, le=600)] | None = None
 
 
 class ExportedFile(BaseModel):

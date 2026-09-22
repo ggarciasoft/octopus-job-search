@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://job-getter.local/schemas/ObserveConfirmationResult.schema.json",
+  "title": "ObserveConfirmationResult",
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "application_id",
+    "packet_id",
+    "outcome",
+    "confirmation",
+    "unknown_reason",
+    "watched_seconds",
+    "page_url",
+    "adapter",
+    "adapter_version",
+    "screenshot_file_id"
+  ],
+  "properties": {
+    "application_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "packet_id": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "outcome": {
+      "anyOf": [
+        {
+          "const": "observed",
+          "type": "string"
+        },
+        {
+          "const": "unknown",
+          "type": "string"
+        }
+      ]
+    },
+    "confirmation": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "confirmation_text",
+            "reference",
+            "url",
+            "observed_at"
+          ],
+          "properties": {
+            "confirmation_text": {
+              "anyOf": [
+                {
+                  "maxLength": 2000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "reference": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "url": {
+              "anyOf": [
+                {
+                  "maxLength": 2000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "observed_at": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "unknown_reason": {
+      "anyOf": [
+        {
+          "anyOf": [
+            {
+              "const": "timed_out",
+              "type": "string"
+            },
+            {
+              "const": "no_confirmation_found",
+              "type": "string"
+            },
+            {
+              "const": "left_allowed_origin",
+              "type": "string"
+            },
+            {
+              "const": "unsupported",
+              "type": "string"
+            },
+            {
+              "const": "runner_error",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "watched_seconds": {
+      "minimum": 0,
+      "maximum": 3600,
+      "type": "integer"
+    },
+    "page_url": {
+      "anyOf": [
+        {
+          "maxLength": 2000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "adapter": {
+      "anyOf": [
+        {
+          "maxLength": 40,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "adapter_version": {
+      "anyOf": [
+        {
+          "maxLength": 40,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "screenshot_file_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

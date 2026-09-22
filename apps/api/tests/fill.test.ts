@@ -18,12 +18,15 @@
  */
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
+  DEFAULT_OBSERVE_TIMEOUT_SECONDS,
   PROTOCOL_VERSION,
   type ApplicationEventView,
   type ApplicationView,
   type ClaimResponse,
   type FillLocalInput,
   type FillLocalResult,
+  type ObserveConfirmationInput,
+  type ObserveConfirmationResult,
   type PacketAnswer,
 } from '@job-getter/contracts';
 import {
@@ -558,5 +561,399 @@ describe('what the runner sends back', () => {
     const paused = history.find((entry) => entry.type === 'fill_paused');
     expect(requested?.actor).toBe('user');
     expect(paused?.actor).toBe('runner');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AT16 — "Submit observation times out → outcome_unknown; no automated retry."
+// ---------------------------------------------------------------------------
+//
+// The order of events is the opposite of what an automation-shaped guess would
+// assume, so it is worth stating: the runner fills the form and stops, **the
+// person clicks submit**, and only then does anyone look at the page.
+//
+// The case AT16 names is the one where looking does not settle it. A watch that
+// runs out has not gone wrong, and has not established that nothing was
+// submitted — 07_APPLICATION_AUTOMATION.md is explicit that "absence of
+// evidence is not failure or success" — so it lands in `outcome_unknown`, the
+// state that means exactly "nobody could tell", and stays there until the
+// person says what happened. Nothing retries out of it, which is the half of
+// AT16 with teeth: a retry from that state could be a second application to the
+// same employer.
+
+/** Drives an application to `awaiting_user_submit`, where an observation begins. */
+async function awaitingUserSubmit() {
+  const { view, device } = await approved();
+  await postFill(view, device.id);
+  const claimed = await claimFill(device.token);
+  await completeTask(
+    harness,
+    claimed.task_id,
+    claimed.lease_token,
+    fillResult(claimed.input as FillLocalInput),
+  );
+  const after = await readApplication(view.id);
+  expect(after.status).toBe('awaiting_user_submit');
+  return { view: after, device };
+}
+
+function postObserve(view: ApplicationView, deviceId: string, timeoutSeconds?: number) {
+  return harness.app.inject(
+    authed(session, {
+      method: 'POST',
+      url: `/api/v1/applications/${view.id}/observe`,
+      headers: { 'idempotency-key': idempotencyKey() },
+      payload: {
+        expected_revision: view.revision,
+        packet_id: view.current_packet!.id,
+        device_id: deviceId,
+        ...(timeoutSeconds === undefined ? {} : { timeout_seconds: timeoutSeconds }),
+      },
+    }),
+  );
+}
+
+async function claimObserve(token: string): Promise<ClaimResponse> {
+  const response = await harness.app.inject(
+    asDevice(token, {
+      method: 'POST',
+      url: '/internal/v1/tasks/claim',
+      payload: {
+        worker_id: 'runner-1',
+        capabilities: ['observe_confirmation'],
+        protocol_version: PROTOCOL_VERSION,
+      },
+    }),
+  );
+  expect(response.statusCode, response.body).toBe(200);
+  return response.json() as ClaimResponse;
+}
+
+function observeResult(
+  input: ObserveConfirmationInput,
+  overrides: Partial<ObserveConfirmationResult> = {},
+): ObserveConfirmationResult {
+  return {
+    application_id: input.application_id,
+    packet_id: input.packet_id,
+    outcome: 'unknown',
+    confirmation: null,
+    unknown_reason: 'timed_out',
+    watched_seconds: input.timeout_seconds,
+    page_url: input.destination.url,
+    adapter: 'greenhouse',
+    adapter_version: 'greenhouse/v1',
+    screenshot_file_id: null,
+    ...overrides,
+  };
+}
+
+describe('POST /applications/:id/observe', () => {
+  it('hands the page and a deadline to the paired runner', async () => {
+    const { view, device } = await awaitingUserSubmit();
+
+    const response = await postObserve(view, device.id);
+    expect(response.statusCode, response.body).toBe(202);
+
+    const claimed = await claimObserve(device.token);
+    const input = claimed.input as ObserveConfirmationInput;
+    expect(input.application_id).toBe(view.id);
+    expect(input.destination.url).toBe(view.current_packet!.destination.url);
+    expect(input.timeout_seconds).toBe(DEFAULT_OBSERVE_TIMEOUT_SECONDS);
+    // Evidence capture is opt-in and off by default: a confirmation page
+    // carries the applicant's own details back into storage.
+    expect(input.capture_evidence).toBe(false);
+  });
+
+  it('gets exactly one attempt, because a second look is a second guess', async () => {
+    const { view, device } = await awaitingUserSubmit();
+    await postObserve(view, device.id);
+
+    const task = await harness.db
+      .selectFrom('tasks')
+      .selectAll()
+      .where('type', '=', 'observe_confirmation')
+      .executeTakeFirstOrThrow();
+    expect(task.max_attempts).toBe(1);
+  });
+
+  it('refuses a second observation while one is in flight', async () => {
+    const { view, device } = await awaitingUserSubmit();
+    expect((await postObserve(view, device.id)).statusCode).toBe(202);
+
+    const second = await postObserve(await readApplication(view.id), device.id);
+    expect(second.statusCode).toBe(409);
+    expect(second.json().error.message).toContain('already in progress');
+  });
+
+  it('refuses to observe an application nobody has filled', async () => {
+    const { view, device } = await approved();
+    const response = await postObserve(view, device.id);
+    expect(response.statusCode).toBe(409);
+    expect(response.json().error.message).toContain('filled the form and stopped');
+  });
+
+  it('does not change the status just because someone asked', async () => {
+    const { view, device } = await awaitingUserSubmit();
+    await postObserve(view, device.id);
+
+    // Asking to look is not an outcome. It is still waiting for the person.
+    expect((await readApplication(view.id)).status).toBe('awaiting_user_submit');
+  });
+});
+
+describe('AT16: the observation times out', () => {
+  it('records outcome_unknown, with no evidence and the reason it could not tell', async () => {
+    const { view, device } = await awaitingUserSubmit();
+    await postObserve(view, device.id);
+
+    const claimed = await claimObserve(device.token);
+    const input = claimed.input as ObserveConfirmationInput;
+    const completed = await completeTask(
+      harness,
+      claimed.task_id,
+      claimed.lease_token,
+      observeResult(input),
+    );
+    expect(completed.statusCode, completed.body).toBe(200);
+
+    const after = await readApplication(view.id);
+    expect(after.status).toBe('outcome_unknown');
+    // Absence of evidence is not evidence. Nothing is attached, and in
+    // particular nothing claims a submission time.
+    expect(after.submission_evidence).toBeNull();
+    expect(after.submitted_at).toBeNull();
+
+    const recorded = (await events(view.id)).at(-1)!;
+    expect(recorded.type).toBe('outcome_recorded');
+    expect(recorded.actor).toBe('runner');
+    expect(recorded.reason).toBe('timed_out');
+    expect((recorded.data as { watched_seconds: number }).watched_seconds).toBe(
+      input.timeout_seconds,
+    );
+  });
+
+  it('is not a failed task, so nothing is queued to try again', async () => {
+    const { view, device } = await awaitingUserSubmit();
+    await postObserve(view, device.id);
+
+    const claimed = await claimObserve(device.token);
+    await completeTask(
+      harness,
+      claimed.task_id,
+      claimed.lease_token,
+      observeResult(claimed.input as ObserveConfirmationInput),
+    );
+
+    const task = await harness.db
+      .selectFrom('tasks')
+      .selectAll()
+      .where('id', '=', claimed.task_id)
+      .executeTakeFirstOrThrow();
+    // A timeout is a *result*. Failing it would have put it on the retry path,
+    // and "no automated retry" is half of AT16.
+    expect(task.state).toBe('succeeded');
+    expect(task.error_code).toBeNull();
+
+    const pending = await harness.db
+      .selectFrom('tasks')
+      .selectAll()
+      .where('state', 'in', ['queued', 'leased'])
+      .execute();
+    expect(pending).toEqual([]);
+  });
+
+  it('refuses to fill again until the person resolves it', async () => {
+    const { view, device } = await awaitingUserSubmit();
+    await postObserve(view, device.id);
+    const claimed = await claimObserve(device.token);
+    await completeTask(
+      harness,
+      claimed.task_id,
+      claimed.lease_token,
+      observeResult(claimed.input as ObserveConfirmationInput),
+    );
+
+    const unresolved = await readApplication(view.id);
+    expect(unresolved.status).toBe('outcome_unknown');
+
+    const refill = await postFill(unresolved, device.id);
+    // "Disable a second attempt until resolved." The first submission may well
+    // have gone through, so filling again could be a second application.
+    expect(refill.statusCode).toBe(409);
+    expect(refill.json().error.message).toContain('second attempt could be a second application');
+  });
+
+  it('refuses another observation from outcome_unknown', async () => {
+    const { view, device } = await awaitingUserSubmit();
+    await postObserve(view, device.id);
+    const claimed = await claimObserve(device.token);
+    await completeTask(
+      harness,
+      claimed.task_id,
+      claimed.lease_token,
+      observeResult(claimed.input as ObserveConfirmationInput),
+    );
+
+    const again = await postObserve(await readApplication(view.id), device.id);
+    expect(again.statusCode).toBe(409);
+    expect(again.json().error.message).toContain('record the outcome instead');
+  });
+
+  it('lets the person resolve it themselves afterwards', async () => {
+    const { view, device } = await awaitingUserSubmit();
+    await postObserve(view, device.id);
+    const claimed = await claimObserve(device.token);
+    await completeTask(
+      harness,
+      claimed.task_id,
+      claimed.lease_token,
+      observeResult(claimed.input as ObserveConfirmationInput),
+    );
+
+    const unresolved = await readApplication(view.id);
+    const confirmed = await harness.app.inject(
+      authed(session, {
+        method: 'POST',
+        url: `/api/v1/applications/${view.id}/outcome`,
+        payload: {
+          expected_revision: unresolved.revision,
+          outcome: 'submitted',
+          evidence_type: 'user_report',
+          evidence: { note: 'I saw the confirmation page myself.' },
+        },
+      }),
+    );
+    expect(confirmed.statusCode, confirmed.body).toBe(200);
+    expect((confirmed.json() as ApplicationView).status).toBe('submitted');
+  });
+
+  it('treats a crashed runner exactly like a watch that saw nothing', async () => {
+    const { view, device } = await awaitingUserSubmit();
+    await postObserve(view, device.id);
+    const claimed = await claimObserve(device.token);
+
+    const failed = await harness.app.inject(
+      asDevice(device.token, {
+        method: 'POST',
+        url: `/internal/v1/tasks/${claimed.task_id}/fail`,
+        payload: {
+          lease_token: claimed.lease_token,
+          code: 'INTERNAL_ERROR',
+          retryable: false,
+          redacted_message: 'the browser died mid-watch',
+        },
+      }),
+    );
+    expect(failed.statusCode, failed.body).toBe(200);
+
+    // A browser that crashed has said nothing about whether the application
+    // went through. Unresolved — not failed, which is what the tracker would
+    // otherwise show for a perfectly good application.
+    const after = await readApplication(view.id);
+    expect(after.status).toBe('outcome_unknown');
+    expect(after.submission_evidence).toBeNull();
+  });
+});
+
+describe('the observation that does find a confirmation', () => {
+  function observed(input: ObserveConfirmationInput, observedAt: string, text: string) {
+    return observeResult(input, {
+      outcome: 'observed',
+      unknown_reason: null,
+      confirmation: {
+        confirmation_text: text,
+        reference: 'NW-2026-4471',
+        url: `${input.destination.url}/confirmation`,
+        observed_at: observedAt,
+      },
+      watched_seconds: 4,
+    });
+  }
+
+  it('records the submission with the page as evidence', async () => {
+    const { view, device } = await awaitingUserSubmit();
+    await postObserve(view, device.id);
+    const claimed = await claimObserve(device.token);
+    const observedAt = new Date(Date.now() - 60_000).toISOString();
+
+    const completed = await completeTask(
+      harness,
+      claimed.task_id,
+      claimed.lease_token,
+      observed(
+        claimed.input as ObserveConfirmationInput,
+        observedAt,
+        'Your application has been submitted',
+      ),
+    );
+    expect(completed.statusCode, completed.body).toBe(200);
+
+    const after = await readApplication(view.id);
+    expect(after.status).toBe('submitted');
+    expect(after.submission_evidence).not.toBeNull();
+    // Only a paired runner may claim this evidence type; a session asking for
+    // it is refused by the outcome route.
+    expect(after.submission_evidence!.evidence_type).toBe('adapter_observed');
+    expect(after.submission_evidence!.reference).toBe('NW-2026-4471');
+    expect(after.submitted_at).toBe(observedAt);
+  });
+
+  it("keeps the employer's words out of the event log", async () => {
+    const { view, device } = await awaitingUserSubmit();
+    await postObserve(view, device.id);
+    const claimed = await claimObserve(device.token);
+
+    await completeTask(
+      harness,
+      claimed.task_id,
+      claimed.lease_token,
+      observed(
+        claimed.input as ObserveConfirmationInput,
+        new Date().toISOString(),
+        'A sentence that should not be copied into the log',
+      ),
+    );
+
+    const recorded = (await events(view.id)).at(-1)!;
+    expect(recorded.type).toBe('submitted');
+    expect(JSON.stringify(recorded.data)).not.toContain('should not be copied');
+    // The reference is an identifier and does travel: it is what the user
+    // would quote in a follow-up.
+    expect((recorded.data as { reference: string }).reference).toBe('NW-2026-4471');
+  });
+
+  it('does not overwrite an outcome the person already recorded', async () => {
+    const { view, device } = await awaitingUserSubmit();
+    await postObserve(view, device.id);
+    const claimed = await claimObserve(device.token);
+
+    // They were sitting in front of the page; they got there first.
+    const reported = await harness.app.inject(
+      authed(session, {
+        method: 'POST',
+        url: `/api/v1/applications/${view.id}/outcome`,
+        payload: {
+          expected_revision: (await readApplication(view.id)).revision,
+          outcome: 'submitted',
+          evidence_type: 'user_report',
+          evidence: { note: 'Saw it go through.' },
+        },
+      }),
+    );
+    expect(reported.statusCode, reported.body).toBe(200);
+
+    await completeTask(
+      harness,
+      claimed.task_id,
+      claimed.lease_token,
+      observeResult(claimed.input as ObserveConfirmationInput),
+    );
+
+    // First-hand beats a watcher that timed out. Replacing `submitted` with
+    // `outcome_unknown` would swap something known for something unknown.
+    const after = await readApplication(view.id);
+    expect(after.status).toBe('submitted');
+    expect(after.submission_evidence!.evidence_type).toBe('user_report');
   });
 });

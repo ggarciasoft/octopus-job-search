@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Application received — Northwind Robotics</title>
+    <meta property="og:site_name" content="Northwind Robotics" />
+  </head>
+  <!--
+    A synthetic Greenhouse-shaped *confirmation* page: what the board shows
+    after the person has clicked submit themselves.
+
+    Invented throughout: Northwind Robotics does not exist, and no real posting,
+    person or contact detail appears here (fixtures/README.md, "the one rule").
+    The reference number is made up and matches nothing.
+
+    This exists for the observation path (07_APPLICATION_AUTOMATION.md,
+    `observe_confirmation() -> evidence or unknown`). Two details are load
+    bearing and are here deliberately:
+
+      * the `#application_confirmation` container, which is the strong signal
+        the adapter looks for first;
+      * a reference number in the page text, phrased the way a board phrases
+        it, so the adapter has something to extract beyond the prose.
+
+    It also keeps the `#application_form` container, because a real Greenhouse
+    confirmation is rendered in place of the form on the same URL and the
+    adapter must still claim the page in order to read it.
+
+    The decoy matters as much as the confirmation. "Thank you for visiting our
+    careers site" sits in the footer, phrased to look like gratitude, because
+    an adapter that accepts any "thank you" anywhere on a page would report a
+    submission that never happened. The accepted phrasings are matched only
+    inside a heading or a status region, and the footer is neither.
+  -->
+  <body>
+    <main id="application_form">
+      <div id="application_confirmation" role="status">
+        <h1>Your application has been submitted</h1>
+        <p>
+          Thanks for applying to Senior Platform Engineer at Northwind Robotics. Our team reviews
+          every application and will be in touch.
+        </p>
+        <p>Application ID: NW-2026-4471</p>
+      </div>
+    </main>
+
+    <footer>
+      <p>Thank you for visiting our careers site.</p>
+      <p>Northwind Robotics is an equal opportunity employer.</p>
+    </footer>
+  </body>
+</html>

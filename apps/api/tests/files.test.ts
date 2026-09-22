@@ -420,6 +420,81 @@ describe('task artifacts', () => {
     expect(await harness.db.selectFrom('files').selectAll().execute()).toEqual([]);
   });
 
+  it('AT18: an artifact staged by a reclaimed lease is never committed', async () => {
+    const { taskId, leaseToken: crashed } = await leaseATask();
+
+    // The first worker uploads a real artifact, then stops heartbeating.
+    const staged = await uploadArtifact(taskId, crashed);
+    expect(staged.statusCode).toBe(201);
+    const abandonedFileId = staged.json().file_id as string;
+
+    await harness.pool.query(
+      `UPDATE tasks SET lease_expires_at = now() - interval '1 second' WHERE id = $1`,
+      [taskId],
+    );
+    const reclaimed = await harness.app.inject(
+      asWorker({
+        method: 'POST',
+        url: '/internal/v1/tasks/claim',
+        payload: {
+          worker_id: 'w2',
+          capabilities: ['noop_echo'],
+          protocol_version: PROTOCOL_VERSION,
+        },
+      }),
+    );
+    expect(reclaimed.statusCode).toBe(200);
+    const freshToken = reclaimed.json().lease_token as string;
+
+    const redone = await uploadArtifact(taskId, freshToken);
+    expect(redone.statusCode).toBe(201);
+    const committedFileId = redone.json().file_id as string;
+
+    await harness.app.inject(
+      asWorker({
+        method: 'POST',
+        url: `/internal/v1/tasks/${taskId}/complete`,
+        payload: {
+          lease_token: freshToken,
+          result_schema_version: 1,
+          result: {
+            echoed: 'artifact test',
+            worker_id: 'w2',
+            worker_runtime: 'python-3.12',
+            processed_at: new Date().toISOString(),
+          },
+        },
+      }),
+    );
+
+    // Completion commits only what the *winning* lease uploaded. The crashed
+    // worker's file is a half-made document nobody reviewed; it stays staging
+    // and the sweeper takes it, rather than becoming part of the user's data
+    // alongside the real one.
+    const abandoned = await harness.db
+      .selectFrom('files')
+      .selectAll()
+      .where('id', '=', abandonedFileId)
+      .executeTakeFirstOrThrow();
+    expect(abandoned.state).toBe('staging');
+    expect(abandoned.expires_at).not.toBeNull();
+
+    const committed = await harness.db
+      .selectFrom('files')
+      .selectAll()
+      .where('id', '=', committedFileId)
+      .executeTakeFirstOrThrow();
+    expect(committed.state).toBe('ready');
+    expect(committed.expires_at).toBeNull();
+
+    const rows = await harness.db
+      .selectFrom('task_artifacts')
+      .selectAll()
+      .where('task_id', '=', taskId)
+      .execute();
+    expect(rows.filter((row) => row.committed)).toHaveLength(1);
+  });
+
   it('sweeps unreferenced staging artifacts after their 24-hour window', async () => {
     const { taskId, leaseToken } = await leaseATask();
     const uploaded = await uploadArtifact(taskId, leaseToken);

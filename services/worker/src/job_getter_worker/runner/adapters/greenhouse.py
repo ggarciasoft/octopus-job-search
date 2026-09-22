@@ -177,6 +177,67 @@ _INSPECT_SCRIPT: Final = f"""
 """
 
 
+#: Read a post-submission confirmation, if the page is showing one.
+#:
+#: Deliberately conservative. It looks for Greenhouse's own confirmation
+#: container and for a small set of phrasings the board actually uses, and it
+#: returns ``null`` for anything else. The cost of the two mistakes is not
+#: symmetric: failing to recognise a real confirmation leaves the user to say
+#: so themselves, while inventing one from a stray "thank you" on a marketing
+#: footer would record a submission that may never have happened.
+_CONFIRMATION_SCRIPT: Final = r"""
+() => {
+  const clean = (value) => (value || '').replace(/\s+/g, ' ').trim();
+
+  // Greenhouse's own confirmation container, when the board renders one.
+  const container = document.querySelector(
+    '#application_confirmation, .application-confirmation, [data-qa="confirmation"]'
+  );
+
+  let text = container ? clean(container.textContent) : '';
+
+  if (!text) {
+    // Otherwise accept only an explicit statement, and only from a heading or
+    // a status region -- not from anywhere on the page.
+    const candidates = document.querySelectorAll(
+      'h1, h2, h3, [role="status"], [role="alert"], .flash-message, .status-message'
+    );
+    const accepted = new RegExp(
+      '(application (was )?(successfully )?(submitted|received)' +
+        '|thank you for applying' +
+        '|your application has been (submitted|received))',
+      'i'
+    );
+    for (const node of candidates) {
+      const value = clean(node.textContent);
+      if (value && accepted.test(value)) {
+        text = value;
+        break;
+      }
+    }
+  }
+
+  if (!text) return null;
+
+  // An application/reference number when the page shows one beside the text.
+  const body = clean(document.body ? document.body.textContent : '');
+  const match = body.match(
+    new RegExp(
+      '(?:application|reference|confirmation)\\s*(?:id|number|no\\.?|#)' +
+        '\\s*[:#]?\\s*([A-Za-z0-9-]{4,40})',
+      'i'
+    )
+  );
+
+  return {
+    confirmation_text: text.slice(0, 2000),
+    reference: match ? match[1] : null,
+    url: window.location.href,
+  };
+}
+"""
+
+
 class GreenhouseAdapter:
     """Reads Greenhouse-shaped application forms."""
 
@@ -205,3 +266,7 @@ class GreenhouseAdapter:
 
     def parse_inspection(self, raw: Any) -> FormSchema:
         return FormSchema(fields=parse_fields(raw))
+
+    @property
+    def confirmation_script(self) -> str:
+        return _CONFIRMATION_SCRIPT

@@ -7,6 +7,8 @@ PROTOCOL_VERSION: Final = 1
 INPUT_SCHEMA_VERSION: Final = 1
 RESULT_SCHEMA_VERSION: Final = 1
 LEASE_SECONDS: Final = 120
+DEFAULT_OBSERVE_TIMEOUT_SECONDS: Final = 90
+MAX_OBSERVE_TIMEOUT_SECONDS: Final = 600
 HEARTBEAT_SECONDS: Final = 30
 DEFAULT_MAX_ATTEMPTS: Final = 3
 ARTIFACT_STAGING_TTL_HOURS: Final = 24
@@ -20,9 +22,10 @@ IMPLEMENTED_TASK_TYPES: Final = (
     "match_job",
     "render_cv",
     "fill_local",
+    "observe_confirmation",
 )
-RUNNER_ONLY_CAPABILITIES: Final = ("fill_local",)
-NO_RETRY_TASK_TYPES: Final = ("fill_local",)
+RUNNER_ONLY_CAPABILITIES: Final = ("fill_local", "observe_confirmation")
+NO_RETRY_TASK_TYPES: Final = ("fill_local", "observe_confirmation")
 MATCH_ALGORITHM_VERSION: Final = "v1"
 SKILL_ALIAS_MAP_VERSION: Final = "v1"
 SKILL_REQUIRED_WEIGHT: Final = 2

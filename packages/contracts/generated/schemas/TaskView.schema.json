@@ -58,6 +58,10 @@
           "type": "string"
         },
         {
+          "const": "observe_confirmation",
+          "type": "string"
+        },
+        {
           "const": "export_workspace",
           "type": "string"
         },

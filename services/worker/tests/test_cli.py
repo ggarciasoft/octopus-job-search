@@ -91,7 +91,13 @@ def test_the_runner_registry_carries_only_browser_work() -> None:
     from job_getter_worker.runner import build_runner_registry
 
     registry = build_runner_registry(object(), "device-1")
-    assert {task_type.value for task_type in registry.registered} == {"fill_local"}
+    # Both of these drive a real browser on the user's own machine, and neither
+    # of them ever clicks submit: one fills a form and stops, the other reads
+    # the page after the person has submitted it themselves.
+    assert {task_type.value for task_type in registry.registered} == {
+        "fill_local",
+        "observe_confirmation",
+    }
 
 
 def test_worker_cli_fails_fast_on_a_bad_capability(

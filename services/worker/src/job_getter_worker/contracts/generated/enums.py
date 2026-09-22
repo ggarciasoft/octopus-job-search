@@ -13,6 +13,7 @@ class TaskType(StrEnum):
     RENDER_CV = "render_cv"
     BUILD_PACKET = "build_packet"
     FILL_LOCAL = "fill_local"
+    OBSERVE_CONFIRMATION = "observe_confirmation"
     EXPORT_WORKSPACE = "export_workspace"
     DELETE_WORKSPACE = "delete_workspace"
     DISCOVER_BOARDS = "discover_boards"
@@ -280,6 +281,19 @@ class FillOutcome(StrEnum):
     AWAITING_USER_SUBMIT = "awaiting_user_submit"
     NEEDS_INPUT = "needs_input"
     UNSUPPORTED = "unsupported"
+
+
+class ObservationOutcome(StrEnum):
+    OBSERVED = "observed"
+    UNKNOWN = "unknown"
+
+
+class ObservationUnknownReason(StrEnum):
+    TIMED_OUT = "timed_out"
+    NO_CONFIRMATION_FOUND = "no_confirmation_found"
+    LEFT_ALLOWED_ORIGIN = "left_allowed_origin"
+    UNSUPPORTED = "unsupported"
+    RUNNER_ERROR = "runner_error"
 
 
 class ExportExclusion(StrEnum):

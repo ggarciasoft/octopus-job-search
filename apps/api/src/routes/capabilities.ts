@@ -31,6 +31,7 @@ const CREATING_OPERATION: Partial<Record<TaskType, string>> = {
   render_cv: 'createResume',
   // M4. Enqueued by the API, claimed only by a paired local runner.
   fill_local: 'fillApplication',
+  observe_confirmation: 'observeApplication',
 };
 
 /**

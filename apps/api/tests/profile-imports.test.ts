@@ -876,3 +876,114 @@ describe('AT21: an unreachable provider preserves the work already done', () => 
     return response.json().facts.map((fact) => fact.id);
   }
 });
+
+/**
+ * AT18 — "Task worker crashes/reclaims → Exactly one committed result; stale
+ * lease rejected."
+ *
+ * `apps/api/tests/queue.test.ts` proves the queue mechanics on `noop_echo`,
+ * which by design has no domain effect: its result lives only on the task row.
+ * That leaves the half that would actually hurt untested. `parse_profile`
+ * writes to `profile_imports`, and "exactly one committed result" has to mean
+ * exactly one set of drafts in front of the user — not one task row that
+ * happens to be marked succeeded.
+ */
+describe('AT18: a reclaimed task applies its domain result exactly once', () => {
+  async function expireLease(taskId: string): Promise<void> {
+    await harness.pool.query(
+      `UPDATE tasks SET lease_expires_at = now() - interval '1 second' WHERE id = $1`,
+      [taskId],
+    );
+  }
+
+  it("rejects the crashed worker and keeps only the reclaiming worker's drafts", async () => {
+    const created = await createImport({ pasted_text: PASTED_TEXT });
+    const taskId = created.json().task_id as string;
+
+    const crashed = await claimParseProfile();
+    expect(crashed.attempt).toBe(1);
+
+    // The worker stops heartbeating; another one takes the task over.
+    await expireLease(taskId);
+    const reclaimed = await claimParseProfile();
+    expect(reclaimed.task_id).toBe(taskId);
+    expect(reclaimed.attempt).toBe(2);
+    expect(reclaimed.lease_token).not.toBe(crashed.lease_token);
+
+    // The crashed worker wakes up and delivers what it had. It is refused, and
+    // — the part that matters — not one draft of it reaches the import.
+    const stale = await completeTask(
+      taskId,
+      crashed.lease_token,
+      parseResult([draft({ draft_id: 'from-the-crashed-worker' })]),
+    );
+    expect(stale.statusCode).toBe(409);
+
+    const midway = await harness.db
+      .selectFrom('profile_imports')
+      .selectAll()
+      .where('task_id', '=', taskId)
+      .executeTakeFirstOrThrow();
+    expect(midway.status).not.toBe('ready_for_review');
+    expect(midway.extracted_draft).toBeNull();
+
+    const winner = await completeTask(
+      taskId,
+      reclaimed.lease_token,
+      parseResult([draft({ draft_id: 'from-the-reclaiming-worker' })]),
+    );
+    expect(winner.statusCode).toBe(200);
+
+    const view = await readImport(taskId);
+    expect(view.json().status).toBe('ready_for_review');
+    const drafts = view.json().draft_facts as Array<{ draft_id: string }>;
+    expect(drafts.map((d) => d.draft_id)).toEqual(['from-the-reclaiming-worker']);
+
+    // Replaying the winning token is refused too: the lease was cleared on
+    // success, so there is no second commit to be had from either worker.
+    const replay = await completeTask(
+      taskId,
+      reclaimed.lease_token,
+      parseResult([draft({ draft_id: 'a-second-helping' })]),
+    );
+    expect(replay.statusCode).toBe(409);
+
+    const after = await readImport(taskId);
+    expect(
+      (after.json().draft_facts as Array<{ draft_id: string }>).map((d) => d.draft_id),
+    ).toEqual(['from-the-reclaiming-worker']);
+  });
+
+  it('does not let a crashed worker fail an import the new worker went on to finish', async () => {
+    const created = await createImport({ pasted_text: PASTED_TEXT });
+    const taskId = created.json().task_id as string;
+
+    const crashed = await claimParseProfile();
+    await expireLease(taskId);
+    const reclaimed = await claimParseProfile();
+
+    expect(
+      (await completeTask(taskId, reclaimed.lease_token, parseResult([draft()]))).statusCode,
+    ).toBe(200);
+
+    // A stale *failure* is as dangerous as a stale success: it would mark a
+    // finished import failed and throw away drafts the user can already see.
+    const staleFailure = await harness.app.inject(
+      asWorker({
+        method: 'POST',
+        url: `/internal/v1/tasks/${taskId}/fail`,
+        payload: {
+          lease_token: crashed.lease_token,
+          code: 'INTERNAL_ERROR',
+          retryable: false,
+          redacted_message: 'the crashed worker reporting in late',
+        },
+      }),
+    );
+    expect(staleFailure.statusCode).toBe(409);
+
+    const view = await readImport(taskId);
+    expect(view.json().status).toBe('ready_for_review');
+    expect(view.json().error).toBeNull();
+  });
+});

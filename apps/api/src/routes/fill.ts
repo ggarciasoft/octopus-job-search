@@ -58,7 +58,10 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * reach this packet's page, because "never navigate through unexpected
  * external origins" is only meaningful if the list is not a wildcard.
  */
-function resolveAllowedOrigins(declared: readonly string[], destinationOrigin: string): string[] {
+export function resolveAllowedOrigins(
+  declared: readonly string[],
+  destinationOrigin: string,
+): string[] {
   if (declared.length === 0) return [destinationOrigin];
   if (!declared.includes(destinationOrigin)) {
     throw unprocessable(
@@ -93,6 +96,20 @@ export const fillApplication: RouteHandler = async (context, request, reply) => 
 
   if (application.revision !== body.expected_revision) {
     throw staleRevision('This application changed since you read it.');
+  }
+  // "Disable a second attempt until resolved" (07_APPLICATION_AUTOMATION.md).
+  // An application whose outcome nobody could establish is the one case where
+  // filling again could mean applying twice to the same job — the first
+  // submission may well have gone through. Only the person can settle it, and
+  // they settle it by recording the outcome, not by filling again. This is
+  // called out separately from the general status check because the reason
+  // matters and "this one is outcome_unknown" does not explain itself.
+  if (application.status === 'outcome_unknown') {
+    throw conflict(
+      'Nobody could confirm whether this application went through, so it will not ' +
+        'be filled again — a second attempt could be a second application. ' +
+        'Record what happened first.',
+    );
   }
   if (application.status !== 'approved') {
     throw conflict(

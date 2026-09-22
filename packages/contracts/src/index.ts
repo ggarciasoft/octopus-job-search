@@ -36,6 +36,7 @@ export * from './schemas/answers.js';
 export * from './schemas/applications.js';
 export * from './schemas/devices.js';
 export * from './tasks/fill-local.js';
+export * from './tasks/observe-confirmation.js';
 export * from './schemas/workspace.js';
 export * from './routes.js';
 export {

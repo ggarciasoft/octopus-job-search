@@ -15,6 +15,7 @@ import * as Answers from './schemas/answers.js';
 import * as Applications from './schemas/applications.js';
 import * as Devices from './schemas/devices.js';
 import * as FillLocal from './tasks/fill-local.js';
+import * as ObserveConfirmation from './tasks/observe-confirmation.js';
 import * as Workspace from './schemas/workspace.js';
 import * as FetchBoard from './tasks/fetch-board.js';
 import * as NoopEcho from './tasks/noop-echo.js';
@@ -35,6 +36,10 @@ export const TASK_IO_SCHEMAS: Record<string, { input: TSchema; output: TSchema }
   match_job: { input: MatchJob.MatchJobInput, output: MatchJob.MatchJobResult },
   render_cv: { input: RenderCv.RenderCvInput, output: RenderCv.RenderCvResult },
   fill_local: { input: FillLocal.FillLocalInput, output: FillLocal.FillLocalResult },
+  observe_confirmation: {
+    input: ObserveConfirmation.ObserveConfirmationInput,
+    output: ObserveConfirmation.ObserveConfirmationResult,
+  },
 };
 
 /**
@@ -194,6 +199,10 @@ export const EXPORTED_SCHEMAS: Record<string, TSchema> = {
   UnresolvedField: FillLocal.UnresolvedField,
   FillLocalResult: FillLocal.FillLocalResult,
   FillApplicationRequest: FillLocal.FillApplicationRequest,
+  ObserveConfirmationInput: ObserveConfirmation.ObserveConfirmationInput,
+  ObservedConfirmation: ObserveConfirmation.ObservedConfirmation,
+  ObserveConfirmationResult: ObserveConfirmation.ObserveConfirmationResult,
+  ObserveApplicationRequest: ObserveConfirmation.ObserveApplicationRequest,
   ExportedFile: Workspace.ExportedFile,
   ExportCounts: Workspace.ExportCounts,
   WorkspaceExportManifest: Workspace.WorkspaceExportManifest,
@@ -233,6 +242,8 @@ export const EXPORTED_ENUMS: Record<string, readonly string[]> = {
   FillFieldOutcome: FillLocal.ALL_FILL_FIELD_OUTCOMES,
   UnresolvedReason: FillLocal.ALL_UNRESOLVED_REASONS,
   FillOutcome: FillLocal.ALL_FILL_OUTCOMES,
+  ObservationOutcome: ObserveConfirmation.ALL_OBSERVATION_OUTCOMES,
+  ObservationUnknownReason: ObserveConfirmation.ALL_OBSERVATION_UNKNOWN_REASONS,
   ExportExclusion: Workspace.ALL_EXPORT_EXCLUSIONS,
   DeletedObjectKind: Workspace.ALL_DELETED_OBJECT_KINDS,
 };
@@ -243,6 +254,8 @@ export const EXPORTED_CONSTANTS = {
   INPUT_SCHEMA_VERSION: Protocol.INPUT_SCHEMA_VERSION,
   RESULT_SCHEMA_VERSION: Protocol.RESULT_SCHEMA_VERSION,
   LEASE_SECONDS: Registry.LEASE_SECONDS,
+  DEFAULT_OBSERVE_TIMEOUT_SECONDS: ObserveConfirmation.DEFAULT_OBSERVE_TIMEOUT_SECONDS,
+  MAX_OBSERVE_TIMEOUT_SECONDS: ObserveConfirmation.MAX_OBSERVE_TIMEOUT_SECONDS,
   HEARTBEAT_SECONDS: Registry.HEARTBEAT_SECONDS,
   DEFAULT_MAX_ATTEMPTS: Registry.DEFAULT_MAX_ATTEMPTS,
   ARTIFACT_STAGING_TTL_HOURS: Registry.ARTIFACT_STAGING_TTL_HOURS,

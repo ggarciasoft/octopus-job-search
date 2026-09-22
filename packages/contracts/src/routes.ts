@@ -46,6 +46,7 @@ import {
   PairingCodeResponse,
 } from './schemas/devices.js';
 import { FillApplicationRequest } from './tasks/fill-local.js';
+import { ObserveApplicationRequest } from './tasks/observe-confirmation.js';
 import { NoopEchoInput } from './tasks/noop-echo.js';
 import { TaskView } from './tasks/protocol.js';
 import {
@@ -700,6 +701,19 @@ export const ROUTES: readonly RouteDefinition[] = [
     summary: 'Hand an approved packet to a paired local runner to fill.',
     params: IdParam,
     body: FillApplicationRequest,
+    response: AcceptedResponse,
+    successStatus: 202,
+    requiresIdempotencyKey: true,
+    csrf: true,
+  },
+  {
+    operationId: 'observeApplication',
+    method: 'POST',
+    path: '/applications/:id/observe',
+    auth: 'session',
+    summary: "Ask a paired runner whether the employer's page confirms the submission.",
+    params: IdParam,
+    body: ObserveApplicationRequest,
     response: AcceptedResponse,
     successStatus: 202,
     requiresIdempotencyKey: true,

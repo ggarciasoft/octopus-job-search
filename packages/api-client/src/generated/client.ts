@@ -30,6 +30,7 @@ import type {
   LoginRequest,
   MeResponse,
   NoopEchoInput,
+  ObserveApplicationRequest,
   PairingCodeResponse,
   PatchJobRequest,
   PatchSourceRequest,
@@ -791,6 +792,20 @@ export class JobGetterApiClient {
     });
   }
 
+  /** Ask a paired runner whether the employer's page confirms the submission. (`POST /api/v1/applications/:id/observe`) */
+  observeApplication(args: ObserveApplicationArgs): Promise<ObserveApplicationResult> {
+    return this.#request<ObserveApplicationResult>({
+      method: 'POST',
+      prefix: API_PREFIX,
+      path: '/applications/:id/observe',
+      params: args.params,
+      json: args.body,
+      csrf: true,
+      idempotencyKey: args.idempotencyKey,
+      signal: args.signal,
+    });
+  }
+
   /** Paired devices with their status, origins and expiry. (`GET /api/v1/devices`) */
   listDevices(args: ListDevicesArgs = {}): Promise<ListDevicesResult> {
     return this.#request<ListDevicesResult>({
@@ -1382,6 +1397,20 @@ export interface FillApplicationArgs {
 
 /** Result of `fillApplication`. */
 export type FillApplicationResult = AcceptedResponse;
+
+/** Arguments for `POST /api/v1/applications/:id/observe`. */
+export interface ObserveApplicationArgs {
+  /** Path parameters. */
+  readonly params: { id: string };
+  /** JSON request body. */
+  readonly body: ObserveApplicationRequest;
+  /** Required: sent as the `Idempotency-Key` header (04_API_CONTRACTS.md). */
+  readonly idempotencyKey: string;
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `observeApplication`. */
+export type ObserveApplicationResult = AcceptedResponse;
 
 /** Arguments for `GET /api/v1/devices`. */
 export interface ListDevicesArgs {

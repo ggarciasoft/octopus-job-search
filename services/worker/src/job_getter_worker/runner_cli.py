@@ -148,7 +148,7 @@ async def _run_loop(pairing: StoredPairing, store: PairingStore, *, headless: bo
         # than quietly populated from the environment.
         auth_token=SecretStr(""),
         worker_id=f"runner-{pairing.device_id}",
-        capabilities=TaskType.FILL_LOCAL.value,
+        capabilities=f"{TaskType.FILL_LOCAL.value},{TaskType.OBSERVE_CONFIRMATION.value}",
         max_download_bytes=_MAX_ATTACHMENT_BYTES,
     )
 

@@ -34,16 +34,24 @@ from ..handlers import HandlerRegistry
 
 
 def build_runner_registry(browser: Any, device_id: str, **options: Any) -> HandlerRegistry:
-    """A registry holding `fill_local` and nothing else.
+    """A registry holding the two browser tasks and nothing else.
 
     The container worker's registry and this one are disjoint on purpose: a
     single registry with a flag would be one boolean away from a headless
     container claiming a browser task.
+
+    Both handlers here drive a real browser on the user's own machine, and
+    neither of them ever clicks submit: one fills a form and stops, the other
+    reads a page after the person has submitted it themselves.
     """
     from .fill import build_fill_handler
+    from .observe import build_observe_handler
 
     registry = HandlerRegistry()
     registry.register(TaskType.FILL_LOCAL, build_fill_handler(browser, device_id, **options))
+    registry.register(
+        TaskType.OBSERVE_CONFIRMATION, build_observe_handler(browser, device_id, **options)
+    )
     return registry
 
 
