@@ -36,6 +36,7 @@ beforeAll(async () => {
     '0008_job_user_edits',
     '0009_observe_confirmation',
     '0010_workspace_deletion',
+    '0011_fill_sessions',
   ]);
 }, 180_000);
 

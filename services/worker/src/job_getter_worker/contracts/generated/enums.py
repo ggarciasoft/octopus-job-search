@@ -283,6 +283,19 @@ class FillOutcome(StrEnum):
     UNSUPPORTED = "unsupported"
 
 
+class FillSessionState(StrEnum):
+    ACTIVE = "active"
+    EXPIRED = "expired"
+    ENDED = "ended"
+
+
+class FillSessionEndReason(StrEnum):
+    REPORTED = "reported"
+    CANCELLED = "cancelled"
+    SUPERSEDED = "superseded"
+    DEVICE_REVOKED = "device_revoked"
+
+
 class ObservationOutcome(StrEnum):
     OBSERVED = "observed"
     UNKNOWN = "unknown"

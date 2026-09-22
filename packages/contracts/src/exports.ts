@@ -15,6 +15,7 @@ import * as Answers from './schemas/answers.js';
 import * as Applications from './schemas/applications.js';
 import * as Devices from './schemas/devices.js';
 import * as FillLocal from './tasks/fill-local.js';
+import * as FillSessions from './schemas/fill-sessions.js';
 import * as ObserveConfirmation from './tasks/observe-confirmation.js';
 import * as Workspace from './schemas/workspace.js';
 import * as FetchBoard from './tasks/fetch-board.js';
@@ -244,6 +245,8 @@ export const EXPORTED_ENUMS: Record<string, readonly string[]> = {
   FillFieldOutcome: FillLocal.ALL_FILL_FIELD_OUTCOMES,
   UnresolvedReason: FillLocal.ALL_UNRESOLVED_REASONS,
   FillOutcome: FillLocal.ALL_FILL_OUTCOMES,
+  FillSessionState: FillSessions.ALL_FILL_SESSION_STATES,
+  FillSessionEndReason: FillSessions.ALL_FILL_SESSION_END_REASONS,
   ObservationOutcome: ObserveConfirmation.ALL_OBSERVATION_OUTCOMES,
   ObservationUnknownReason: ObserveConfirmation.ALL_OBSERVATION_UNKNOWN_REASONS,
   ExportExclusion: Workspace.ALL_EXPORT_EXCLUSIONS,
@@ -278,5 +281,6 @@ export const EXPORTED_CONSTANTS = {
   PACKET_APPROVAL_MAX_TTL_HOURS: Applications.PACKET_APPROVAL_MAX_TTL_HOURS,
   DEVICE_PAIRING_TTL_SECONDS: Devices.DEVICE_PAIRING_TTL_SECONDS,
   DEVICE_TOKEN_TTL_DAYS: Devices.DEVICE_TOKEN_TTL_DAYS,
+  FILL_SESSION_TTL_SECONDS: FillSessions.FILL_SESSION_TTL_SECONDS,
   EXPORT_SCHEMA_VERSION: Workspace.EXPORT_SCHEMA_VERSION,
 } as const;

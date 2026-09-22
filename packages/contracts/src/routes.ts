@@ -46,6 +46,12 @@ import {
   PairingCodeResponse,
 } from './schemas/devices.js';
 import { FillApplicationRequest } from './tasks/fill-local.js';
+import {
+  CreateFillSessionRequest,
+  FillSessionGrant,
+  FillSessionView,
+  ReportFillSessionRequest,
+} from './schemas/fill-sessions.js';
 import { ObserveApplicationRequest } from './tasks/observe-confirmation.js';
 import { NoopEchoInput } from './tasks/noop-echo.js';
 import { TaskView } from './tasks/protocol.js';
@@ -88,17 +94,26 @@ export interface RouteDefinition {
   /**
    * Skips the same-origin check on a state-changing route.
    *
-   * Exactly one route sets this, and it needs a standing justification rather
-   * than a flag someone can reach for. Origin verification exists to stop a
+   * Few routes set this, and each needs a standing justification rather than
+   * a flag someone can reach for. Origin verification exists to stop a
    * *browser* being used as a confused deputy: it only works because a browser
    * always sends `Origin`, and the check therefore rejects any client that
    * sends none. A paired desktop runner is not a browser and sends none.
    *
    * Exempting a route is only safe where there is no ambient authority to
    * forge — no cookie, no session, nothing the victim's browser would attach
-   * automatically. `POST /devices/exchange` qualifies: it authenticates solely
-   * on a single-use code that expires in five minutes, so anyone who can make
-   * the request already holds the only thing it checks.
+   * automatically. Two kinds of route qualify.
+   *
+   *  * `POST /devices/exchange` authenticates solely on a single-use code that
+   *    expires in five minutes, so anyone who can make the request already
+   *    holds the only thing it checks.
+   *  * The `/fill-sessions` routes authenticate on `x-device-token`, and the
+   *    mutating ones additionally on a session nonce. A page that makes the
+   *    victim's browser issue one of these requests supplies neither header,
+   *    because neither is ambient: the token lives in the extension's service
+   *    worker, where page scripts cannot reach it (AT24). The `Origin` such a
+   *    caller does send is its own `chrome-extension://` id, which the
+   *    same-origin check has nothing useful to compare against.
    */
   readonly originExempt?: boolean;
 }
@@ -779,6 +794,63 @@ export const ROUTES: readonly RouteDefinition[] = [
     successStatus: 204,
     csrf: true,
   },
+  // --- Milestone M5: scoped fill sessions for the extension ------------------
+  //
+  // The only routes in the public API authenticated by a device token rather
+  // than a session cookie. They are reachable through the proxy because the
+  // caller is a browser extension: `/internal/v1`, where the local runner
+  // talks, is deliberately not proxied to a browser (10_DEPLOYMENT.md).
+  //
+  // All three are `originExempt` for the reason documented on that flag: the
+  // credential is a header the caller must already hold, not a cookie the
+  // victim's browser would attach. An extension's `Origin` is its own
+  // `chrome-extension://` id, which no same-origin rule could usefully check
+  // against the API's configured origin.
+  {
+    operationId: 'createFillSession',
+    method: 'POST',
+    path: '/fill-sessions',
+    auth: 'device',
+    summary: 'Bind one approved packet to one tab origin for ten minutes.',
+    body: CreateFillSessionRequest,
+    response: FillSessionGrant,
+    successStatus: 201,
+    originExempt: true,
+  },
+  {
+    operationId: 'getFillSession',
+    method: 'GET',
+    path: '/fill-sessions/:id',
+    auth: 'device',
+    summary: 'Whether this session is still live, without re-issuing its grant.',
+    params: IdParam,
+    response: FillSessionView,
+    successStatus: 200,
+  },
+  {
+    operationId: 'reportFillSession',
+    method: 'POST',
+    path: '/fill-sessions/:id/report',
+    auth: 'device',
+    summary: 'Report what was filled and what the page still needs; ends the session.',
+    params: IdParam,
+    body: ReportFillSessionRequest,
+    response: FillSessionView,
+    successStatus: 200,
+    originExempt: true,
+  },
+  {
+    operationId: 'endFillSession',
+    method: 'DELETE',
+    path: '/fill-sessions/:id',
+    auth: 'device',
+    summary: 'Give up a session without reporting a fill.',
+    params: IdParam,
+    response: NoContent,
+    successStatus: 204,
+    originExempt: true,
+  },
+
   {
     operationId: 'exportWorkspace',
     method: 'POST',

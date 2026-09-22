@@ -23,6 +23,7 @@ import type {
   ConnectorId,
   DeletedObjectKind,
   DeviceKind,
+  FillSessionEndReason,
   JobEmploymentType,
   JobStatus,
   RemoteType,
@@ -566,6 +567,30 @@ export interface WorkspaceDeletionsTable {
   updated_at: TimestampColumn;
 }
 
+/**
+ * One extension, one approved packet, one tab origin, ten minutes.
+ *
+ * The nonce is a digest like every other secret in this schema, and the state
+ * (`active`/`expired`/`ended`) is derived from the timestamps on read rather
+ * than stored, for the same reason `DeviceStatus` is: a session must not be
+ * able to be expired by one column and live according to another.
+ */
+export interface FillSessionsTable {
+  id: Generated<string>;
+  workspace_id: string;
+  device_id: string;
+  application_id: string;
+  packet_id: string;
+  content_hash: string;
+  origin: string;
+  nonce_hash: string;
+  created_at: TimestampColumn;
+  expires_at: TimestampColumn;
+  ended_at: NullableTimestampColumn;
+  ended_reason: FillSessionEndReason | null;
+  last_seen_at: NullableTimestampColumn;
+}
+
 export interface SchemaMigrationsTable {
   name: string;
   checksum: string;
@@ -600,6 +625,7 @@ export interface Database {
   application_packets: ApplicationPacketsTable;
   application_events: ApplicationEventsTable;
   paired_devices: PairedDevicesTable;
+  fill_sessions: FillSessionsTable;
   deletion_ledger: DeletionLedgerTable;
   workspace_deletions: WorkspaceDeletionsTable;
   job_sources: JobSourcesTable;
@@ -642,6 +668,7 @@ export const WORKSPACE_SCOPED_TABLES = [
   'application_packets',
   'application_events',
   'paired_devices',
+  'fill_sessions',
 ] as const;
 
 export type WorkspaceScopedTable = (typeof WORKSPACE_SCOPED_TABLES)[number];
@@ -697,4 +724,5 @@ export type ApplicationRow = Selectable<ApplicationsTable>;
 export type ApplicationPacketRow = Selectable<ApplicationPacketsTable>;
 export type ApplicationEventRow = Selectable<ApplicationEventsTable>;
 export type PairedDeviceRow = Selectable<PairedDevicesTable>;
+export type FillSessionRow = Selectable<FillSessionsTable>;
 export type DeletionLedgerRow = Selectable<DeletionLedgerTable>;

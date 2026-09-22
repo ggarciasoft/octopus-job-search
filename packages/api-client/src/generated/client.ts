@@ -12,6 +12,7 @@ import type {
   ApproveResumeRequest,
   ConfirmImportRequest,
   CreateApplicationRequest,
+  CreateFillSessionRequest,
   CreatePacketRequest,
   CreatePairingRequest,
   CreateProfileImportRequest,
@@ -24,6 +25,8 @@ import type {
   ErrorCode,
   FileUploadResponse,
   FillApplicationRequest,
+  FillSessionGrant,
+  FillSessionView,
   JobDetailView,
   JobImportRequest,
   JobView,
@@ -44,6 +47,7 @@ import type {
   ProviderSettingsView,
   ProviderTestResult,
   RegisterRequest,
+  ReportFillSessionRequest,
   ResumeView,
   ResumesListQuery,
   ScanView,
@@ -865,6 +869,52 @@ export class JobGetterApiClient {
     });
   }
 
+  /** Bind one approved packet to one tab origin for ten minutes. (`POST /api/v1/fill-sessions`) */
+  createFillSession(args: CreateFillSessionArgs): Promise<CreateFillSessionResult> {
+    return this.#request<CreateFillSessionResult>({
+      method: 'POST',
+      prefix: API_PREFIX,
+      path: '/fill-sessions',
+      json: args.body,
+      signal: args.signal,
+    });
+  }
+
+  /** Whether this session is still live, without re-issuing its grant. (`GET /api/v1/fill-sessions/:id`) */
+  getFillSession(args: GetFillSessionArgs): Promise<GetFillSessionResult> {
+    return this.#request<GetFillSessionResult>({
+      method: 'GET',
+      prefix: API_PREFIX,
+      path: '/fill-sessions/:id',
+      params: args.params,
+      signal: args.signal,
+    });
+  }
+
+  /** Report what was filled and what the page still needs; ends the session. (`POST /api/v1/fill-sessions/:id/report`) */
+  reportFillSession(args: ReportFillSessionArgs): Promise<ReportFillSessionResult> {
+    return this.#request<ReportFillSessionResult>({
+      method: 'POST',
+      prefix: API_PREFIX,
+      path: '/fill-sessions/:id/report',
+      params: args.params,
+      json: args.body,
+      signal: args.signal,
+    });
+  }
+
+  /** Give up a session without reporting a fill. (`DELETE /api/v1/fill-sessions/:id`) */
+  endFillSession(args: EndFillSessionArgs): Promise<EndFillSessionResult> {
+    return this.#request<EndFillSessionResult>({
+      method: 'DELETE',
+      prefix: API_PREFIX,
+      path: '/fill-sessions/:id',
+      params: args.params,
+      noContent: true,
+      signal: args.signal,
+    });
+  }
+
   /** Package this workspace as a downloadable archive. (`POST /api/v1/workspace/export`) */
   exportWorkspace(args: ExportWorkspaceArgs): Promise<ExportWorkspaceResult> {
     return this.#request<ExportWorkspaceResult>({
@@ -1484,6 +1534,48 @@ export interface RevokeDeviceArgs {
 
 /** Result of `revokeDevice`. */
 export type RevokeDeviceResult = void;
+
+/** Arguments for `POST /api/v1/fill-sessions`. */
+export interface CreateFillSessionArgs {
+  /** JSON request body. */
+  readonly body: CreateFillSessionRequest;
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `createFillSession`. */
+export type CreateFillSessionResult = FillSessionGrant;
+
+/** Arguments for `GET /api/v1/fill-sessions/:id`. */
+export interface GetFillSessionArgs {
+  /** Path parameters. */
+  readonly params: { id: string };
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `getFillSession`. */
+export type GetFillSessionResult = FillSessionView;
+
+/** Arguments for `POST /api/v1/fill-sessions/:id/report`. */
+export interface ReportFillSessionArgs {
+  /** Path parameters. */
+  readonly params: { id: string };
+  /** JSON request body. */
+  readonly body: ReportFillSessionRequest;
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `reportFillSession`. */
+export type ReportFillSessionResult = FillSessionView;
+
+/** Arguments for `DELETE /api/v1/fill-sessions/:id`. */
+export interface EndFillSessionArgs {
+  /** Path parameters. */
+  readonly params: { id: string };
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `endFillSession`. */
+export type EndFillSessionResult = void;
 
 /** Arguments for `POST /api/v1/workspace/export`. */
 export interface ExportWorkspaceArgs {

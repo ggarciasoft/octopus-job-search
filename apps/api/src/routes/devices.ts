@@ -194,6 +194,18 @@ export const revokeDevice: RouteHandler = async (context, request, reply) => {
       .where('id', '=', id)
       .execute();
 
+    // AT23: "immediate API denial and no new packet access." Destroying the
+    // token denies the next request; ending the sessions in the same
+    // transaction is what makes the second half true. A live fill session is
+    // packet access, and it would otherwise outlive the credential that
+    // obtained it by up to ten minutes.
+    await scoped
+      .updateTable('fill_sessions')
+      .set({ ended_at: new Date(), ended_reason: 'device_revoked' })
+      .where('device_id', '=', id)
+      .where('ended_at', 'is', null)
+      .execute();
+
     await recordAuditEvent(scoped, {
       action: 'device.revoked',
       actorId: principal.userId,

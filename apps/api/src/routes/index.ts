@@ -16,6 +16,7 @@ import type { FastifyInstance, FastifyRequest, RouteOptions } from 'fastify';
 import { API_PREFIX, ROUTES, type RouteDefinition } from '@job-getter/contracts';
 import { isStateChanging, verifyCsrfToken, verifyOrigin } from '../auth/csrf.js';
 import { resolveSession } from '../auth/sessions.js';
+import { authenticateDevice } from '../auth/worker.js';
 import { unauthenticated } from '../errors.js';
 import { completeSetup, getSetupStatus } from './setup.js';
 import { login, logout } from './auth.js';
@@ -49,6 +50,12 @@ import {
   revokeDevice,
 } from './devices.js';
 import { fillApplication } from './fill.js';
+import {
+  createFillSession,
+  endFillSession,
+  getFillSession,
+  reportFillSession,
+} from './fill-sessions.js';
 import { observeApplication } from './observe.js';
 import { deleteWorkspace, exportWorkspace, getWorkspaceDeletion } from './workspace.js';
 import type { RouteContext, RouteHandler } from './context.js';
@@ -138,6 +145,10 @@ function handlers(): Readonly<Record<string, RouteHandler>> {
     recordApplicationOutcome,
     listApplicationEvents,
     fillApplication,
+    createFillSession,
+    getFillSession,
+    reportFillSession,
+    endFillSession,
     observeApplication,
     listAnswerBank,
     putAnswerBankEntry,
@@ -184,10 +195,27 @@ function buildPreHandler(
   route: RouteDefinition,
 ): (request: FastifyRequest) => Promise<void> {
   return async (request: FastifyRequest) => {
-    // `originExempt` is documented on RouteDefinition and set by exactly one
-    // route, whose authentication is a single-use code rather than a cookie.
+    // `originExempt` is documented on RouteDefinition and set only by routes
+    // whose authentication is a header the caller must already hold — a
+    // single-use pairing code, or a device token plus a session nonce —
+    // rather than a cookie a browser would attach on a page's behalf.
     if (isStateChanging(route.method) && route.originExempt !== true) {
       verifyOrigin(context.config, request);
+    }
+
+    // A device route never consults the cookie, and a session route never
+    // consults the device header. Resolving both and letting a handler pick
+    // would make every route accept whichever credential the caller happened
+    // to have, which is the bug this split exists to prevent.
+    if (route.auth === 'device') {
+      // Throws 401 when the header is present but does not resolve, so a
+      // revoked token is denied on its very next request (AT23).
+      const device = await authenticateDevice(context.db, request);
+      if (device === null) {
+        throw unauthenticated('This request needs a paired device token.');
+      }
+      request.principal = device;
+      return;
     }
 
     const session = await resolveSession(context.db, request);

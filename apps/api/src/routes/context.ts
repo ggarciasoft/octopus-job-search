@@ -9,7 +9,12 @@ import type { Db } from '../db/pool.js';
 import type { Logger } from '../logging.js';
 import type { StorageDriver } from '../files/storage.js';
 import { unauthenticated } from '../errors.js';
-import { WorkspaceScope, type Principal, type SessionPrincipal } from '../auth/scope.js';
+import {
+  WorkspaceScope,
+  type DevicePrincipal,
+  type Principal,
+  type SessionPrincipal,
+} from '../auth/scope.js';
 
 export interface RouteContext {
   readonly config: Config;
@@ -42,6 +47,22 @@ export function requireSession(request: FastifyRequest): SessionPrincipal {
 }
 
 /**
+ * Narrows to a paired device or rejects with 401.
+ *
+ * Deliberately not interchangeable with `requireSession`: the two credentials
+ * authorise different things, and a route that accepted either would be a
+ * route where the weaker one silently sufficed. A device token reaches only
+ * the fill-session routes (M5); a session cookie reaches none of them.
+ */
+export function requireDevicePrincipal(request: FastifyRequest): DevicePrincipal {
+  const principal = request.principal;
+  if (principal === null || principal.kind !== 'device') {
+    throw unauthenticated('This request needs a paired device token.');
+  }
+  return principal;
+}
+
+/**
  * Builds the workspace scope for the current request. This is the only
  * supported way a handler obtains database access to private tables, so the
  * workspace always comes from the session row rather than from the client.
@@ -51,4 +72,19 @@ export function requireScope(context: RouteContext, request: FastifyRequest): Wo
   const scope = WorkspaceScope.fromPrincipal(context.db, principal);
   if (scope === null) throw unauthenticated('Sign in to continue.');
   return scope;
+}
+
+/**
+ * The same, for a device principal. The workspace comes from the device row
+ * the token resolved to, never from the request: an extension cannot name a
+ * workspace any more than a browser session can.
+ */
+export function requireDeviceScope(
+  context: RouteContext,
+  request: FastifyRequest,
+): { scope: WorkspaceScope; principal: DevicePrincipal } {
+  const principal = requireDevicePrincipal(request);
+  const scope = WorkspaceScope.fromPrincipal(context.db, principal);
+  if (scope === null) throw unauthenticated('This request needs a paired device token.');
+  return { scope, principal };
 }
