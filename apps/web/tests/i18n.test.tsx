@@ -79,6 +79,23 @@ describe('message catalogues', () => {
     });
   }
 
+  // Copy that denies a feature is a claim about the product, and it rots the
+  // moment the feature lands. Both of these were true when they were written
+  // and false by the time a browser rendered them on 2026-09-22; no jsdom test
+  // noticed, because a test asserting the copy passes either way. These pin
+  // the corrected wording so a revert fails rather than misinforms.
+  describe('copy that denies a feature', () => {
+    it('does not tell the user nothing has been scored — M3 scores jobs', () => {
+      expect(en['jobs.intro']).not.toMatch(/nothing has been matched|later milestone/i);
+      expect(es['jobs.intro']).not.toMatch(/nada se ha comparado|hito posterior/i);
+    });
+
+    it('does not list export and deletion as still to come — the Privacy tab ships both', () => {
+      expect(en['settings.missingBody']).not.toMatch(/deletion arrive with later milestones/i);
+      expect(es['settings.missingBody']).not.toMatch(/borrado de datos llegan con hitos/i);
+    });
+  });
+
   it('renders the diagnostics screen in English without leaking a raw catalogue key', async () => {
     renderApp({ route: '/diagnostics' });
 

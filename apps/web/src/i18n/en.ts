@@ -643,13 +643,13 @@ export const en = {
   // --- M1: settings --------------------------------------------------------
   'settings.title': 'Settings',
   'settings.intro':
-    'Search preferences and the model provider. Every change is saved against a revision; if something else changed first, the save is refused and you can reload.',
+    'Search preferences, the model provider, paired devices and your data. Every change is saved against a revision; if something else changed first, the save is refused and you can reload.',
   'settings.tabsLabel': 'Settings sections',
   'settings.preferencesTab': 'Preferences',
   'settings.providerTab': 'AI provider',
   'settings.missingTitle': 'Not on this screen yet',
   'settings.missingBody':
-    'Scan schedules, prompt and template choices beyond the ones here, and data export and deletion arrive with later milestones. They are absent rather than shown as controls that do nothing.',
+    'Scan schedules, and prompt and template choices beyond the ones here, arrive with later milestones. They are absent rather than shown as controls that do nothing. Export and deletion are on the Privacy tab.',
 
   'preferences.loading': 'Loading preferences…',
   'preferences.loadFailed': 'Preferences could not be loaded.',
@@ -1056,7 +1056,7 @@ export const en = {
   // --- M2: Jobs -----------------------------------------------------------------
   'jobs.title': 'Jobs',
   'jobs.intro':
-    'Every job found through your boards and imports. Nothing has been matched against your profile yet — matching arrives in a later milestone — so every job reads "Not checked".',
+    'Every job found through your boards and imports. A job is scored only when you check its fit, so a job you have not checked reads "Not checked" rather than a low score.',
   'jobs.filtersLegend': 'Filters',
   'jobs.query': 'Search title or company',
   'jobs.status': 'Status',

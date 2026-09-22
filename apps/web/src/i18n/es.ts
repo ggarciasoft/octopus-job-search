@@ -646,13 +646,13 @@ export const es: Record<MessageKey, string> = {
   // --- M1: ajustes ---------------------------------------------------------
   'settings.title': 'Ajustes',
   'settings.intro':
-    'Preferencias de búsqueda y proveedor del modelo. Cada cambio se guarda sobre una revisión; si algo más cambió antes, el guardado se rechaza y puedes recargar.',
+    'Preferencias de búsqueda, proveedor del modelo, dispositivos vinculados y tus datos. Cada cambio se guarda sobre una revisión; si algo más cambió antes, el guardado se rechaza y puedes recargar.',
   'settings.tabsLabel': 'Secciones de ajustes',
   'settings.preferencesTab': 'Preferencias',
   'settings.providerTab': 'Proveedor de IA',
   'settings.missingTitle': 'Todavía no está en esta pantalla',
   'settings.missingBody':
-    'Los horarios de rastreo, más opciones de prompts y plantillas, y la exportación y el borrado de datos llegan con hitos posteriores. Están ausentes en lugar de mostrarse como controles que no hacen nada.',
+    'Los horarios de rastreo, y más opciones de prompts y plantillas, llegan con hitos posteriores. Están ausentes en lugar de mostrarse como controles que no hacen nada. La exportación y el borrado están en la pestaña Privacidad.',
 
   'preferences.loading': 'Cargando preferencias…',
   'preferences.loadFailed': 'No se pudieron cargar las preferencias.',
@@ -1070,7 +1070,7 @@ export const es: Record<MessageKey, string> = {
   // --- M2: Empleos --------------------------------------------------------------
   'jobs.title': 'Empleos',
   'jobs.intro':
-    'Todos los empleos encontrados a través de tus tablones e importaciones. Nada se ha comparado aún con tu perfil (la comparación llega en un hito posterior), así que cada empleo muestra "Sin comprobar".',
+    'Todos los empleos encontrados a través de tus tablones e importaciones. Un empleo solo se puntúa cuando compruebas su idoneidad, así que un empleo sin comprobar muestra "Sin comprobar" en lugar de una puntuación baja.',
   'jobs.filtersLegend': 'Filtros',
   'jobs.query': 'Buscar por título o empresa',
   'jobs.status': 'Estado',
