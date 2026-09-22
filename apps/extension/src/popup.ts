@@ -6,7 +6,11 @@
  * rather than a limitation: the product's whole claim is that a human approved
  * this packet and is watching this page.
  */
-import { fillActiveTab, readPairing, savePairing } from './background.js';
+import { ensureApiPermission, fillActiveTab, readPairing, savePairing } from './background.js';
+
+declare const chrome: {
+  tabs: { query(info: { active: boolean; currentWindow: boolean }): Promise<{ id?: number }[]> };
+};
 
 function element<T extends HTMLElement>(id: string): T {
   const node = document.getElementById(id);
@@ -21,6 +25,9 @@ function show(message: string): void {
 }
 
 async function render(): Promise<void> {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  targetTabId = tab?.id;
+
   const pairing = await readPairing();
   element<HTMLDivElement>('pairing').hidden = pairing !== null;
   element<HTMLDivElement>('fill').hidden = pairing === null;
@@ -34,11 +41,25 @@ element<HTMLButtonElement>('pair').addEventListener('click', async () => {
     show('Both the installation address and the token are needed.');
     return;
   }
-  await savePairing({ baseUrl: baseUrl.replace(/\/+$/, ''), token });
+  const normalised = baseUrl.replace(/\/+$/, '');
+  // Without this the API's response is unreadable: it sends no CORS headers,
+  // by design, and only a host permission exempts the extension from that.
+  if (!(await ensureApiPermission(normalised))) {
+    show('Without permission to reach your installation, nothing can be filled.');
+    return;
+  }
+  await savePairing({ baseUrl: normalised, token });
   // Cleared immediately: a token left in a DOM input is a token in a DOM.
   element<HTMLInputElement>('token').value = '';
   await render();
 });
+
+/**
+ * The tab this popup was opened over, resolved as it renders.
+ *
+ * Deliberately not re-read at click time: see `FillOptions.tabId`.
+ */
+let targetTabId: number | undefined;
 
 element<HTMLButtonElement>('start').addEventListener('click', async () => {
   const applicationId = element<HTMLInputElement>('application').value.trim();
@@ -48,7 +69,7 @@ element<HTMLButtonElement>('start').addEventListener('click', async () => {
     return;
   }
   show('Working…');
-  const result = await fillActiveTab(applicationId, contentHash);
+  const result = await fillActiveTab(applicationId, contentHash, { tabId: targetTabId });
   show(result.message);
 });
 

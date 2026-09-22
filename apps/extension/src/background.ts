@@ -37,6 +37,10 @@ interface MessageSender {
   readonly url?: string;
 }
 interface ChromeApi {
+  permissions: {
+    contains(request: { origins: string[] }): Promise<boolean>;
+    request(request: { origins: string[] }): Promise<boolean>;
+  };
   storage: {
     local: {
       get(keys: string[]): Promise<Record<string, unknown>>;
@@ -45,6 +49,7 @@ interface ChromeApi {
   };
   tabs: {
     query(info: { active: boolean; currentWindow: boolean }): Promise<Tab[]>;
+    get(tabId: number): Promise<Tab | undefined>;
     sendMessage(tabId: number, message: WorkerMessage): Promise<ContentMessage>;
   };
   scripting: {
@@ -97,6 +102,32 @@ export async function savePairing(pairing: StoredPairing, api: ChromeApi = chrom
   await api.storage.local.set({ baseUrl: pairing.baseUrl, token: pairing.token });
 }
 
+/**
+ * Ask for permission to talk to the user's own installation.
+ *
+ * The API registers no CORS plugin anywhere, deliberately: "never expose a
+ * wildcard CORS policy with credentials", and with no
+ * `Access-Control-Allow-Origin` header a browser refuses to hand any other
+ * origin the response. An extension's fetch is subject to that like anyone
+ * else's — *unless* the extension holds host permission for the origin, which
+ * exempts it.
+ *
+ * So one host permission is genuinely necessary, and it is requested rather
+ * than declared: `optional_host_permissions` in the manifest makes it
+ * requestable, and this asks for exactly the origin the person typed, on their
+ * own gesture, with Chrome's own prompt naming it. The extension ships with no
+ * host access to anywhere, which is what "request additional host permissions
+ * only when necessary with a clear explanation" means in practice.
+ */
+export async function ensureApiPermission(
+  baseUrl: string,
+  api: ChromeApi = chrome,
+): Promise<boolean> {
+  const origins = [`${new URL(baseUrl).origin}/*`];
+  if (await api.permissions.contains({ origins })) return true;
+  return api.permissions.request({ origins });
+}
+
 export async function sha256Hex(input: string): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
   return Array.from(new Uint8Array(digest))
@@ -109,21 +140,41 @@ export interface FillReport {
   readonly message: string;
 }
 
+export interface FillOptions {
+  /**
+   * The tab to fill, resolved when the popup opened rather than when the
+   * button was clicked.
+   *
+   * These are not the same moment. A person can open the popup over an
+   * employer's form, change their mind, switch tabs and come back to click —
+   * and a fill that re-queried "the active tab" at click time would then act
+   * on whatever is in front of them now. The popup resolves the tab once, as
+   * it renders, and says which one it meant.
+   */
+  readonly tabId?: number;
+  readonly api?: ChromeApi;
+  readonly digest?: (input: string) => Promise<string>;
+}
+
 /** The whole flow, from the person pressing "Fill" to the API being told. */
 export async function fillActiveTab(
   applicationId: string,
   contentHash: string,
-  api: ChromeApi = chrome,
-  digest: (input: string) => Promise<string> = sha256Hex,
+  options_: FillOptions = {},
 ): Promise<FillReport> {
+  const api = options_.api ?? chrome;
+  const digest = options_.digest ?? sha256Hex;
+
   const pairing = await readPairing(api);
   if (pairing === null) {
     return { ok: false, message: 'Pair this browser with your installation first.' };
   }
 
-  const [tab] = await api.tabs.query({ active: true, currentWindow: true });
+  const tabs = await api.tabs.query({ active: true, currentWindow: true });
+  const tab =
+    options_.tabId === undefined ? tabs[0] : ((await api.tabs.get(options_.tabId)) ?? undefined);
   if (tab?.id === undefined || tab.url === undefined) {
-    return { ok: false, message: 'No active tab to fill.' };
+    return { ok: false, message: 'No tab to fill.' };
   }
   const origin = originOf(tab.url);
   if (origin === null) return { ok: false, message: 'That tab has no readable address.' };
