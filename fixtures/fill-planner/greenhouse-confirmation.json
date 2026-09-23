@@ -1,0 +1,18 @@
+[
+  {
+    "page": "greenhouse-confirmation.html",
+    "confirmation": {
+      "confirmation_text": "Your application has been submitted Thanks for applying to Senior Platform Engineer at Northwind Robotics. Our team reviews every application and will be in touch. Application ID: NW-2026-4471",
+      "reference": "NW-2026-4471",
+      "url": "/greenhouse-confirmation.html"
+    }
+  },
+  {
+    "page": "greenhouse-application.html",
+    "confirmation": null
+  },
+  {
+    "page": "greenhouse-application-changed.html",
+    "confirmation": null
+  }
+]

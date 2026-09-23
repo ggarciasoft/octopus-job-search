@@ -47,11 +47,26 @@ export type ContentMessage =
       readonly type: 'page/unsupported';
       readonly url: string;
       readonly reason: string;
+    }
+  | {
+      /**
+       * "Here is what this page says about a submission", or null for
+       * nothing recognisable. Evidence like the rest: the service worker and
+       * then the API decide what it means.
+       */
+      readonly type: 'page/confirmation';
+      readonly url: string;
+      readonly confirmation: {
+        readonly confirmation_text: string;
+        readonly reference: string | null;
+      } | null;
     };
 
 /** What the service worker may ask of the content script. */
 export type WorkerMessage =
   | { readonly type: 'page/inspect' }
+  /** After the person submitted: read the page for a confirmation, change nothing. */
+  | { readonly type: 'page/read-confirmation' }
   | {
       readonly type: 'page/fill';
       /**

@@ -23,6 +23,9 @@ fixtures/cvs/
 fixtures/model-responses/
 fixtures/jobs/
 fixtures/ats-pages/
+# Chromium's reading of the confirmation fixtures, written by
+# fixtures/fill-planner/generate-confirmation.py and asserted against as written.
+fixtures/fill-planner/greenhouse-confirmation.json
 apps/api/dist/
 apps/web/dist/
 

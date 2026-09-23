@@ -29,6 +29,7 @@ import {
   ADAPTER_VERSION,
   handles,
   findForm,
+  readConfirmation,
   readFields,
   readIdentity,
 } from './adapters/greenhouse.js';
@@ -58,6 +59,26 @@ function inspect(): ContentMessage {
     url,
     identity: readIdentity(globalThis.document),
     fields: readFields(globalThis.document),
+  };
+}
+
+/**
+ * Read the page for a confirmation. Reads only: the person has already
+ * submitted, and there is nothing left on this page for the extension to do.
+ */
+function confirmation(): ContentMessage {
+  const url = globalThis.location.href;
+  if (!handles(url, findForm(globalThis.document) !== null)) {
+    return { type: 'page/unsupported', url, reason: 'no tested adapter matches this page' };
+  }
+  const found = readConfirmation(globalThis.document, url);
+  return {
+    type: 'page/confirmation',
+    url,
+    confirmation:
+      found === null
+        ? null
+        : { confirmation_text: found.confirmation_text, reference: found.reference },
   };
 }
 
@@ -166,8 +187,12 @@ if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
       respond(fill(message));
       return true;
     }
+    if (message.type === 'page/read-confirmation') {
+      respond(confirmation());
+      return true;
+    }
     return undefined;
   });
 }
 
-export { inspect, fill, ADAPTER_VERSION };
+export { inspect, fill, confirmation, ADAPTER_VERSION };

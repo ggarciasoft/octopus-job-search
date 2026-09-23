@@ -73,6 +73,15 @@ pairing** in the popup is local only: revoke in the web app too.
 6. The content script types them and reports what landed. The API records the
    same states and the same `fill_paused` event the desktop runner produces.
 7. **You** press the employer's submit button.
+8. On the page the employer shows next, open the popup and press **I
+   submitted it: check this page**. The extension reads that page once, with
+   the same conservative rules the desktop runner uses (pinned to it by
+   `fixtures/fill-planner/greenhouse-confirmation.json`), and reports what it
+   saw to `POST /fill-sessions/:id/observation`. A confirmation is recorded as
+   submitted with the page's own words as evidence. Anything less is recorded
+   as "could not tell", and Job Getter asks you what happened. Nothing can be
+   recorded as "not submitted". Only the browser that reported the fill can
+   do this, only on the packet's own origin, and only once.
 
 ## The security shape
 
@@ -119,8 +128,12 @@ uv run python ../../fixtures/fill-planner/generate-page.py   # needs Chromium
 
 - **Only Greenhouse, and only a fixture.** Lever is M5's second adapter and is
   not written. No adapter has met a live board in either client.
-- **No confirmation observation.** The desktop runner can watch for a
-  confirmation after you submit; the extension cannot.
+- **The confirmation check is one look, not a watch.** The desktop runner
+  opens the page itself and watches it for up to ninety seconds. The extension
+  may read an employer's page only while you invoke it there, so you open the
+  popup on the confirmation page yourself. Only a fill that ended waiting for
+  submission (every question answered) can be checked. After a fill that
+  needed input, record the outcome in the web app, as with the runner.
 - **`background.js` is ~104 kB.** Importing two header constants from
   `@job-getter/contracts` pulls in the whole barrel, whose top-level
   `registerContractFormats()` defeats tree-shaking of TypeBox. Copying the

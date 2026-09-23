@@ -6,7 +6,7 @@
  * Kept apart from `popup.ts` so each rule is asserted without a DOM or a
  * browser, the same way `session.ts` holds the fill's judgement.
  */
-import type { FillTarget } from '@job-getter/contracts';
+import type { AwaitingSubmission, FillTarget } from '@job-getter/contracts';
 
 /**
  * The installation's address, or `null` if it cannot be one.
@@ -61,6 +61,16 @@ export function arrangeTargets(
     (tabOrigin !== null && target.destination.origin === tabOrigin ? here : elsewhere).push(target);
   }
   return { here, elsewhere };
+}
+
+/**
+ * Whether a waiting application can be checked from the tab in front of the
+ * person: only on its own origin, where its confirmation page would be.
+ * Like `arrangeTargets`, a convenience; the service worker and the API both
+ * refuse another origin regardless.
+ */
+export function checkableHere(item: AwaitingSubmission, tabOrigin: string | null): boolean {
+  return tabOrigin !== null && item.destination.origin === tabOrigin;
 }
 
 /**

@@ -19,7 +19,7 @@
  * attempt for ten minutes and a fill on the wrong page is someone's real
  * application.
  */
-import type { FillSessionGrant, FillTarget } from '@job-getter/contracts';
+import type { AwaitingSubmission, FillSessionGrant, FillTarget } from '@job-getter/contracts';
 import {
   createFillSession,
   downloadFillSessionResume,
@@ -28,6 +28,7 @@ import {
   FillSessionApiError,
   listFillTargets,
   reportFillSession,
+  reportObservation,
   type ApiOptions,
   type ResumeBytes,
 } from './api.js';
@@ -181,7 +182,13 @@ export async function pairWithCode(
 
 export type TargetsResult =
   | { readonly kind: 'unpaired'; readonly message: string | null }
-  | { readonly kind: 'ok'; readonly baseUrl: string; readonly items: readonly FillTarget[] }
+  | {
+      readonly kind: 'ok';
+      readonly baseUrl: string;
+      readonly items: readonly FillTarget[];
+      /** Fills this browser reported that are waiting for the person to submit. */
+      readonly awaiting: readonly AwaitingSubmission[];
+    }
   | { readonly kind: 'error'; readonly baseUrl: string; readonly message: string };
 
 /**
@@ -200,7 +207,13 @@ export async function loadTargets(
 
   try {
     const list = await listFillTargets({ ...pairing, fetch: options.fetch });
-    return { kind: 'ok', baseUrl: pairing.baseUrl, items: list.items };
+    return {
+      kind: 'ok',
+      baseUrl: pairing.baseUrl,
+      items: list.items,
+      // An installation older than this extension does not send it.
+      awaiting: list.awaiting_submission ?? [],
+    };
   } catch (error) {
     if (error instanceof FillSessionApiError && error.status === 401) {
       await forgetPairing(api);
@@ -404,6 +417,128 @@ export async function fillActiveTab(
     return { ok: false, message: error instanceof Error ? error.message : 'The fill failed.' };
   } finally {
     setBinding(null);
+  }
+}
+
+export interface CheckOptions {
+  /** The tab the popup was opened over; see `FillOptions.tabId`. */
+  readonly tabId?: number;
+  readonly api?: ChromeApi;
+  /** How many times to read the page while it settles, one second apart. */
+  readonly attempts?: number;
+  readonly sleep?: (ms: number) => Promise<void>;
+  readonly fetch?: typeof globalThis.fetch;
+}
+
+/**
+ * After the person submitted: read the page in front of them for a
+ * confirmation, and tell the API what it said.
+ *
+ * One look, on their click. The runner can watch a page for ninety seconds
+ * because it opened that page itself; the extension may read an employer's
+ * page only while the person invokes it there, and submitting usually
+ * navigates, which ends that access. So the person opens the popup on the
+ * page the employer showed after submit, and presses the button.
+ *
+ * The page gets a few seconds to finish rendering, because a confirmation is
+ * often drawn a moment after the navigation. What happens next is the API's
+ * decision, through the same rules the runner's observation follows: a
+ * confirmation is recorded as submitted with the page's words as evidence,
+ * and anything less as "could not tell", which asks the person. Nothing here
+ * can record "not submitted".
+ */
+export async function checkConfirmation(
+  item: AwaitingSubmission,
+  options_: CheckOptions = {},
+): Promise<FillReport> {
+  const api = options_.api ?? chrome;
+  const attempts = options_.attempts ?? 5;
+  const sleep = options_.sleep ?? ((ms: number) => new Promise((done) => setTimeout(done, ms)));
+
+  const pairing = await readPairing(api);
+  if (pairing === null) {
+    return { ok: false, message: 'Pair this browser with your installation first.' };
+  }
+  const tabs = await api.tabs.query({ active: true, currentWindow: true });
+  const tab =
+    options_.tabId === undefined ? tabs[0] : ((await api.tabs.get(options_.tabId)) ?? undefined);
+  if (tab?.id === undefined || tab.url === undefined) {
+    return { ok: false, message: 'No tab to check.' };
+  }
+  // Before anything is read: a page on another origin is not this
+  // application's confirmation, and nothing is recorded about it.
+  if (originOf(tab.url) !== item.destination.origin) {
+    return {
+      ok: false,
+      message: `Open the page ${item.destination.origin} showed after you submitted, then check again.`,
+    };
+  }
+  const tabId = tab.id;
+
+  let answer: ContentMessage | null = null;
+  try {
+    await api.scripting.executeScript({ target: { tabId }, files: ['content.js'] });
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+      answer = await api.tabs.sendMessage(tabId, { type: 'page/read-confirmation' });
+      if (answer.type !== 'page/confirmation' || answer.confirmation !== null) break;
+      if (attempt < attempts - 1) await sleep(1000);
+    }
+  } catch {
+    return { ok: false, message: 'The page could not be read. Nothing was recorded.' };
+  }
+  if (
+    answer === null ||
+    (answer.type !== 'page/confirmation' && answer.type !== 'page/unsupported')
+  ) {
+    return { ok: false, message: 'The page did not answer. Nothing was recorded.' };
+  }
+  // The page may have navigated while it was being read.
+  if (originOf(answer.url) !== item.destination.origin) {
+    return { ok: false, message: 'The page moved to another site. Nothing was recorded.' };
+  }
+
+  const found = answer.type === 'page/confirmation' ? answer.confirmation : null;
+  try {
+    const recorded = await reportObservation(
+      { baseUrl: pairing.baseUrl, token: pairing.token, fetch: options_.fetch },
+      item.fill_session_id,
+      {
+        outcome: found === null ? 'unknown' : 'observed',
+        confirmation:
+          found === null
+            ? null
+            : {
+                confirmation_text: found.confirmation_text,
+                reference: found.reference,
+                url: answer.url,
+              },
+        unknown_reason:
+          found !== null
+            ? null
+            : answer.type === 'page/unsupported'
+              ? 'unsupported'
+              : 'no_confirmation_found',
+        page_url: answer.url,
+        adapter: ADAPTER_NAME,
+        adapter_version: ADAPTER_VERSION,
+      },
+    );
+    return recorded.status === 'submitted'
+      ? {
+          ok: true,
+          message:
+            found?.reference == null
+              ? 'The page confirms it. Recorded as submitted.'
+              : `The page confirms it (reference ${found.reference}). Recorded as submitted.`,
+        }
+      : {
+          ok: true,
+          message:
+            'No confirmation this extension recognises is on this page. ' +
+            'Job Getter will ask you what happened.',
+        };
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : 'The API refused.' };
   }
 }
 

@@ -930,3 +930,249 @@ describe('workspace isolation', () => {
     expect(response.statusCode).toBe(401);
   });
 });
+
+describe('after the person submits: the extension’s one look at the confirmation page', () => {
+  const CONFIRMED = {
+    outcome: 'observed',
+    confirmation: {
+      confirmation_text: 'Thank you for applying. Your application has been received.',
+      reference: 'GH-2026-0001',
+      url: null,
+    },
+    unknown_reason: null,
+    adapter: 'greenhouse',
+    adapter_version: 'greenhouse/v1',
+  };
+  const NOTHING = {
+    outcome: 'unknown',
+    confirmation: null,
+    unknown_reason: 'no_confirmation_found',
+    adapter: 'greenhouse',
+    adapter_version: 'greenhouse/v1',
+  };
+
+  /** Approved, filled through a session, reported: waiting for the person to submit. */
+  async function filled(options: { allowedOrigins?: string[] } = {}) {
+    const { view, device } = await approved(options);
+    const issued = await grant(device.token, view);
+    const reported = await harness.app.inject(
+      asDevice(device.token, {
+        method: 'POST',
+        url: `/api/v1/fill-sessions/${issued.session_id}/report`,
+        headers: { [FILL_SESSION_NONCE_HEADER]: issued.nonce },
+        payload: {
+          filled_fields: [
+            { question_key: 'why_this_role', outcome: 'filled', matched_label: 'Why this role?' },
+          ],
+          unresolved_fields: [],
+          page_url: null,
+          form_fingerprint: 'abc123',
+          outcome: 'awaiting_user_submit',
+          adapter: 'greenhouse',
+          adapter_version: 'greenhouse/v1',
+        },
+      }),
+    );
+    expect(reported.statusCode, reported.body).toBe(200);
+    const pageUrl = `${view.current_packet!.destination.origin}/confirmation`;
+    return { view, device, issued, pageUrl };
+  }
+
+  function observe(
+    token: string,
+    sessionId: string,
+    payload: Record<string, unknown>,
+    headers: Record<string, string> = {},
+  ) {
+    return harness.app.inject(
+      asDevice(token, {
+        method: 'POST',
+        url: `/api/v1/fill-sessions/${sessionId}/observation`,
+        headers,
+        payload,
+      }),
+    );
+  }
+
+  it('lists a reported fill as waiting for submission, and nothing more', async () => {
+    const { view, device, issued } = await filled();
+    const response = await harness.app.inject(
+      asDevice(device.token, { method: 'GET', url: '/api/v1/fill-targets' }),
+    );
+    const list = response.json() as FillTargetList;
+    expect(list.items).toEqual([]);
+    expect(list.awaiting_submission).toHaveLength(1);
+    expect(list.awaiting_submission[0]).toMatchObject({
+      fill_session_id: issued.session_id,
+      application_id: view.id,
+      destination: { origin: view.current_packet!.destination.origin },
+    });
+    // A pointer, like the fill targets: no answers, no CV.
+    expect(JSON.stringify(list)).not.toContain('Because the work is interesting');
+  });
+
+  it('records a confirmation as submitted, with the page’s words as evidence', async () => {
+    const { view, device, issued, pageUrl } = await filled();
+    const before = Date.now();
+    const response = await observe(device.token, issued.session_id, {
+      ...CONFIRMED,
+      page_url: pageUrl,
+    });
+
+    expect(response.statusCode, response.body).toBe(200);
+    expect(response.json()).toEqual({ application_id: view.id, status: 'submitted' });
+    const application = await readApplication(view.id);
+    expect(application.status).toBe('submitted');
+    expect(application.submission_evidence).toMatchObject({
+      evidence_type: 'adapter_observed',
+      confirmation_text: CONFIRMED.confirmation.confirmation_text,
+      reference: 'GH-2026-0001',
+    });
+    // Stamped by the API, not taken from the browser.
+    expect(Date.parse(application.submitted_at!)).toBeGreaterThanOrEqual(before - 1000);
+
+    const events = await harness.app.inject(
+      authed(session, { method: 'GET', url: `/api/v1/applications/${view.id}/events` }),
+    );
+    const submitted = (events.json().items as ApplicationEventView[]).find(
+      (event) => event.type === 'submitted',
+    );
+    expect(submitted?.actor).toBe('runner');
+
+    const list = await harness.app.inject(
+      asDevice(device.token, { method: 'GET', url: '/api/v1/fill-targets' }),
+    );
+    expect((list.json() as FillTargetList).awaiting_submission).toEqual([]);
+  });
+
+  it('records a look that found nothing as unknown, never as not submitted', async () => {
+    const { view, device, issued, pageUrl } = await filled();
+    const response = await observe(device.token, issued.session_id, {
+      ...NOTHING,
+      page_url: pageUrl,
+    });
+    expect(response.statusCode, response.body).toBe(200);
+    expect(response.json().status).toBe('outcome_unknown');
+    const application = await readApplication(view.id);
+    expect(application.submission_evidence).toBeNull();
+    expect(application.submitted_at).toBeNull();
+  });
+
+  it('allows no second look once it could not tell (AT16)', async () => {
+    const { device, issued, pageUrl } = await filled();
+    await observe(device.token, issued.session_id, { ...NOTHING, page_url: pageUrl });
+    const again = await observe(device.token, issued.session_id, {
+      ...CONFIRMED,
+      page_url: pageUrl,
+    });
+    expect(again.statusCode).toBe(409);
+    expect(again.json().error.message).toContain('record the outcome');
+  });
+
+  it('does not overwrite an outcome the person already recorded', async () => {
+    const { view, device, issued, pageUrl } = await filled();
+    const current = await readApplication(view.id);
+    const recorded = await harness.app.inject(
+      authed(session, {
+        method: 'POST',
+        url: `/api/v1/applications/${view.id}/outcome`,
+        payload: {
+          expected_revision: current.revision,
+          outcome: 'submitted',
+          evidence_type: 'user_report',
+        },
+      }),
+    );
+    expect(recorded.statusCode, recorded.body).toBe(200);
+
+    const response = await observe(device.token, issued.session_id, {
+      ...NOTHING,
+      page_url: pageUrl,
+    });
+    expect(response.statusCode).toBe(409);
+    expect((await readApplication(view.id)).status).toBe('submitted');
+  });
+
+  it('refuses a page on another origin, and changes nothing', async () => {
+    const { view, device, issued } = await filled();
+    const response = await observe(device.token, issued.session_id, {
+      ...CONFIRMED,
+      page_url: 'https://attacker.example/thanks',
+    });
+    expect(response.statusCode).toBe(422);
+    expect(response.json().error.fields).toHaveProperty('page_url');
+    expect((await readApplication(view.id)).status).toBe('awaiting_user_submit');
+  });
+
+  it.each([
+    ['a confirmation with a reason', { ...CONFIRMED, unknown_reason: 'no_confirmation_found' }],
+    ['observed with no confirmation', { ...CONFIRMED, confirmation: null }],
+    ['unknown with a confirmation', { ...NOTHING, confirmation: CONFIRMED.confirmation }],
+  ])('refuses an incoherent report: %s', async (_label, payload) => {
+    const { view, device, issued, pageUrl } = await filled();
+    const response = await observe(device.token, issued.session_id, {
+      ...payload,
+      page_url: pageUrl,
+    });
+    expect(response.statusCode).toBe(422);
+    expect((await readApplication(view.id)).status).toBe('awaiting_user_submit');
+  });
+
+  it('refuses a reason only the runner can know, like a timeout', async () => {
+    const { device, issued, pageUrl } = await filled();
+    const response = await observe(device.token, issued.session_id, {
+      ...NOTHING,
+      unknown_reason: 'timed_out',
+      page_url: pageUrl,
+    });
+    expect(response.statusCode).toBe(400);
+  });
+
+  it('refuses a session that never reported a fill', async () => {
+    const { view, device } = await approved();
+    const issued = await grant(device.token, view);
+    const response = await observe(device.token, issued.session_id, {
+      ...CONFIRMED,
+      page_url: `${view.current_packet!.destination.origin}/confirmation`,
+    });
+    expect(response.statusCode).toBe(409);
+    expect((await readApplication(view.id)).status).not.toBe('submitted');
+  });
+
+  it('is not reachable by a second paired browser', async () => {
+    const { view, issued, pageUrl } = await filled();
+    const other = await pairExtension();
+    const response = await observe(other.token, issued.session_id, {
+      ...CONFIRMED,
+      page_url: pageUrl,
+    });
+    expect(response.statusCode).toBe(404);
+    expect((await readApplication(view.id)).status).toBe('awaiting_user_submit');
+  });
+
+  it('refuses a revoked browser (AT23)', async () => {
+    const { view, device, issued, pageUrl } = await filled();
+    await harness.app.inject(
+      authed(session, { method: 'DELETE', url: `/api/v1/devices/${device.id}` }),
+    );
+    const response = await observe(device.token, issued.session_id, {
+      ...CONFIRMED,
+      page_url: pageUrl,
+    });
+    expect(response.statusCode).toBe(401);
+    expect((await readApplication(view.id)).status).toBe('awaiting_user_submit');
+  });
+
+  it('refuses a session cookie: a page riding the person’s session cannot claim a submission', async () => {
+    const { view, issued, pageUrl } = await filled();
+    const response = await harness.app.inject(
+      authed(session, {
+        method: 'POST',
+        url: `/api/v1/fill-sessions/${issued.session_id}/observation`,
+        payload: { ...CONFIRMED, page_url: pageUrl },
+      }),
+    );
+    expect(response.statusCode).toBe(401);
+    expect((await readApplication(view.id)).status).toBe('awaiting_user_submit');
+  });
+});

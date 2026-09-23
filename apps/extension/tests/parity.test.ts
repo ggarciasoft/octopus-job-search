@@ -21,7 +21,7 @@ import { resolve } from 'node:path';
 import { JSDOM } from 'jsdom';
 import { describe, expect, it } from 'vitest';
 import { fingerprint, parseFields } from '@job-getter/fill-planner';
-import { readFields, readIdentity } from '../src/adapters/greenhouse.js';
+import { readConfirmation, readFields, readIdentity } from '../src/adapters/greenhouse.js';
 
 interface RecordedPage {
   page: string;
@@ -95,4 +95,31 @@ describe('the extension reads a page the way the runner does', () => {
     expect(recorded).toHaveLength(2);
     expect(recorded[0]!.fingerprint).not.toBe(recorded[1]!.fingerprint);
   });
+});
+
+interface RecordedConfirmation {
+  page: string;
+  confirmation: { confirmation_text: string; reference: string | null; url: string } | null;
+}
+
+const recordedConfirmations = JSON.parse(
+  readFileSync(
+    resolve(process.cwd(), '../../fixtures/fill-planner/greenhouse-confirmation.json'),
+    'utf-8',
+  ),
+) as RecordedConfirmation[];
+
+describe('the extension reads a confirmation the way the runner does', () => {
+  // Both clients turn this reading into `submitted` evidence. A page one of
+  // them calls a confirmation and the other does not would record a
+  // submission through one client that the other would never have claimed.
+  for (const expected of recordedConfirmations) {
+    it(`${expected.page}: ${expected.confirmation ? 'the same words and reference' : 'nothing'}`, () => {
+      const url = 'http://127.0.0.1:9999/' + expected.page;
+      const found = readConfirmation(read(expected.page), url);
+      expect(found === null ? null : { ...found, url: new URL(found.url).pathname }).toEqual(
+        expected.confirmation,
+      );
+    });
+  }
 });

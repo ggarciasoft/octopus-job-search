@@ -58,6 +58,7 @@ import {
   endFillSession,
   getFillSession,
   reportFillSession,
+  reportFillSessionObservation,
 } from './fill-sessions.js';
 import { observeApplication } from './observe.js';
 import { deleteWorkspace, exportWorkspace, getWorkspaceDeletion } from './workspace.js';
@@ -155,6 +156,7 @@ function handlers(): Readonly<Record<string, RouteHandler>> {
     getFillSession,
     downloadFillSessionResume,
     reportFillSession,
+    reportFillSessionObservation,
     endFillSession,
     observeApplication,
     listAnswerBank,

@@ -1,6 +1,7 @@
 import { Type, type Static } from '@sinclair/typebox';
 import { Timestamp, Uuid } from '../common.js';
-import { PacketDestination } from './applications.js';
+import { ApplicationStatus, PacketDestination } from './applications.js';
+import { ObservationOutcome } from '../tasks/observe-confirmation.js';
 import {
   FillField,
   FillJobIdentity,
@@ -143,8 +144,32 @@ export const FillTarget = Type.Object(
 );
 export type FillTarget = Static<typeof FillTarget>;
 
+/**
+ * A form this extension filled, which is now waiting for the person to press
+ * the employer's submit button.
+ *
+ * Listed so that, once they have, the popup can offer to read the
+ * confirmation page. Only fills this device itself reported appear here: the
+ * fill session is the proof that this browser was the one on that page.
+ */
+export const AwaitingSubmission = Type.Object(
+  {
+    fill_session_id: Uuid,
+    application_id: Uuid,
+    job: FillJobIdentity,
+    destination: PacketDestination,
+    /** When the fill was reported. */
+    filled_at: Timestamp,
+  },
+  { additionalProperties: false },
+);
+export type AwaitingSubmission = Static<typeof AwaitingSubmission>;
+
 export const FillTargetList = Type.Object(
-  { items: Type.Array(FillTarget, { maxItems: 50 }) },
+  {
+    items: Type.Array(FillTarget, { maxItems: 50 }),
+    awaiting_submission: Type.Array(AwaitingSubmission, { maxItems: 50 }),
+  },
   { additionalProperties: false },
 );
 export type FillTargetList = Static<typeof FillTargetList>;
@@ -235,3 +260,61 @@ export const ReportFillSessionRequest = Type.Object(
   { additionalProperties: false },
 );
 export type ReportFillSessionRequest = Static<typeof ReportFillSessionRequest>;
+
+/**
+ * What the confirmation page said, read by the extension on the person's own
+ * click after they submitted (`POST /fill-sessions/:id/observation`).
+ *
+ * The runner watches a page it opened itself, for up to ninety seconds. The
+ * extension cannot: it may read an employer's page only while the person
+ * invokes it there, so its observation is one look at the page in front of
+ * them. The two honest answers are the runner's two: "here is what the page
+ * said" and "I could not tell". Neither is "not submitted", and nothing here
+ * can say so; only the person can, through the outcome route.
+ *
+ * There is no `observed_at`. The API stamps its own time rather than taking
+ * the browser's word for when something was seen.
+ */
+export const ExtensionConfirmation = Type.Object(
+  {
+    confirmation_text: Type.String({ minLength: 1, maxLength: 2000 }),
+    reference: Type.Union([Type.String({ minLength: 1, maxLength: 200 }), Type.Null()]),
+    url: Type.Union([Type.String({ maxLength: 2000 }), Type.Null()]),
+  },
+  { additionalProperties: false },
+);
+export type ExtensionConfirmation = Static<typeof ExtensionConfirmation>;
+
+export const ExtensionObservationUnknownReason = Type.Union([
+  /** The page was read, and nothing on it was a confirmation this adapter knows. */
+  Type.Literal('no_confirmation_found'),
+  /** No tested adapter matched the page, so nothing was read from it. */
+  Type.Literal('unsupported'),
+]);
+export type ExtensionObservationUnknownReason = Static<typeof ExtensionObservationUnknownReason>;
+
+export const ReportObservationRequest = Type.Object(
+  {
+    outcome: ObservationOutcome,
+    /** Present exactly when `outcome` is `observed`. */
+    confirmation: Type.Union([ExtensionConfirmation, Type.Null()]),
+    /** Present exactly when `outcome` is `unknown`. */
+    unknown_reason: Type.Union([ExtensionObservationUnknownReason, Type.Null()]),
+    /** Where the tab was. It must be on an origin this packet was allowed to fill. */
+    page_url: Type.String({ minLength: 1, maxLength: 2000 }),
+    adapter: Type.Union([Type.String({ maxLength: 40 }), Type.Null()]),
+    adapter_version: Type.Union([Type.String({ maxLength: 40 }), Type.Null()]),
+  },
+  { additionalProperties: false },
+);
+export type ReportObservationRequest = Static<typeof ReportObservationRequest>;
+
+export const ObservationRecorded = Type.Object(
+  {
+    application_id: Uuid,
+    /** `submitted` when the page confirmed it, `outcome_unknown` when it could not tell. */
+    status: ApplicationStatus,
+  },
+  { additionalProperties: false },
+);
+export type ObservationRecorded = Static<typeof ObservationRecorded>;

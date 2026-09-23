@@ -17,7 +17,13 @@ import { resolve } from 'node:path';
 import { JSDOM } from 'jsdom';
 import { describe, expect, it } from 'vitest';
 import { parseFields, normalizeQuestionKey } from '@job-getter/fill-planner';
-import { findForm, handles, readFields, readIdentity } from '../src/adapters/greenhouse.js';
+import {
+  findForm,
+  handles,
+  readConfirmation,
+  readFields,
+  readIdentity,
+} from '../src/adapters/greenhouse.js';
 
 function load(name: string): Document {
   // Resolved from the package root rather than `import.meta.url`: under jsdom
@@ -115,5 +121,36 @@ describe('reading the synthetic Greenhouse form', () => {
     const changed = parseFields(readFields(load('greenhouse-application-changed.html')));
     const original = parseFields(readFields(page));
     expect(changed).not.toEqual(original);
+  });
+});
+
+describe('reading a confirmation', () => {
+  function html(body: string) {
+    return new JSDOM(`<body>${body}</body>`, { url: 'https://boards.greenhouse.io/x/jobs/1' })
+      .window.document;
+  }
+
+  it('ignores a footer that merely says thank you', () => {
+    const page = html('<main><h1>Open roles</h1></main><footer>Thank you for applying!</footer>');
+    expect(readConfirmation(page, 'https://boards.greenhouse.io/x')).toBeNull();
+  });
+
+  it('accepts an explicit statement in a heading, and finds a reference beside it', () => {
+    const page = html('<h2>Thank you for applying</h2><p>Reference number: AB-1234</p>');
+    expect(readConfirmation(page, 'https://boards.greenhouse.io/x')).toEqual({
+      confirmation_text: 'Thank you for applying',
+      reference: 'AB-1234',
+      url: 'https://boards.greenhouse.io/x',
+    });
+  });
+
+  it('keeps a trailing asterisk: evidence is not a label to tidy', () => {
+    const page = html('<div id="application_confirmation">Application received *</div>');
+    expect(readConfirmation(page, 'u')?.confirmation_text).toBe('Application received *');
+  });
+
+  it('claims no reference when the page shows none', () => {
+    const page = html('<div role="status">Your application has been received.</div>');
+    expect(readConfirmation(page, 'u')?.reference).toBeNull();
   });
 });

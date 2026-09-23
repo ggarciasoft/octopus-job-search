@@ -201,3 +201,26 @@ async def test_chromium_still_reads_the_recorded_page(
 
     assert [field.key for field in schema.fields] == expected["keys"]
     assert schema.fingerprint == expected["fingerprint"]
+
+
+# `fixtures/fill-planner/greenhouse-confirmation.json` does the same for the
+# confirmation reader, which both clients now turn into `submitted` evidence.
+
+CONFIRMATION_VECTORS = json.loads(
+    (
+        pathlib.Path(__file__).resolve().parents[3]
+        / "fixtures/fill-planner/greenhouse-confirmation.json"
+    ).read_text(encoding="utf-8")
+)
+
+
+@pytest.mark.parametrize("expected", CONFIRMATION_VECTORS, ids=lambda v: v["page"])
+async def test_chromium_still_reads_the_recorded_confirmation(
+    ats_browser: RunnerBrowser, ats_server: str, expected: dict
+) -> None:
+    adapter = GreenhouseAdapter()
+    page = await ats_browser.open(f"{ats_server}/{expected['page']}", (ats_server,))
+    raw = await page.evaluate(adapter.confirmation_script)
+    if isinstance(raw, dict):
+        raw = {**raw, "url": raw["url"].removeprefix(ats_server)}
+    assert raw == expected["confirmation"]

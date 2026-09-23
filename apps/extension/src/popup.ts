@@ -11,8 +11,9 @@
  * started life on an employer's page, and an extension page is a privileged
  * place for someone else's markup to run.
  */
-import type { FillTarget } from '@job-getter/contracts';
+import type { AwaitingSubmission, FillTarget } from '@job-getter/contracts';
 import {
+  checkConfirmation,
   ensureApiPermission,
   fillActiveTab,
   forgetPairing,
@@ -20,7 +21,7 @@ import {
   pairWithCode,
 } from './background.js';
 import { originOf } from './session.js';
-import { arrangeTargets, normaliseBaseUrl, openableUrl } from './targets.js';
+import { arrangeTargets, checkableHere, normaliseBaseUrl, openableUrl } from './targets.js';
 
 declare const chrome: {
   tabs: {
@@ -89,6 +90,30 @@ function targetRow(target: FillTarget, action: 'fill' | 'open'): HTMLLIElement {
   return row;
 }
 
+function awaitingRow(item: AwaitingSubmission): HTMLLIElement {
+  const row = document.createElement('li');
+  const title = document.createElement('div');
+  title.className = 'title';
+  title.textContent = item.job.title;
+  const company = document.createElement('div');
+  company.textContent = item.job.company;
+  row.append(title, company);
+
+  if (checkableHere(item, targetTabOrigin)) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = 'I submitted it: check this page';
+    button.addEventListener('click', () => void check(item));
+    row.append(button);
+  } else {
+    const where = document.createElement('div');
+    where.className = 'meta';
+    where.textContent = `Check it from the page ${item.destination.origin} shows after you submit.`;
+    row.append(where);
+  }
+  return row;
+}
+
 function renderList(listId: string, emptyId: string, rows: readonly HTMLLIElement[]): void {
   element<HTMLUListElement>(listId).replaceChildren(...rows);
   element<HTMLParagraphElement>(emptyId).hidden = rows.length > 0;
@@ -113,6 +138,7 @@ async function render(): Promise<void> {
   if (result.kind === 'error') {
     renderList('here', 'here-empty', []);
     renderList('elsewhere', 'elsewhere-empty', []);
+    renderList('awaiting', 'awaiting-empty', []);
     show(result.message);
     return;
   }
@@ -128,6 +154,21 @@ async function render(): Promise<void> {
     'elsewhere-empty',
     elsewhere.map((target) => targetRow(target, 'open')),
   );
+  renderList('awaiting', 'awaiting-empty', result.awaiting.map(awaitingRow));
+}
+
+async function check(item: AwaitingSubmission): Promise<void> {
+  if (busy) return;
+  busy = true;
+  show('Reading the page…');
+  try {
+    const result = await checkConfirmation(item, { tabId: targetTabId });
+    // Recorded either way, so the application has left the waiting list.
+    await render();
+    show(result.message);
+  } finally {
+    busy = false;
+  }
 }
 
 async function fill(target: FillTarget): Promise<void> {

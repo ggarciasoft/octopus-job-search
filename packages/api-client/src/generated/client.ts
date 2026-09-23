@@ -35,6 +35,7 @@ import type {
   LoginRequest,
   MeResponse,
   NoopEchoInput,
+  ObservationRecorded,
   ObserveApplicationRequest,
   PairingCodeResponse,
   PatchJobRequest,
@@ -49,6 +50,7 @@ import type {
   ProviderTestResult,
   RegisterRequest,
   ReportFillSessionRequest,
+  ReportObservationRequest,
   ResumeView,
   ResumesListQuery,
   ScanView,
@@ -951,6 +953,18 @@ export class JobGetterApiClient {
     });
   }
 
+  /** After the person submitted: what the confirmation page said, read on their click. Once. (`POST /api/v1/fill-sessions/:id/observation`) */
+  reportFillSessionObservation(args: ReportFillSessionObservationArgs): Promise<ReportFillSessionObservationResult> {
+    return this.#request<ReportFillSessionObservationResult>({
+      method: 'POST',
+      prefix: API_PREFIX,
+      path: '/fill-sessions/:id/observation',
+      params: args.params,
+      json: args.body,
+      signal: args.signal,
+    });
+  }
+
   /** Give up a session without reporting a fill. (`DELETE /api/v1/fill-sessions/:id`) */
   endFillSession(args: EndFillSessionArgs): Promise<EndFillSessionResult> {
     return this.#request<EndFillSessionResult>({
@@ -1650,6 +1664,18 @@ export interface ReportFillSessionArgs {
 
 /** Result of `reportFillSession`. */
 export type ReportFillSessionResult = FillSessionView;
+
+/** Arguments for `POST /api/v1/fill-sessions/:id/observation`. */
+export interface ReportFillSessionObservationArgs {
+  /** Path parameters. */
+  readonly params: { id: string };
+  /** JSON request body. */
+  readonly body: ReportObservationRequest;
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `reportFillSessionObservation`. */
+export type ReportFillSessionObservationResult = ObservationRecorded;
 
 /** Arguments for `DELETE /api/v1/fill-sessions/:id`. */
 export interface EndFillSessionArgs {

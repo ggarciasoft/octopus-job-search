@@ -31,14 +31,19 @@ import {
   FILL_SESSION_TTL_SECONDS,
   FILL_SESSION_NONCE_HEADER,
   FILL_TARGET_LIMIT,
+  observationResultIsCoherent,
   type ApplicationStatus,
+  type AwaitingSubmission,
   type CreateFillSessionRequest,
   type FillSessionGrant,
   type FillSessionState,
   type FillSessionView,
   type FillTarget,
   type FillTargetList,
+  type ObservationRecorded,
+  type ObserveConfirmationResult,
   type ReportFillSessionRequest,
+  type ReportObservationRequest,
 } from '@job-getter/contracts';
 import type { FastifyRequest } from 'fastify';
 import { conflict, notFound, unauthenticated, unprocessable } from '../errors.js';
@@ -65,6 +70,7 @@ import {
   reconcileApplications,
   transitionApplication,
 } from '../applications/service.js';
+import { applyObservation } from '../applications/observe.js';
 import { resolveAllowedOrigins } from './fill.js';
 import { requireDeviceScope, type RouteHandler } from './context.js';
 
@@ -236,8 +242,75 @@ export const listFillTargets: RouteHandler = async (context, request) => {
       approval_expires_at: packet.expires_at?.toISOString() ?? null,
     });
   }
-  return { items } satisfies FillTargetList;
+  return {
+    items,
+    awaiting_submission: await awaitingSubmission(scope, principal.deviceId),
+  } satisfies FillTargetList;
 };
+
+/**
+ * Fills this device reported that are still waiting for the person to submit.
+ *
+ * Keyed on the fill session, because the session is the proof that this
+ * browser was on that page: another paired browser, or the desktop runner,
+ * filling the same application does not make it this one's to check. Only the
+ * application's current packet counts, and only while it is still
+ * `awaiting_user_submit`; once the person or an observation has settled it,
+ * it leaves the list.
+ */
+async function awaitingSubmission(
+  scope: WorkspaceScope,
+  deviceId: string,
+): Promise<AwaitingSubmission[]> {
+  const sessions = (await scope
+    .selectFrom('fill_sessions')
+    .selectAll()
+    .where('device_id', '=', deviceId)
+    .where('ended_reason', '=', 'reported')
+    .orderBy('ended_at', 'desc')
+    .limit(FILL_TARGET_LIMIT * 4)
+    .execute()) as FillSessionRow[];
+  if (sessions.length === 0) return [];
+
+  const waiting = (await scope
+    .selectFrom('applications')
+    .selectAll()
+    .where('status', '=', 'awaiting_user_submit')
+    .where(
+      'id',
+      'in',
+      sessions.map((session) => session.application_id),
+    )
+    .execute()) as ApplicationRow[];
+  const contexts = await loadApplicationContexts(scope, waiting, new Date());
+  const byApplication = new Map(contexts.map((loaded) => [loaded.application.id, loaded]));
+
+  const items: AwaitingSubmission[] = [];
+  const seen = new Set<string>();
+  // Newest first, so a re-fill of the same packet is represented by its latest session.
+  for (const session of sessions) {
+    if (seen.has(session.application_id)) continue;
+    const loaded = byApplication.get(session.application_id);
+    const packet = loaded?.packet as ApplicationPacketRow | null | undefined;
+    if (loaded === undefined || packet === null || packet === undefined) continue;
+    if (loaded.application.current_packet_id !== session.packet_id) continue;
+    seen.add(session.application_id);
+    items.push({
+      fill_session_id: session.id,
+      application_id: loaded.application.id,
+      job: { job_id: loaded.job.id, company: loaded.job.company, title: loaded.job.title },
+      destination: {
+        url: packet.destination_url,
+        origin: packet.destination_origin,
+        connector: packet.connector,
+        connector_version: packet.connector_version,
+      },
+      filled_at: (session.ended_at ?? session.created_at).toISOString(),
+    });
+    if (items.length === FILL_TARGET_LIMIT) break;
+  }
+  return items;
+}
 
 /**
  * POST /fill-sessions — bind one approved packet to one tab, for ten minutes.
@@ -552,3 +625,144 @@ function isUniqueViolation(error: unknown): boolean {
     (error as { code?: unknown }).code === '23505'
   );
 }
+
+/**
+ * POST /fill-sessions/:id/observation — after the person submitted, what the
+ * confirmation page said.
+ *
+ * The runner's observation is a task that watches a page it opened. The
+ * extension may only read an employer's page while the person invokes it
+ * there, so its observation is one look, taken on their click, at the page in
+ * front of them. What the look means is decided by `applyObservation`, the
+ * same function the runner's result goes through: a confirmation becomes
+ * `submitted` with the page's words as evidence, and anything less becomes
+ * `outcome_unknown` and waits for the person.
+ *
+ * The guards are the observe route's, adapted to who is asking:
+ *
+ *  * **Only the browser that filled it.** The session must belong to this
+ *    device and must have reported a fill. A cancelled or unreported session
+ *    proves nothing about who was on the page.
+ *  * **Only while it waits for the person.** From `outcome_unknown` the way
+ *    out is the person saying what happened, not another look ("disable a
+ *    second attempt until resolved"), and a recorded outcome is theirs.
+ *  * **Only the current packet, and only its own origin.** A confirmation read
+ *    anywhere else is not about this application.
+ *
+ * No nonce: the session's nonce lived for a fill that is over, and the person
+ * may submit long after the service worker that held it has gone. The device
+ * token plus a session this device reported is the credential here.
+ */
+export const reportFillSessionObservation: RouteHandler = async (context, request) => {
+  const { scope, principal } = requireDeviceScope(context, request);
+  const { id } = request.params as { id: string };
+  const body = request.body as ReportObservationRequest;
+  const now = new Date();
+
+  const device = await requireDevice(scope, principal.deviceId);
+  requireExtension(device);
+  const session = await loadSession(scope, id, principal.deviceId);
+  if (session.ended_reason !== 'reported') {
+    throw conflict(
+      'Only a fill this browser finished and reported can be checked for a confirmation.',
+    );
+  }
+
+  const result: ObserveConfirmationResult = {
+    application_id: session.application_id,
+    packet_id: session.packet_id,
+    outcome: body.outcome,
+    confirmation:
+      body.confirmation === null
+        ? null
+        : {
+            confirmation_text: body.confirmation.confirmation_text,
+            reference: body.confirmation.reference,
+            url: body.confirmation.url,
+            // The API's clock, not the browser's.
+            observed_at: now.toISOString(),
+          },
+    unknown_reason: body.unknown_reason,
+    // One look, not a watch.
+    watched_seconds: 0,
+    page_url: body.page_url,
+    adapter: body.adapter,
+    adapter_version: body.adapter_version,
+    screenshot_file_id: null,
+  };
+  if (!observationResultIsCoherent(result)) {
+    throw unprocessable(
+      'An observation either found a confirmation or says why it could not; not both, and not neither.',
+      { confirmation: 'Present exactly when outcome is "observed".' },
+    );
+  }
+
+  const status = await context.db.transaction().execute(async (trx) => {
+    const scoped = scope.withExecutor(trx);
+    const application = (await scoped
+      .selectFrom('applications')
+      .selectAll()
+      .where('id', '=', session.application_id)
+      .forUpdate()
+      .executeTakeFirst()) as ApplicationRow | undefined;
+    if (application === undefined) throw notFound('No such application.');
+
+    if (application.status === 'outcome_unknown') {
+      throw conflict(
+        'This application is already waiting for you to say what happened. ' +
+          'Looking again will not settle it; record the outcome in Job Getter instead.',
+      );
+    }
+    if (application.status !== 'awaiting_user_submit') {
+      throw conflict(
+        `This application is "${application.status}", so there is nothing to confirm.`,
+      );
+    }
+    if (application.current_packet_id !== session.packet_id) {
+      throw conflict('That packet has been superseded by a newer revision.');
+    }
+
+    const packet = (await scoped
+      .selectFrom('application_packets')
+      .selectAll()
+      .where('id', '=', session.packet_id)
+      .executeTakeFirstOrThrow()) as ApplicationPacketRow;
+    const allowed = resolveAllowedOrigins(
+      (device.allowed_origins as string[] | null) ?? [],
+      packet.destination_origin,
+    );
+    const pageOrigin = normalizeOrigin(body.page_url);
+    if (!allowed.includes(pageOrigin)) {
+      throw unprocessable('That page is not on the origin this application was filled on.', {
+        page_url: `Expected ${allowed.join(', ')}.`,
+      });
+    }
+
+    await applyObservation(scoped, application, result, {
+      via: 'extension',
+      fill_session_id: session.id,
+      device_id: session.device_id,
+    });
+    await recordAuditEvent(scoped, {
+      action: 'application.observed',
+      actorId: null,
+      objectId: application.id,
+      objectType: 'application',
+      metadata: {
+        via: 'extension',
+        device_id: session.device_id,
+        outcome: result.outcome,
+        unknown_reason: result.unknown_reason,
+      },
+    });
+
+    const after = await scoped
+      .selectFrom('applications')
+      .select('status')
+      .where('id', '=', application.id)
+      .executeTakeFirstOrThrow();
+    return after.status as ApplicationStatus;
+  });
+
+  return { application_id: session.application_id, status } satisfies ObservationRecorded;
+};

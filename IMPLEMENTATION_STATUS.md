@@ -48,7 +48,7 @@ single honest answer to "does this actually work yet?"
 | Functional requirements implemented | 11 of 14 (PR01–PR10, PR14); PR11 is partial (providers, weights, limits and connectors configurable; prompt bodies are not)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | Acceptance scenarios passing        | **28 of 28.** AT24 was the last, closed on 2026-09-22 by loading the extension in a real Chrome and having the page it had just filled attack it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Milestones complete                 | 4 of 8 (M0, M1, M2, M3); M4 in progress, 2 of 10 pilot workflows run; M5 in progress. **All 28 acceptance scenarios pass** — see the milestone table for what "complete" covers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| Verified working today              | Toolchain; `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm contracts:check`; every test suite (contracts 192, api 705, web 232, ui 7, worker 560, fill-planner 84, extension 59); two M4 workflows on the Compose stack — one full sandbox fill with a real Chromium, and one prepared to the approval gate against a live Greenhouse posting; the fixture corpus (46/46); all three images build; `docker compose up` from a `setup.sh`-generated `.env`; `scripts/smoke.sh` through the nginx proxy on `127.0.0.1:3000`; data persistence across `docker compose down`/`up`; `scripts/backup.sh` (gpg and `--no-encrypt`), `scripts/restore.sh` into a separate installation and over the source, and `scripts/migrate.sh` (AT25); workspace deletion on a throwaway stack, and a restore of a pre-deletion backup that re-deleted it (AT26); all eleven M1–M3 screens rendered by a real Chromium against the live stack, in English and Spanish |
+| Verified working today              | Toolchain; `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm contracts:check`; every test suite (contracts 192, api 719, web 232, ui 7, worker 563, fill-planner 84, extension 74); two M4 workflows on the Compose stack — one full sandbox fill with a real Chromium, and one prepared to the approval gate against a live Greenhouse posting; the fixture corpus (46/46); all three images build; `docker compose up` from a `setup.sh`-generated `.env`; `scripts/smoke.sh` through the nginx proxy on `127.0.0.1:3000`; data persistence across `docker compose down`/`up`; `scripts/backup.sh` (gpg and `--no-encrypt`), `scripts/restore.sh` into a separate installation and over the source, and `scripts/migrate.sh` (AT25); workspace deletion on a throwaway stack, and a restore of a pre-deletion backup that re-deleted it (AT26); all eleven M1–M3 screens rendered by a real Chromium against the live stack, in English and Spanish |
 | **Never executed**                  | `scripts/smoke.ps1`, `scripts/backup.ps1`, `scripts/dev.*` (syntax-checked only); `scripts/restore.ps1` end to end (its new file-pruning block ran on its own under Windows PowerShell 5.1; the whole script stops earlier on 5.1, see AT26); `backup.sh --age-recipient` (only the gpg and plaintext paths ran); the `local-ai` Ollama profile; any image build on a host WITHOUT TLS interception (the no-secret path is verified only by construction); macOS/Linux hosts                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
 If you came here from the README looking for a product: there isn't one yet.
@@ -1288,6 +1288,68 @@ on 5.1 (see "Backup and restore are incomplete by design").
 receipt page; both are covered by component tests only. The retry of a failed
 erasure ran in tests, not live. So did the hosted rule that setup stays closed.
 A deletion's receipt does not survive a restore of an older backup.
+
+### M5: the extension checks the confirmation page (verified 2026-09-22)
+
+The desktop runner could record "Submitted: verified" by watching the
+employer's page after the person submitted. The extension could not, so
+anything filled through it could only ever be "reported by you". That gap is
+now closed. The mechanism differs because the extension's access differs. It may read an
+employer's page only while the person invokes it there, and submitting
+usually navigates, which ends that access. Background watching would need
+broad host permissions, which the extension deliberately does not have. So
+it is **one look, on the person's click**: they open the popup on the page
+the employer shows after submit and press **I submitted it: check this
+page**.
+
+- **One reader, two clients.** `readConfirmation` in
+  `apps/extension/src/adapters/greenhouse.ts` is the runner's
+  `_CONFIRMATION_SCRIPT` line for line, pinned by
+  `fixtures/fill-planner/greenhouse-confirmation.json`. That file records
+  Chromium running the runner's own script over the confirmation fixture and
+  two form pages (`generate-confirmation.py`). jsdom must reproduce it
+  (`parity.test.ts`), and Chromium must still produce it
+  (`test_planner_parity.py`). The parity test caught two real divergences on
+  its first run. The extension's `clean` strips a trailing `*`, which the
+  runner's does not. And a `new RegExp('…')` string had lost its backslashes,
+  so `\s` matched the letter "s" and no reference was ever found.
+- **One set of rules.** `POST /fill-sessions/:id/observation` (device-only)
+  goes through `applyObservation`, the function the runner's task result now
+  also uses. A confirmation becomes `submitted` with `adapter_observed`
+  evidence. Anything else becomes `outcome_unknown`, and nothing can say "not
+  submitted". It is accepted only from the device that **reported** that fill
+  session, only from `awaiting_user_submit` (so there is no second look after
+  `outcome_unknown`, and a recorded outcome is never overwritten), only for
+  the current packet, and only from a page on the packet's own origin. The API
+  stamps the observation time itself. There is no nonce, because the fill's
+  nonce died with the fill.
+- **The list.** `GET /fill-targets` also returns `awaiting_submission`: this
+  device's reported fills still waiting for submission. The field is additive,
+  and an older installation that omits it reads as "nothing waiting".
+
+Tests: API +14 (`fill-sessions.test.ts`), covering the list; `submitted` with
+evidence stamped by the API; `outcome_unknown` with no evidence; no second
+look; the person's outcome wins; another origin; three incoherent reports; a
+runner-only reason; an unreported session; a second browser; a revoked
+browser; and a session cookie. Extension +15: the flow through a fake
+`chrome` and `fetch` (another origin is never read; a page that moves while
+being read records nothing; a still-rendering page gets more looks), the
+reader's edge cases (a footer "thank you" is ignored), and parity. Worker +3
+(Chromium parity).
+
+**In a real Chrome:** `.local/e2e-m5-confirm.py`, **14 of 14 checks**.
+Application A was filled through the popup. The tab then went to the
+confirmation page, and the popup's check recorded `submitted` with reference
+`NW-2026-4471`, the page's own words, and not the footer's decoy. Application
+B was checked while still on its form and became `outcome_unknown` with no
+evidence. Screenshots: `.local/screenshots/m5-confirm-*.png`. **Shortcuts,
+named in the script:** apply_url seeded with psql, host permissions declared
+in a manifest copy, the device paired through the API, "submit" simulated by
+navigating to the confirmation fixture, and the popup opened as a tab with
+`tabs.query` pointed at the form tab. An earlier attempt failed before
+filling, because job titles that did not contain the page's role were
+refused by the identity check. It left two approved test applications on the
+owner's stack (`Confirmation Check Engineer e15f8f-A/B`).
 
 ### The desktop runner's token folder, and its pairing prompt (verified 2026-09-22)
 

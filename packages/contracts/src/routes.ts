@@ -56,7 +56,9 @@ import {
   FillSessionGrant,
   FillSessionView,
   FillTargetList,
+  ObservationRecorded,
   ReportFillSessionRequest,
+  ReportObservationRequest,
 } from './schemas/fill-sessions.js';
 import { ObserveApplicationRequest } from './tasks/observe-confirmation.js';
 import { NoopEchoInput } from './tasks/noop-echo.js';
@@ -882,6 +884,19 @@ export const ROUTES: readonly RouteDefinition[] = [
     params: IdParam,
     body: ReportFillSessionRequest,
     response: FillSessionView,
+    successStatus: 200,
+    originExempt: true,
+  },
+  {
+    operationId: 'reportFillSessionObservation',
+    method: 'POST',
+    path: '/fill-sessions/:id/observation',
+    auth: 'device',
+    summary:
+      'After the person submitted: what the confirmation page said, read on their click. Once.',
+    params: IdParam,
+    body: ReportObservationRequest,
+    response: ObservationRecorded,
     successStatus: 200,
     originExempt: true,
   },

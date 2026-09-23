@@ -71,7 +71,21 @@ export async function applyObserveConfirmationResult(
   const scope = WorkspaceScope.forTaskWorkspace(trx, task.workspace_id);
   const application = await loadApplication(trx, scope, input.application_id);
   if (application === null) return;
+  await applyObservation(scope, application, result);
+}
 
+/**
+ * The rules above, for whichever client looked: the runner's task result and
+ * the extension's one look at the page both land here, so the two cannot
+ * disagree about what an observation means. `extra` is added to the event,
+ * for recording which client and which fill session it was.
+ */
+export async function applyObservation(
+  scope: WorkspaceScope,
+  application: ApplicationRow,
+  result: ObserveConfirmationResult,
+  extra: Record<string, unknown> = {},
+): Promise<void> {
   // A result that claims to know and not know at once is refused rather than
   // stored. The schema cannot express the pairing, so it is checked here.
   const coherent = observationResultIsCoherent(result);
@@ -86,6 +100,7 @@ export async function applyObserveConfirmationResult(
     unknown_reason: coherent ? result.unknown_reason : 'runner_error',
     adapter: result.adapter,
     adapter_version: result.adapter_version,
+    ...extra,
   };
 
   if (!OBSERVABLE_STATUSES.includes(application.status)) {

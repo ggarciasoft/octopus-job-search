@@ -135,6 +135,10 @@ The popup then shows your approved applications. The device appears as
 4. Check the page. Anything the packet does not answer is left for you, and the
    popup says so.
 5. **You** press the employer's submit button. Job Getter never does.
+6. On the page that appears next, open the popup and press **I submitted it:
+   check this page**. If that page shows a confirmation, the application is
+   recorded as submitted, with the confirmation's words as evidence. If it
+   doesn't, Job Getter asks you what happened.
 
 Only Greenhouse forms are supported, and only a synthetic Greenhouse form has
 been filled so far. See the [source support matrix](../README.md#source-support-matrix).

@@ -191,7 +191,9 @@ describe('loadTargets', () => {
 
     const result = await loadTargets({ api, fetch });
 
-    expect(result).toEqual({ kind: 'ok', baseUrl: BASE, items: [target()] });
+    // The fake answers the way an installation older than this extension
+    // does, with no `awaiting_submission`: that reads as nothing waiting.
+    expect(result).toEqual({ kind: 'ok', baseUrl: BASE, items: [target()], awaiting: [] });
     expect(calls[0]!.url).toBe(`${BASE}/api/v1/fill-targets`);
     expect(calls[0]!.init.method).toBe('GET');
     expect(calls[0]!.init.credentials).toBe('omit');

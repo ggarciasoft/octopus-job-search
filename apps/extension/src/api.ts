@@ -24,7 +24,9 @@ import {
   type FillSessionGrant,
   type FillSessionView,
   type FillTargetList,
+  type ObservationRecorded,
   type ReportFillSessionRequest,
+  type ReportObservationRequest,
 } from '@job-getter/contracts';
 
 export interface ApiError {
@@ -140,6 +142,21 @@ export function reportFillSession(
   body: ReportFillSessionRequest,
 ): Promise<FillSessionView> {
   return request(options, `/fill-sessions/${id}/report`, { method: 'POST', body, nonce });
+}
+
+/**
+ * What the confirmation page said, after the person submitted.
+ *
+ * No nonce: the fill it belongs to is over, and the service worker that held
+ * that nonce may be long gone by the time someone presses submit. The API
+ * accepts it only from the device that reported the fill.
+ */
+export function reportObservation(
+  options: ApiOptions,
+  sessionId: string,
+  body: ReportObservationRequest,
+): Promise<ObservationRecorded> {
+  return request(options, `/fill-sessions/${sessionId}/observation`, { method: 'POST', body });
 }
 
 export function endFillSession(options: ApiOptions, id: string, nonce: string): Promise<void> {
