@@ -651,6 +651,28 @@ export const en = {
   'settings.missingBody':
     'Scan schedules, and prompt and template choices beyond the ones here, arrive with later milestones. They are absent rather than shown as controls that do nothing. Export and deletion are on the Privacy tab.',
 
+  'settingsFile.title': 'Settings file',
+  'settingsFile.intro':
+    'Save your preferences and the boards you watch as a JSON file, to keep a copy or to set up another installation the same way. The file never contains your AI provider or its key, your saved answers, or anything from your profile.',
+  'settingsFile.export': 'Export settings',
+  'settingsFile.exporting': 'Exporting',
+  'settingsFile.importLabel': 'Import a settings file',
+  'settingsFile.importDescription':
+    'A .json file exported from Job Getter. Nothing changes until you confirm.',
+  'settingsFile.notJson': 'That file is not JSON, so it cannot be a settings file.',
+  'settingsFile.tooLarge': 'That file is far larger than a settings file can be.',
+  'settingsFile.confirmTitle': 'Import {name}?',
+  'settingsFile.confirmPreferences':
+    'Every preference on this page will be replaced with the one in the file, and unsaved changes here will be lost. Matches will show as out of date until they are scored again.',
+  'settingsFile.confirmBoards':
+    'Boards in the file: {count}. Any you are not watching yet will be added. Boards you already have stay exactly as they are, and none are removed.',
+  'settingsFile.confirmBoardsUnknown':
+    'Boards in the file that you are not watching yet will be added. Boards you already have stay exactly as they are, and none are removed.',
+  'settingsFile.confirm': 'Import',
+  'settingsFile.importing': 'Importing',
+  'settingsFile.imported':
+    'Imported. Preferences are now at revision {revision}. Boards added: {created}. Already here: {present}.',
+
   'preferences.loading': 'Loading preferences…',
   'preferences.loadFailed': 'Preferences could not be loaded.',
   'preferences.revision': 'Revision {revision} · settings schema version {version}',

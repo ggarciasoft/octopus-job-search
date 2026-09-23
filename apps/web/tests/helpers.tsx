@@ -532,6 +532,18 @@ export function createFakeApi(overrides: Partial<JobGetterApi> = {}): JobGetterA
     confirmProfileImport: vi.fn(async () => makeProfile({ revision: 4 })),
     getPreferences: vi.fn(async () => makePreferencesView()),
     putPreferences: vi.fn(async () => makePreferencesView({ revision: 3 })),
+    exportSettings: vi.fn(async () => ({
+      format: 'job-getter-settings' as const,
+      format_version: 1 as const,
+      exported_at: '2026-09-22T12:00:00.000Z',
+      preferences: makePreferencesView().config,
+      sources: [],
+    })),
+    importSettings: vi.fn(async () => ({
+      preferences: makePreferencesView({ revision: 3 }),
+      sources_created: 0,
+      sources_already_present: 0,
+    })),
     getProviderSettings: vi.fn(async () => makeProviderView()),
     putProviderSettings: vi.fn(async () => makeProviderView()),
     testProviderSettings: vi.fn(async () => ({

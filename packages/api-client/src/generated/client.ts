@@ -52,6 +52,9 @@ import type {
   ResumeView,
   ResumesListQuery,
   ScanView,
+  SettingsFile,
+  SettingsImportRequest,
+  SettingsImportResult,
   SetupRequest,
   SetupStatus,
   SourceView,
@@ -405,6 +408,28 @@ export class JobGetterApiClient {
       method: 'PUT',
       prefix: API_PREFIX,
       path: '/preferences',
+      json: args.body,
+      csrf: true,
+      signal: args.signal,
+    });
+  }
+
+  /** Preferences and boards as a settings file; no keys, tokens or personal data. (`GET /api/v1/settings/export`) */
+  exportSettings(args: ExportSettingsArgs = {}): Promise<ExportSettingsResult> {
+    return this.#request<ExportSettingsResult>({
+      method: 'GET',
+      prefix: API_PREFIX,
+      path: '/settings/export',
+      signal: args.signal,
+    });
+  }
+
+  /** Replace preferences and add missing boards from a settings file, atomically. (`POST /api/v1/settings/import`) */
+  importSettings(args: ImportSettingsArgs): Promise<ImportSettingsResult> {
+    return this.#request<ImportSettingsResult>({
+      method: 'POST',
+      prefix: API_PREFIX,
+      path: '/settings/import',
       json: args.body,
       csrf: true,
       signal: args.signal,
@@ -1151,6 +1176,24 @@ export interface PutPreferencesArgs {
 
 /** Result of `putPreferences`. */
 export type PutPreferencesResult = PreferencesView;
+
+/** Arguments for `GET /api/v1/settings/export`. */
+export interface ExportSettingsArgs {
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `exportSettings`. */
+export type ExportSettingsResult = SettingsFile;
+
+/** Arguments for `POST /api/v1/settings/import`. */
+export interface ImportSettingsArgs {
+  /** JSON request body. */
+  readonly body: SettingsImportRequest;
+  readonly signal?: AbortSignal;
+}
+
+/** Result of `importSettings`. */
+export type ImportSettingsResult = SettingsImportResult;
 
 /** Arguments for `GET /api/v1/settings/providers`. */
 export interface GetProviderSettingsArgs {

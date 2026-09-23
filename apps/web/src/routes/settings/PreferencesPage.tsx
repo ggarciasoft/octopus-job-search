@@ -34,6 +34,7 @@ import { useTranslation } from '../../i18n/I18nProvider';
 import { formatNumber } from '../../i18n/format';
 import { SUPPORTED_LOCALES } from '../../i18n/messages';
 import { isCountryCode, isLanguageCode, literalOptions } from '../../profile/factValues';
+import { SettingsFilePanel } from './SettingsFilePanel';
 
 export const PREFERENCES_QUERY_KEY = ['preferences'] as const;
 
@@ -71,6 +72,7 @@ export function PreferencesPage() {
     queryKey: PREFERENCES_QUERY_KEY,
     queryFn: ({ signal }) => api.getPreferences({ signal }),
   });
+  const queryClient = useQueryClient();
   // Held here rather than in the form, which remounts on every new revision.
   const [savedRevision, setSavedRevision] = useState<number | null>(null);
 
@@ -95,7 +97,8 @@ export function PreferencesPage() {
     );
   }
   // Keyed by revision so a reload after a 409 rebuilds the form from the
-  // server's copy only when the user asked for it.
+  // server's copy only when the user asked for it. An import replaces the
+  // revision too, which is what swaps the imported values into the form.
   return (
     <>
       {savedRevision === null ? null : (
@@ -104,6 +107,15 @@ export function PreferencesPage() {
         </Callout>
       )}
       <PreferencesForm key={query.data.revision} view={query.data} onSaved={setSavedRevision} />
+      <div className="mt-8">
+        <SettingsFilePanel
+          view={query.data}
+          onImported={(result) => {
+            setSavedRevision(null);
+            queryClient.setQueryData(PREFERENCES_QUERY_KEY, result.preferences);
+          }}
+        />
+      </div>
     </>
   );
 }

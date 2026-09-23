@@ -654,6 +654,29 @@ export const es: Record<MessageKey, string> = {
   'settings.missingBody':
     'Los horarios de rastreo, y más opciones de prompts y plantillas, llegan con hitos posteriores. Están ausentes en lugar de mostrarse como controles que no hacen nada. La exportación y el borrado están en la pestaña Privacidad.',
 
+  'settingsFile.title': 'Archivo de ajustes',
+  'settingsFile.intro':
+    'Guarda tus preferencias y los portales que sigues en un archivo JSON, para tener una copia o para configurar otra instalación igual. El archivo nunca incluye tu proveedor de IA ni su clave, tus respuestas guardadas ni nada de tu perfil.',
+  'settingsFile.export': 'Exportar ajustes',
+  'settingsFile.exporting': 'Exportando',
+  'settingsFile.importLabel': 'Importar un archivo de ajustes',
+  'settingsFile.importDescription':
+    'Un archivo .json exportado desde Job Getter. No cambia nada hasta que confirmes.',
+  'settingsFile.notJson': 'Ese archivo no es JSON, así que no puede ser un archivo de ajustes.',
+  'settingsFile.tooLarge':
+    'Ese archivo es mucho más grande de lo que puede ser un archivo de ajustes.',
+  'settingsFile.confirmTitle': '¿Importar {name}?',
+  'settingsFile.confirmPreferences':
+    'Cada preferencia de esta página se sustituirá por la del archivo, y se perderán los cambios sin guardar. Las coincidencias aparecerán como desactualizadas hasta que se vuelvan a puntuar.',
+  'settingsFile.confirmBoards':
+    'Portales en el archivo: {count}. Se añadirán los que aún no sigues. Los que ya tienes se quedan exactamente como están, y no se elimina ninguno.',
+  'settingsFile.confirmBoardsUnknown':
+    'Se añadirán los portales del archivo que aún no sigues. Los que ya tienes se quedan exactamente como están, y no se elimina ninguno.',
+  'settingsFile.confirm': 'Importar',
+  'settingsFile.importing': 'Importando',
+  'settingsFile.imported':
+    'Importado. Las preferencias están ahora en la revisión {revision}. Portales añadidos: {created}. Ya estaban: {present}.',
+
   'preferences.loading': 'Cargando preferencias…',
   'preferences.loadFailed': 'No se pudieron cargar las preferencias.',
   'preferences.revision': 'Revisión {revision} · versión del esquema de ajustes {version}',

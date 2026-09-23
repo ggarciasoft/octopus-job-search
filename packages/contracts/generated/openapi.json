@@ -12564,6 +12564,420 @@
         }
       }
     },
+    "/api/v1/settings/export": {
+      "get": {
+        "operationId": "exportSettings",
+        "summary": "Preferences and boards as a settings file; no keys, tokens or personal data.",
+        "tags": [
+          "settings"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Preferences and boards as a settings file; no keys, tokens or personal data.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "format",
+                    "format_version",
+                    "exported_at",
+                    "preferences",
+                    "sources"
+                  ],
+                  "properties": {
+                    "format": {
+                      "const": "job-getter-settings",
+                      "type": "string"
+                    },
+                    "format_version": {
+                      "const": 1,
+                      "type": "number"
+                    },
+                    "exported_at": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "preferences": {
+                      "$ref": "#/components/schemas/Preferences"
+                    },
+                    "sources": {
+                      "maxItems": 500,
+                      "type": "array",
+                      "items": {
+                        "additionalProperties": false,
+                        "type": "object",
+                        "required": [
+                          "connector",
+                          "board_key",
+                          "base_url",
+                          "enabled"
+                        ],
+                        "properties": {
+                          "connector": {
+                            "anyOf": [
+                              {
+                                "const": "greenhouse",
+                                "type": "string"
+                              },
+                              {
+                                "const": "lever",
+                                "type": "string"
+                              }
+                            ]
+                          },
+                          "board_key": {
+                            "minLength": 1,
+                            "maxLength": 200,
+                            "pattern": "^[A-Za-z0-9._-]+$",
+                            "type": "string"
+                          },
+                          "base_url": {
+                            "anyOf": [
+                              {
+                                "maxLength": 500,
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "enabled": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body, query or header.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated: no valid session, device token or worker credential.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted for this workspace resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or not accessible from the authenticated workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale revision, duplicate command or idempotency key reuse with a different body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload exceeds the configured upload limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Structurally valid but invalid domain input.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota or rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/settings/import": {
+      "post": {
+        "operationId": "importSettings",
+        "summary": "Replace preferences and add missing boards from a settings file, atomically.",
+        "tags": [
+          "settings"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Replace preferences and add missing boards from a settings file, atomically.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "preferences",
+                    "sources_created",
+                    "sources_already_present"
+                  ],
+                  "properties": {
+                    "preferences": {
+                      "$ref": "#/components/schemas/PreferencesView"
+                    },
+                    "sources_created": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "sources_already_present": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request body, query or header.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated: no valid session, device token or worker credential.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated but not permitted for this workspace resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or not accessible from the authenticated workspace.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale revision, duplicate command or idempotency key reuse with a different body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload exceeds the configured upload limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Structurally valid but invalid domain input.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Quota or rate limit exceeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "description": "Anti-CSRF token for cookie-authenticated mutations; origin is verified too.",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 200
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "expected_revision",
+                  "settings"
+                ],
+                "properties": {
+                  "expected_revision": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "settings": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "format",
+                      "format_version",
+                      "exported_at",
+                      "preferences",
+                      "sources"
+                    ],
+                    "properties": {
+                      "format": {
+                        "const": "job-getter-settings",
+                        "type": "string"
+                      },
+                      "format_version": {
+                        "const": 1,
+                        "type": "number"
+                      },
+                      "exported_at": {
+                        "format": "date-time",
+                        "type": "string"
+                      },
+                      "preferences": {
+                        "$ref": "#/components/schemas/Preferences"
+                      },
+                      "sources": {
+                        "maxItems": 500,
+                        "type": "array",
+                        "items": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "connector",
+                            "board_key",
+                            "base_url",
+                            "enabled"
+                          ],
+                          "properties": {
+                            "connector": {
+                              "anyOf": [
+                                {
+                                  "const": "greenhouse",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "lever",
+                                  "type": "string"
+                                }
+                              ]
+                            },
+                            "board_key": {
+                              "minLength": 1,
+                              "maxLength": 200,
+                              "pattern": "^[A-Za-z0-9._-]+$",
+                              "type": "string"
+                            },
+                            "base_url": {
+                              "anyOf": [
+                                {
+                                  "maxLength": 500,
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "enabled": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/settings/providers": {
       "get": {
         "operationId": "getProviderSettings",

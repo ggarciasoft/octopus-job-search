@@ -170,15 +170,16 @@ you. `job-getter-runner status` shows what it is paired with.
 
 ## Everyday operation
 
-| To                           | Do                                                                                           |
-| ---------------------------- | -------------------------------------------------------------------------------------------- |
-| Stop                         | `docker compose down`. Your data is kept.                                                    |
-| Start again                  | `docker compose up -d`                                                                       |
-| Back up                      | `sh scripts/backup.sh`. See [RUNBOOK §3](RUNBOOK.md)                                         |
-| Upgrade                      | Back up first, then [RUNBOOK §5](RUNBOOK.md)                                                 |
-| Update the extension         | `git pull`, `pnpm install`, `pnpm extension:build`, then **Reload** in `chrome://extensions` |
-| Stop a device acting for you | **Revoke** it in Settings → Devices. **Forget this pairing** in the popup is local only      |
-| Delete everything            | Settings → Privacy → **Delete my workspace**. See [RUNBOOK §8](RUNBOOK.md)                   |
+| To                           | Do                                                                                                      |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Stop                         | `docker compose down`. Your data is kept.                                                               |
+| Start again                  | `docker compose up -d`                                                                                  |
+| Back up                      | `sh scripts/backup.sh`. See [RUNBOOK §3](RUNBOOK.md)                                                    |
+| Upgrade                      | Back up first, then [RUNBOOK §5](RUNBOOK.md)                                                            |
+| Copy your settings elsewhere | Settings → Preferences → **Export settings**, then **Import a settings file** on the other installation |
+| Update the extension         | `git pull`, `pnpm install`, `pnpm extension:build`, then **Reload** in `chrome://extensions`            |
+| Stop a device acting for you | **Revoke** it in Settings → Devices. **Forget this pairing** in the popup is local only                 |
+| Delete everything            | Settings → Privacy → **Delete my workspace**. See [RUNBOOK §8](RUNBOOK.md)                              |
 
 > **`docker compose down -v` deletes all your data**: every profile, CV and
 > application. Back up first.

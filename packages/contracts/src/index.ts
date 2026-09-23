@@ -28,6 +28,7 @@ export * from './tasks/parse-profile.js';
 export * from './schemas/requirements.js';
 export * from './schemas/matches.js';
 export * from './schemas/jobs.js';
+export * from './schemas/settings-file.js';
 export * from './tasks/fetch-board.js';
 export * from './tasks/match-job.js';
 export * from './schemas/resumes.js';

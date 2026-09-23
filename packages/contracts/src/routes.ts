@@ -11,6 +11,11 @@ import {
 } from './schemas/auth.js';
 import { FilePurpose, FileUploadResponse } from './schemas/files.js';
 import { PreferencesPutRequest, PreferencesView } from './schemas/preferences.js';
+import {
+  SettingsFile,
+  SettingsImportRequest,
+  SettingsImportResult,
+} from './schemas/settings-file.js';
 import { Profile, ProfilePatchRequest } from './schemas/profile.js';
 import {
   ProviderSettingsPutRequest,
@@ -325,6 +330,26 @@ export const ROUTES: readonly RouteDefinition[] = [
     summary: 'Replace preferences; unknown keys are rejected.',
     body: PreferencesPutRequest,
     response: PreferencesView,
+    successStatus: 200,
+    csrf: true,
+  },
+  {
+    operationId: 'exportSettings',
+    method: 'GET',
+    path: '/settings/export',
+    auth: 'session',
+    summary: 'Preferences and boards as a settings file; no keys, tokens or personal data.',
+    response: SettingsFile,
+    successStatus: 200,
+  },
+  {
+    operationId: 'importSettings',
+    method: 'POST',
+    path: '/settings/import',
+    auth: 'session',
+    summary: 'Replace preferences and add missing boards from a settings file, atomically.',
+    body: SettingsImportRequest,
+    response: SettingsImportResult,
     successStatus: 200,
     csrf: true,
   },

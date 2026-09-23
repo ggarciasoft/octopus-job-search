@@ -29,6 +29,8 @@ export type JobGetterApi = Pick<
   | 'confirmProfileImport'
   | 'getPreferences'
   | 'putPreferences'
+  | 'exportSettings'
+  | 'importSettings'
   | 'getProviderSettings'
   | 'putProviderSettings'
   | 'testProviderSettings'

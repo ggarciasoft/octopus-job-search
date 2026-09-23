@@ -27,6 +27,7 @@ import { downloadFile, uploadFile } from './files.js';
 import { getProfile, patchProfile } from './profile.js';
 import { confirmProfileImport, createProfileImport, getProfileImport } from './imports.js';
 import { getPreferences, putPreferences } from './preferences.js';
+import { exportSettings, importSettings } from './settings-file.js';
 import { getProviderSettings, putProviderSettings, testProviderSettings } from './providers.js';
 import { createSource, deleteSource, listSources, patchSource, scanSource } from './sources.js';
 import { getScan } from './scans.js';
@@ -121,6 +122,8 @@ function handlers(): Readonly<Record<string, RouteHandler>> {
     confirmProfileImport,
     getPreferences,
     putPreferences,
+    exportSettings,
+    importSettings,
     getProviderSettings,
     putProviderSettings,
     testProviderSettings,
