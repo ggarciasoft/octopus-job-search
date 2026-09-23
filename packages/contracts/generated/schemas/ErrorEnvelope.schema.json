@@ -75,6 +75,10 @@
               "type": "string"
             },
             {
+              "const": "PROTOCOL_UNSUPPORTED",
+              "type": "string"
+            },
+            {
               "const": "INTERNAL_ERROR",
               "type": "string"
             }

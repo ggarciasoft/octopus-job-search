@@ -1961,7 +1961,8 @@
           "device_id",
           "token",
           "expires_at",
-          "allowed_origins"
+          "allowed_origins",
+          "protocol_version"
         ],
         "properties": {
           "device_id": {
@@ -1984,6 +1985,10 @@
               "maxLength": 500,
               "type": "string"
             }
+          },
+          "protocol_version": {
+            "maxLength": 16,
+            "type": "string"
           }
         }
       },
@@ -2460,6 +2465,10 @@
                   },
                   {
                     "const": "PROVIDER_UNAVAILABLE",
+                    "type": "string"
+                  },
+                  {
+                    "const": "PROTOCOL_UNSUPPORTED",
                     "type": "string"
                   },
                   {

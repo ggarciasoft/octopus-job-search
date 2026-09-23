@@ -341,6 +341,8 @@ export const es: Record<MessageKey, string> = {
     'El presupuesto configurado se agotó. La revisión y la exportación siguen funcionando; se bloquean las nuevas inferencias.',
   'error.PROVIDER_UNAVAILABLE':
     'El proveedor del modelo no respondió. No se sustituyó por otro proveedor y tu trabajo se conservó.',
+  'error.PROTOCOL_UNSUPPORTED':
+    'La extensión del navegador y esta instalación usan versiones de protocolo distintas. Actualiza la que sea más antigua.',
   'error.INTERNAL_ERROR':
     'El servidor tuvo un error interno. El ID de solicitud de abajo lo identifica en los registros.',
 

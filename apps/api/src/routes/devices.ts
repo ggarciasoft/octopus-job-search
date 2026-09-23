@@ -15,6 +15,7 @@
  */
 import {
   DEVICE_PAIRING_TTL_SECONDS,
+  EXTENSION_PROTOCOL_VERSION,
   type CreatePairingRequest,
   type DeviceExchangeRequest,
   type DeviceExchangeResponse,
@@ -34,7 +35,12 @@ import {
   requireDevice,
   toDeviceView,
 } from '../devices/service.js';
-import { requireScope, requireSession, type RouteHandler } from './context.js';
+import {
+  requireScope,
+  requireSession,
+  requireSupportedProtocol,
+  type RouteHandler,
+} from './context.js';
 
 export const listDevices: RouteHandler = async (context, request, reply) => {
   const scope = requireScope(context, request);
@@ -115,6 +121,10 @@ export const createDevicePairing: RouteHandler = async (context, request, reply)
  * without learning whether it was wrong, expired or already used.
  */
 export const exchangeDevicePairing: RouteHandler = async (context, request, reply) => {
+  // Before the code is spent: an extension that cannot talk to this server
+  // should keep its code for after the upgrade, not burn it on a pairing
+  // that will fail on its next request.
+  requireSupportedProtocol(request);
   const body = request.body as DeviceExchangeRequest;
   const now = new Date();
   const token = generateToken();
@@ -164,6 +174,7 @@ export const exchangeDevicePairing: RouteHandler = async (context, request, repl
     token,
     expires_at: expiresAt.toISOString(),
     allowed_origins: (device.allowed_origins as string[] | null) ?? [],
+    protocol_version: EXTENSION_PROTOCOL_VERSION,
   } satisfies DeviceExchangeResponse);
 };
 

@@ -367,10 +367,23 @@ changes are applied in the right order without a separate command.
 
 ### Extension and protocol compatibility
 
-The server supports the **current and previous** protocol minor version
-(`docs/spec/10_DEPLOYMENT.md`). A browser extension one minor version behind
-keeps working; two behind must be updated. Check `protocol_version` in the
-device pairing response after an upgrade.
+**The browser extension.** The server supports the **current and previous**
+extension protocol minor version (`docs/spec/10_DEPLOYMENT.md`). The extension
+sends its version in `x-job-getter-protocol` on every request. An extension
+one minor version behind keeps working. Anything older, a different major
+version, or an extension newer than the server gets **426
+`PROTOCOL_UNSUPPORTED`**, with a message saying which side to update, and the
+popup shows it. A refused pairing does not spend its code, so it still works
+after the update. The pairing response carries the server's
+`protocol_version`. An extension that sends no header predates it and counts
+as 1.0. The rule is `extensionProtocolVerdict` in
+`packages/contracts/src/schemas/devices.ts`.
+
+**The desktop runner and the container worker** use a separate task protocol:
+one integer (`PROTOCOL_VERSION`, currently 1), which must match the API
+**exactly**. A mismatch is refused at claim time with a message naming the
+version the API speaks. After an upgrade, update the runner in the same step
+(`git pull`, then `uv sync --project services/worker --extra browser`).
 
 ### Release hygiene
 

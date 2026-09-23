@@ -36,8 +36,16 @@ export const DEVICE_PAIRING_TTL_SECONDS = 300;
 /** 04_API_CONTRACTS.md: "Tokens expire after 30 days and can be revoked." */
 export const DEVICE_TOKEN_TTL_DAYS = 30;
 
-/** The header a paired device presents. Not a cookie: a runner is not a browser. */
-export const DEVICE_TOKEN_HEADER = 'x-device-token';
+// The header names and the extension protocol are in `../headers.ts`, which
+// imports nothing, so the browser extension can use them without pulling
+// TypeBox and every schema into its bundle.
+export {
+  DEVICE_TOKEN_HEADER,
+  EXTENSION_PROTOCOL_HEADER,
+  EXTENSION_PROTOCOL_VERSION,
+  extensionProtocolVerdict,
+  type ProtocolVerdict,
+} from '../headers.js';
 
 /**
  * Derived, never stored. A row is `pending` until its code is exchanged, and
@@ -127,6 +135,8 @@ export const DeviceExchangeResponse = Type.Object(
     token: Type.String({ minLength: 32, maxLength: 200 }),
     expires_at: Timestamp,
     allowed_origins: Type.Array(Type.String({ maxLength: 500 }), { maxItems: 20 }),
+    /** The extension protocol this server speaks; it also serves the previous minor. */
+    protocol_version: Type.String({ maxLength: 16 }),
   },
   { additionalProperties: false },
 );

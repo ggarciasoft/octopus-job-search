@@ -340,6 +340,8 @@ export const en = {
     'The configured spending budget is exhausted. Review and export still work; new inference is blocked.',
   'error.PROVIDER_UNAVAILABLE':
     'The model provider did not respond. No other provider was substituted, and your work was kept.',
+  'error.PROTOCOL_UNSUPPORTED':
+    'This browser extension and this installation speak different protocol versions. Update whichever is older.',
   'error.INTERNAL_ERROR':
     'The server hit an internal error. The request ID below identifies it in the logs.',
 

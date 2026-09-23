@@ -22,6 +22,8 @@
  */
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
+  EXTENSION_PROTOCOL_HEADER,
+  EXTENSION_PROTOCOL_VERSION,
   FILL_SESSION_NONCE_HEADER,
   FILL_SESSION_TTL_SECONDS,
   type ApplicationEventView,
@@ -1174,5 +1176,65 @@ describe('after the person submits: the extension’s one look at the confirmati
     );
     expect(response.statusCode).toBe(401);
     expect((await readApplication(view.id)).status).toBe('awaiting_user_submit');
+  });
+});
+
+describe('the extension protocol version (current and previous minor)', () => {
+  function targetsWith(token: string, version?: string) {
+    return harness.app.inject(
+      asDevice(token, {
+        method: 'GET',
+        url: '/api/v1/fill-targets',
+        headers: version === undefined ? {} : { [EXTENSION_PROTOCOL_HEADER]: version },
+      }),
+    );
+  }
+
+  it('serves its own version, and an extension that predates the header', async () => {
+    const device = await pairExtension();
+    expect((await targetsWith(device.token, EXTENSION_PROTOCOL_VERSION)).statusCode).toBe(200);
+    expect((await targetsWith(device.token)).statusCode).toBe(200);
+  });
+
+  it.each([
+    ['an extension too old for it', '0.9', 'Update the extension'],
+    ['an extension newer than it', '1.9', 'Upgrade Job Getter'],
+    ['a version it cannot read', 'banana', 'not a protocol version'],
+  ])('refuses %s with 426, saying which side to update', async (_label, version, says) => {
+    const device = await pairExtension();
+    const response = await targetsWith(device.token, version);
+    expect(response.statusCode).toBe(426);
+    expect(response.json().error.code).toBe('PROTOCOL_UNSUPPORTED');
+    expect(response.json().error.message).toContain(says);
+  });
+
+  it('refuses before anything is spent: a pairing code survives a refused exchange', async () => {
+    const pairing = await harness.app.inject(
+      authed(session, {
+        method: 'POST',
+        url: '/api/v1/devices/pairing',
+        payload: { device_kind: 'extension', label: 'Chrome, too old' },
+      }),
+    );
+    const code = pairing.json().pairing_code as string;
+    const payload = { pairing_code: code, device_public_id: 'chrome-old' };
+
+    const refused = await harness.app.inject({
+      method: 'POST',
+      url: '/api/v1/devices/exchange',
+      headers: { [EXTENSION_PROTOCOL_HEADER]: '0.1' },
+      payload,
+    });
+    expect(refused.statusCode).toBe(426);
+
+    // After updating the extension, the same code still works.
+    const exchanged = await harness.app.inject({
+      method: 'POST',
+      url: '/api/v1/devices/exchange',
+      headers: { [EXTENSION_PROTOCOL_HEADER]: EXTENSION_PROTOCOL_VERSION },
+      payload,
+    });
+    expect(exchanged.statusCode, exchanged.body).toBe(200);
+    expect(exchanged.json().protocol_version).toBe(EXTENSION_PROTOCOL_VERSION);
   });
 });

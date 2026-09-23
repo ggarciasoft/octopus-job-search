@@ -8,7 +8,12 @@ import type { Config } from '../config.js';
 import type { Db } from '../db/pool.js';
 import type { Logger } from '../logging.js';
 import type { StorageDriver } from '../files/storage.js';
-import { unauthenticated } from '../errors.js';
+import {
+  EXTENSION_PROTOCOL_HEADER,
+  EXTENSION_PROTOCOL_VERSION,
+  extensionProtocolVerdict,
+} from '@job-getter/contracts';
+import { protocolUnsupported, unauthenticated } from '../errors.js';
 import {
   WorkspaceScope,
   type DevicePrincipal,
@@ -79,10 +84,32 @@ export function requireScope(context: RouteContext, request: FastifyRequest): Wo
  * the token resolved to, never from the request: an extension cannot name a
  * workspace any more than a browser session can.
  */
+/**
+ * Refuses an extension speaking a protocol this server cannot serve, before
+ * anything else happens. See `EXTENSION_PROTOCOL_HEADER`.
+ */
+export function requireSupportedProtocol(request: FastifyRequest): void {
+  const raw = request.headers[EXTENSION_PROTOCOL_HEADER];
+  const sent = Array.isArray(raw) ? raw[0] : raw;
+  const verdict = extensionProtocolVerdict(sent);
+  if (verdict.ok) return;
+  const theirs = sent ?? '1.0';
+  throw protocolUnsupported(
+    verdict.reason === 'too_new'
+      ? `This extension speaks protocol ${theirs}, newer than this installation's ` +
+          `${EXTENSION_PROTOCOL_VERSION}. Upgrade Job Getter, or use an older extension.`
+      : verdict.reason === 'too_old'
+        ? `This extension speaks protocol ${theirs}, which this installation ` +
+          `(${EXTENSION_PROTOCOL_VERSION}) no longer serves. Update the extension.`
+        : `"${theirs}" is not a protocol version this installation understands.`,
+  );
+}
+
 export function requireDeviceScope(
   context: RouteContext,
   request: FastifyRequest,
 ): { scope: WorkspaceScope; principal: DevicePrincipal } {
+  requireSupportedProtocol(request);
   const principal = requireDevicePrincipal(request);
   const scope = WorkspaceScope.fromPrincipal(context.db, principal);
   if (scope === null) throw unauthenticated('This request needs a paired device token.');

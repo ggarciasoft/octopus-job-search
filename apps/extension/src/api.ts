@@ -15,18 +15,24 @@
  * device, and the API's separation between the two credentials would quietly
  * stop being a separation at all.
  */
+// Runtime values from the dependency-free subpath, types from the main entry:
+// see `packages/contracts/src/headers.ts` for why the two are separate.
 import {
   DEVICE_TOKEN_HEADER,
+  EXTENSION_PROTOCOL_HEADER,
+  EXTENSION_PROTOCOL_VERSION,
   FILL_SESSION_NONCE_HEADER,
-  type CreateFillSessionRequest,
-  type DeviceExchangeRequest,
-  type DeviceExchangeResponse,
-  type FillSessionGrant,
-  type FillSessionView,
-  type FillTargetList,
-  type ObservationRecorded,
-  type ReportFillSessionRequest,
-  type ReportObservationRequest,
+} from '@job-getter/contracts/headers';
+import type {
+  CreateFillSessionRequest,
+  DeviceExchangeRequest,
+  DeviceExchangeResponse,
+  FillSessionGrant,
+  FillSessionView,
+  FillTargetList,
+  ObservationRecorded,
+  ReportFillSessionRequest,
+  ReportObservationRequest,
 } from '@job-getter/contracts';
 
 export interface ApiError {
@@ -60,7 +66,11 @@ async function request<T>(
   init: { method: string; body?: unknown; nonce?: string },
 ): Promise<T> {
   const doFetch = options.fetch ?? globalThis.fetch;
-  const headers: Record<string, string> = {};
+  // On every request, pairing included, so a server that cannot serve this
+  // version says so before anything is spent.
+  const headers: Record<string, string> = {
+    [EXTENSION_PROTOCOL_HEADER]: EXTENSION_PROTOCOL_VERSION,
+  };
   if (options.token !== null) headers[DEVICE_TOKEN_HEADER] = options.token;
   if (init.body !== undefined) headers['content-type'] = 'application/json';
   if (init.nonce !== undefined) headers[FILL_SESSION_NONCE_HEADER] = init.nonce;
@@ -184,7 +194,11 @@ export async function downloadFillSessionResume(
   const doFetch = options.fetch ?? globalThis.fetch;
   const response = await doFetch(`${options.baseUrl}/api/v1/fill-sessions/${id}/resume`, {
     method: 'GET',
-    headers: { [DEVICE_TOKEN_HEADER]: options.token, [FILL_SESSION_NONCE_HEADER]: nonce },
+    headers: {
+      [DEVICE_TOKEN_HEADER]: options.token,
+      [FILL_SESSION_NONCE_HEADER]: nonce,
+      [EXTENSION_PROTOCOL_HEADER]: EXTENSION_PROTOCOL_VERSION,
+    },
     credentials: 'omit',
   });
   if (!response.ok) {

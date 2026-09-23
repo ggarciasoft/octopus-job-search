@@ -48,7 +48,7 @@ single honest answer to "does this actually work yet?"
 | Functional requirements implemented | 11 of 14 (PR01–PR10, PR14); PR11 is partial (providers, weights, limits and connectors configurable; prompt bodies are not)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | Acceptance scenarios passing        | **28 of 28.** AT24 was the last, closed on 2026-09-22 by loading the extension in a real Chrome and having the page it had just filled attack it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Milestones complete                 | 4 of 8 (M0, M1, M2, M3); M4 in progress, 2 of 10 pilot workflows run; M5 in progress. **All 28 acceptance scenarios pass** — see the milestone table for what "complete" covers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| Verified working today              | Toolchain; `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm contracts:check`; every test suite (contracts 192, api 719, web 232, ui 7, worker 563, fill-planner 84, extension 74); two M4 workflows on the Compose stack — one full sandbox fill with a real Chromium, and one prepared to the approval gate against a live Greenhouse posting; the fixture corpus (46/46); all three images build; `docker compose up` from a `setup.sh`-generated `.env`; `scripts/smoke.sh` through the nginx proxy on `127.0.0.1:3000`; data persistence across `docker compose down`/`up`; `scripts/backup.sh` (gpg and `--no-encrypt`), `scripts/restore.sh` into a separate installation and over the source, and `scripts/migrate.sh` (AT25); workspace deletion on a throwaway stack, and a restore of a pre-deletion backup that re-deleted it (AT26); all eleven M1–M3 screens rendered by a real Chromium against the live stack, in English and Spanish |
+| Verified working today              | Toolchain; `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm contracts:check`; every test suite (contracts 206, api 724, web 232, ui 7, worker 563, fill-planner 84, extension 74); two M4 workflows on the Compose stack — one full sandbox fill with a real Chromium, and one prepared to the approval gate against a live Greenhouse posting; the fixture corpus (46/46); all three images build; `docker compose up` from a `setup.sh`-generated `.env`; `scripts/smoke.sh` through the nginx proxy on `127.0.0.1:3000`; data persistence across `docker compose down`/`up`; `scripts/backup.sh` (gpg and `--no-encrypt`), `scripts/restore.sh` into a separate installation and over the source, and `scripts/migrate.sh` (AT25); workspace deletion on a throwaway stack, and a restore of a pre-deletion backup that re-deleted it (AT26); all eleven M1–M3 screens rendered by a real Chromium against the live stack, in English and Spanish |
 | **Never executed**                  | `scripts/smoke.ps1`, `scripts/backup.ps1`, `scripts/dev.*` (syntax-checked only); `scripts/restore.ps1` end to end (its new file-pruning block ran on its own under Windows PowerShell 5.1; the whole script stops earlier on 5.1, see AT26); `backup.sh --age-recipient` (only the gpg and plaintext paths ran); the `local-ai` Ollama profile; any image build on a host WITHOUT TLS interception (the no-secret path is verified only by construction); macOS/Linux hosts                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
 If you came here from the README looking for a product: there isn't one yet.
@@ -1288,6 +1288,42 @@ on 5.1 (see "Backup and restore are incomplete by design").
 receipt page; both are covered by component tests only. The retry of a failed
 erasure ran in tests, not live. So did the hosted rule that setup stays closed.
 A deletion's receipt does not survive a restore of an older backup.
+
+### M5: extension protocol compatibility, and a 15 kB service worker (verified 2026-09-22)
+
+**The runbook promised something nothing implemented.** It said the server
+serves the current and previous extension protocol minor version, and told
+operators to "check `protocol_version` in the device pairing response". The
+extension sent no version, the API checked none, and the pairing response
+had no such field. The desktop runner's task protocol is a separate single
+integer, which the API requires to match exactly.
+
+Now the extension sends `x-job-getter-protocol` (currently `1.0`) on every
+request, pairing included. `extensionProtocolVerdict` in the contracts
+package accepts the current and previous minor version, and treats a missing
+header as 1.0, so extensions installed before this change keep working.
+Anything else gets **426 `PROTOCOL_UNSUPPORTED`**, with a message saying
+whether the extension or the installation needs updating. The check runs
+before a pairing code is spent, so a refused pairing can be retried with the
+same code after the update. The pairing response now carries
+`protocol_version`. The runbook describes both protocols as they actually
+behave.
+
+**`background.js` went from 111 kB to 15 kB** (26 kB to 5.5 kB gzipped). The
+extension's only runtime values from the contracts package were four
+constants, but importing them through the main entry pulled in TypeBox and
+every schema, because that entry registers formats as it loads. They now
+live in `packages/contracts/src/headers.ts`, which imports nothing and is
+published as `@job-getter/contracts/headers`. The schema modules re-export
+them, so no other import changed.
+
+Tests: contracts +14 (the window, asserted against a hypothetical 1.3 server
+because there is no second version yet), API +5 (current and headerless
+served; too old, too new and unreadable refused with 426; a code survives a
+refused exchange), and the extension's header assertions. Live: 0.1 through
+the nginx proxy gets 426 with "Update the extension", 1.0 goes on to normal
+handling, and `e2e-m5-confirm.py` passed 14 of 14 again with the 15 kB build
+in a real Chrome.
 
 ### M5: the extension checks the confirmation page (verified 2026-09-22)
 

@@ -52,6 +52,7 @@ class ErrorEnvelopeError(BaseModel):
         "SETUP_CLOSED",
         "BUDGET_EXHAUSTED",
         "PROVIDER_UNAVAILABLE",
+        "PROTOCOL_UNSUPPORTED",
         "INTERNAL_ERROR"
     ]
     message: str
@@ -2005,6 +2006,7 @@ class DeviceExchangeResponse(BaseModel):
     token: Annotated[str, Field(min_length=32, max_length=200)]
     expires_at: TimestampString
     allowed_origins: Annotated[list[Annotated[str, Field(max_length=500)]], Field(max_length=20)]
+    protocol_version: Annotated[str, Field(max_length=16)]
 
 
 class FillField(BaseModel):

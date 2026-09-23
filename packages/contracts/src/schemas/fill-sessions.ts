@@ -48,13 +48,7 @@ import {
 /** 07_APPLICATION_AUTOMATION.md fixes this at ten minutes. */
 export const FILL_SESSION_TTL_SECONDS = 600;
 
-/**
- * The header carrying the session nonce. Separate from `x-device-token`
- * because they authorise different things: the token says which browser this
- * is, the nonce says which fill it is acting on. A request that presents the
- * token alone can create a session and nothing else.
- */
-export const FILL_SESSION_NONCE_HEADER = 'x-fill-session-nonce';
+export { FILL_SESSION_NONCE_HEADER } from '../headers.js';
 
 /**
  * Derived from the timestamps on every read, never stored as a column, for

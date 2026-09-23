@@ -134,8 +134,8 @@ uv run python ../../fixtures/fill-planner/generate-page.py   # needs Chromium
   popup on the confirmation page yourself. Only a fill that ended waiting for
   submission (every question answered) can be checked. After a fill that
   needed input, record the outcome in the web app, as with the runner.
-- **`background.js` is ~104 kB.** Importing two header constants from
-  `@job-getter/contracts` pulls in the whole barrel, whose top-level
-  `registerContractFormats()` defeats tree-shaking of TypeBox. Copying the
-  constants by hand would be the "parallel enum" the repository forbids, so the
-  weight stays until the contracts package grows a side-effect-free subpath.
+- **Protocol compatibility is enforced, not just documented.** Every request
+  carries `x-job-getter-protocol`. The API serves the current and previous
+  minor version and answers anything else with 426 and a sentence saying
+  which side to update (see RUNBOOK, "Extension and protocol
+  compatibility").

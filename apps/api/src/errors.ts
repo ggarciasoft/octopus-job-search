@@ -18,7 +18,7 @@
  */
 import type { ErrorCode } from '@job-getter/contracts';
 
-export type ErrorStatus = 400 | 401 | 403 | 404 | 409 | 413 | 422 | 429 | 500 | 503;
+export type ErrorStatus = 400 | 401 | 403 | 404 | 409 | 413 | 422 | 426 | 429 | 500 | 503;
 
 export interface ErrorEnvelopeBody {
   error: {
@@ -115,6 +115,14 @@ export function payloadTooLarge(message = 'The upload exceeds the permitted size
 
 export function unprocessable(message: string, fields?: Record<string, string>): ApiError {
   return new ApiError(422, 'UNPROCESSABLE', message, fields ? { fields } : {});
+}
+
+/**
+ * An extension this server cannot talk to. 426 Upgrade Required, because the
+ * fix is always an upgrade: the extension's, or the installation's.
+ */
+export function protocolUnsupported(message: string): ApiError {
+  return new ApiError(426, 'PROTOCOL_UNSUPPORTED', message);
 }
 
 export function quotaExceeded(retryAfterSeconds?: number): ApiError {

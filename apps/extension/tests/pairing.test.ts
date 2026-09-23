@@ -94,6 +94,8 @@ describe('pairWithCode', () => {
     expect(calls[0]!.url).toBe(`${BASE}/api/v1/devices/exchange`);
     expect(calls[0]!.init.method).toBe('POST');
     expect(calls[0]!.init.credentials).toBe('omit');
+    // Sent on the pairing request too, so an incompatible server refuses before the code is spent.
+    expect((calls[0]!.init.headers as Record<string, string>)['x-job-getter-protocol']).toBe('1.0');
     expect(calls[0]!.init.headers).not.toHaveProperty('x-device-token');
     expect(JSON.parse(calls[0]!.init.body as string)).toEqual({
       pairing_code: 'abcDEF',
@@ -197,7 +199,11 @@ describe('loadTargets', () => {
     expect(calls[0]!.url).toBe(`${BASE}/api/v1/fill-targets`);
     expect(calls[0]!.init.method).toBe('GET');
     expect(calls[0]!.init.credentials).toBe('omit');
-    expect(calls[0]!.init.headers).toEqual({ 'x-device-token': paired.token });
+    // The token and the protocol version, and nothing a page could ride on.
+    expect(calls[0]!.init.headers).toEqual({
+      'x-device-token': paired.token,
+      'x-job-getter-protocol': '1.0',
+    });
   });
 
   it('forgets a revoked or expired token rather than keep offering fills', async () => {

@@ -42,6 +42,7 @@ export const ErrorCode = Type.Union([
   Type.Literal('SETUP_CLOSED'),
   Type.Literal('BUDGET_EXHAUSTED'),
   Type.Literal('PROVIDER_UNAVAILABLE'),
+  Type.Literal('PROTOCOL_UNSUPPORTED'),
   Type.Literal('INTERNAL_ERROR'),
 ]);
 export type ErrorCode = Static<typeof ErrorCode>;
