@@ -24,7 +24,7 @@ from collections.abc import AsyncIterator, Iterator
 import pytest
 
 from job_getter_worker.contracts.generated import FillField
-from job_getter_worker.runner.adapters import GreenhouseAdapter
+from job_getter_worker.runner.adapters import Adapter, GreenhouseAdapter, LeverAdapter
 from job_getter_worker.runner.adapters.base import check_identity, parse_fields, parse_identity
 from job_getter_worker.runner.browser import (
     BrowserOptions,
@@ -143,15 +143,22 @@ def test_plans_match_the_fixture(vector: dict) -> None:
 # produces two fingerprints for one page, and every approval made through one
 # client reads as stale to the other.
 #
-# `fixtures/fill-planner/greenhouse-page.json` records what Chromium saw.
-# `apps/extension/tests/parity.test.ts` asserts jsdom reproduces it; this
-# asserts Chromium still does.
+# `fixtures/fill-planner/{greenhouse,lever}-page.json` record what Chromium
+# saw, one file per adapter. `apps/extension/tests/parity.test.ts` asserts
+# jsdom reproduces them; this asserts Chromium still does.
 
-PAGE_VECTORS = json.loads(
-    (
-        pathlib.Path(__file__).resolve().parents[3] / "fixtures/fill-planner/greenhouse-page.json"
-    ).read_text(encoding="utf-8")
-)
+_PAGE_ADAPTERS: dict[str, Adapter] = {"greenhouse": GreenhouseAdapter(), "lever": LeverAdapter()}
+
+PAGE_VECTORS = [
+    (name, vector)
+    for name in _PAGE_ADAPTERS
+    for vector in json.loads(
+        (
+            pathlib.Path(__file__).resolve().parents[3]
+            / f"fixtures/fill-planner/{name}-page.json"
+        ).read_text(encoding="utf-8")
+    )
+]
 
 
 @pytest.fixture(scope="module")
@@ -190,11 +197,13 @@ async def ats_browser(tmp_path: pathlib.Path) -> AsyncIterator[RunnerBrowser]:
         await runner.aclose()
 
 
-@pytest.mark.parametrize("expected", PAGE_VECTORS, ids=lambda v: v["page"])
+@pytest.mark.parametrize(
+    ("adapter_name", "expected"), PAGE_VECTORS, ids=[v["page"] for _, v in PAGE_VECTORS]
+)
 async def test_chromium_still_reads_the_recorded_page(
-    ats_browser: RunnerBrowser, ats_server: str, expected: dict
+    ats_browser: RunnerBrowser, ats_server: str, adapter_name: str, expected: dict
 ) -> None:
-    adapter = GreenhouseAdapter()
+    adapter = _PAGE_ADAPTERS[adapter_name]
     page = await ats_browser.open(f"{ats_server}/{expected['page']}", (ats_server,))
     rows = await page.evaluate(adapter.inspect_script)
     schema = adapter.parse_inspection(rows)

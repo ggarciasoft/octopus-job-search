@@ -25,14 +25,7 @@
  * `form.submit()`, no click on a submit control, nothing that dispatches one.
  * The person presses the button.
  */
-import {
-  ADAPTER_VERSION,
-  handles,
-  findForm,
-  readConfirmation,
-  readFields,
-  readIdentity,
-} from './adapters/greenhouse.js';
+import { pick } from './adapters/index.js';
 import type { ContentMessage, WorkerMessage } from './messages.js';
 
 declare const chrome: {
@@ -51,14 +44,16 @@ declare const chrome: {
 
 function inspect(): ContentMessage {
   const url = globalThis.location.href;
-  if (!handles(url, findForm(globalThis.document) !== null)) {
+  const adapter = pick(url, globalThis.document);
+  if (adapter === null) {
     return { type: 'page/unsupported', url, reason: 'no tested adapter matches this page' };
   }
   return {
     type: 'page/inspected',
     url,
-    identity: readIdentity(globalThis.document),
-    fields: readFields(globalThis.document),
+    adapter: { name: adapter.name, version: adapter.version },
+    identity: adapter.readIdentity(globalThis.document),
+    fields: adapter.readFields(globalThis.document),
   };
 }
 
@@ -68,13 +63,15 @@ function inspect(): ContentMessage {
  */
 function confirmation(): ContentMessage {
   const url = globalThis.location.href;
-  if (!handles(url, findForm(globalThis.document) !== null)) {
+  const adapter = pick(url, globalThis.document);
+  if (adapter === null) {
     return { type: 'page/unsupported', url, reason: 'no tested adapter matches this page' };
   }
-  const found = readConfirmation(globalThis.document, url);
+  const found = adapter.readConfirmation(globalThis.document, url);
   return {
     type: 'page/confirmation',
     url,
+    adapter: { name: adapter.name, version: adapter.version },
     confirmation:
       found === null
         ? null
@@ -195,4 +192,4 @@ if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
   });
 }
 
-export { inspect, fill, confirmation, ADAPTER_VERSION };
+export { inspect, fill, confirmation };

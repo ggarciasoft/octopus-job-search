@@ -1,0 +1,394 @@
+[
+  {
+    "page": "lever-application.html",
+    "rows": [
+      {
+        "selector": "#resume-upload-input",
+        "label": "Resume/CV",
+        "kind": "file",
+        "required": true,
+        "options": []
+      },
+      {
+        "selector": "input[name=\"name\"]",
+        "label": "Full name",
+        "kind": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "selector": "input[type=\"checkbox\"][name=\"pronouns\"]",
+        "label": "Pronouns",
+        "kind": "checkbox",
+        "required": false,
+        "options": ["He/him", "She/her", "They/them"],
+        "option_values": ["He/him", "She/her", "They/them"]
+      },
+      {
+        "selector": "input[name=\"email\"]",
+        "label": "Email",
+        "kind": "email",
+        "required": true,
+        "options": []
+      },
+      {
+        "selector": "input[name=\"phone\"]",
+        "label": "Phone",
+        "kind": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "selector": "#location-input",
+        "label": "Current location",
+        "kind": "custom",
+        "required": false,
+        "options": []
+      },
+      {
+        "selector": "input[name=\"org\"]",
+        "label": "Current company",
+        "kind": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "selector": "input[name=\"urls\\[LinkedIn\\]\"]",
+        "label": "LinkedIn URL",
+        "kind": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "selector": "input[name=\"urls\\[GitHub\\]\"]",
+        "label": "GitHub URL",
+        "kind": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "selector": "textarea[name=\"cards\\[5e7c0a1b-0000-4000-8000-00000000c0de\\]\\[field0\\]\"]",
+        "label": "Why do you want to work at Orbital Foods?",
+        "kind": "textarea",
+        "required": true,
+        "options": []
+      },
+      {
+        "selector": "input[type=\"radio\"][name=\"cards\\[5e7c0a1b-0000-4000-8000-00000000c0de\\]\\[field1\\]\"]",
+        "label": "Are you legally authorized to work in Spain?",
+        "kind": "radio",
+        "required": true,
+        "options": ["Yes", "No", "Yes, with sponsorship"],
+        "option_values": ["Yes", "No", "Yes, with sponsorship"]
+      },
+      {
+        "selector": "input[type=\"checkbox\"][name=\"cards\\[5e7c0a1b-0000-4000-8000-00000000c0de\\]\\[field2\\]\"]",
+        "label": "Which of these have you worked with?",
+        "kind": "checkbox",
+        "required": false,
+        "options": ["Python", "Go", "Rust"],
+        "option_values": ["Python", "Go", "Rust"]
+      },
+      {
+        "selector": "select[name=\"cards\\[5e7c0a1b-0000-4000-8000-00000000c0de\\]\\[field3\\]\"]",
+        "label": "Notice period",
+        "kind": "select",
+        "required": false,
+        "options": ["Immediately", "2 weeks", "30 days", "90 days"],
+        "option_values": ["Immediately", "2 weeks", "30 days", "90 days"]
+      },
+      {
+        "selector": "input[name=\"cards\\[5e7c0a1b-0000-4000-8000-00000000c0de\\]\\[field4\\]\"]",
+        "label": "Internal referral code",
+        "kind": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "selector": "textarea[name=\"comments\"]",
+        "label": "Additional information",
+        "kind": "textarea",
+        "required": false,
+        "options": []
+      },
+      {
+        "selector": "select[name=\"eeo\\[gender\\]\"]",
+        "label": "Voluntary self-identification: Gender",
+        "kind": "select",
+        "required": false,
+        "options": ["Male", "Female", "Decline to self-identify"],
+        "option_values": ["Male", "Female", "Decline to self-identify"]
+      },
+      {
+        "selector": "input[type=\"radio\"][name=\"eeo\\[race\\]\"]",
+        "label": "Voluntary self-identification: Race",
+        "kind": "radio",
+        "required": false,
+        "options": ["Group A", "Group B", "Decline to self-identify"],
+        "option_values": ["Group A", "Group B", "Decline to self-identify"]
+      },
+      {
+        "selector": "#disabilitySelectElement",
+        "label": "Voluntary self-identification: Disability status",
+        "kind": "select",
+        "required": false,
+        "options": [
+          "Yes, I have a disability",
+          "No, I do not have a disability",
+          "I do not want to answer"
+        ],
+        "option_values": ["Yes", "No", "I do not want to answer"]
+      },
+      {
+        "selector": "input[name=\"eeo\\[disabilitySignature\\]\"]",
+        "label": "Voluntary self-identification: Name",
+        "kind": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "selector": "input[name=\"eeo\\[disabilitySignatureDate\\]\"]",
+        "label": "Voluntary self-identification: Date",
+        "kind": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "selector": "input[type=\"radio\"][name=\"surveysResponses\\[00000000-0000-4000-8000-00000000005e\\]\\[responses\\]\\[field0\\]\"]",
+        "label": "Voluntary self-identification: What is your age range?",
+        "kind": "radio",
+        "required": false,
+        "options": ["18-29", "30 or older"],
+        "option_values": ["18-29", "30 or older"]
+      }
+    ],
+    "identity": {
+      "company": "Orbital Foods",
+      "title": "Platform Engineer"
+    },
+    "fingerprint": "v1:306a157ce6ffd9713cb59e19606b8d28",
+    "keys": [
+      "resume_cv",
+      "full_name",
+      "pronouns",
+      "email",
+      "phone",
+      "current_location",
+      "current_company",
+      "linkedin_url",
+      "github_url",
+      "why_do_you_want_to_work_at_orbital_foods",
+      "are_you_legally_authorized_to_work_in_spain",
+      "which_of_these_have_you_worked_with",
+      "notice_period",
+      "internal_referral_code",
+      "additional_information",
+      "voluntary_self_identification_gender",
+      "voluntary_self_identification_race",
+      "voluntary_self_identification_disability_status",
+      "voluntary_self_identification_name",
+      "voluntary_self_identification_date",
+      "voluntary_self_identification_what_is_your_age_range"
+    ]
+  },
+  {
+    "page": "lever-application-changed.html",
+    "rows": [
+      {
+        "selector": "#resume-upload-input",
+        "label": "Resume/CV",
+        "kind": "file",
+        "required": true,
+        "options": []
+      },
+      {
+        "selector": "input[name=\"name\"]",
+        "label": "Full name",
+        "kind": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "selector": "input[type=\"checkbox\"][name=\"pronouns\"]",
+        "label": "Pronouns",
+        "kind": "checkbox",
+        "required": false,
+        "options": ["He/him", "She/her", "They/them"],
+        "option_values": ["He/him", "She/her", "They/them"]
+      },
+      {
+        "selector": "input[name=\"email\"]",
+        "label": "Email",
+        "kind": "email",
+        "required": true,
+        "options": []
+      },
+      {
+        "selector": "input[name=\"phone\"]",
+        "label": "Phone",
+        "kind": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "selector": "#location-input",
+        "label": "Current location",
+        "kind": "custom",
+        "required": false,
+        "options": []
+      },
+      {
+        "selector": "input[name=\"org\"]",
+        "label": "Current company",
+        "kind": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "selector": "input[name=\"urls\\[LinkedIn\\]\"]",
+        "label": "LinkedIn URL",
+        "kind": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "selector": "input[name=\"urls\\[GitHub\\]\"]",
+        "label": "GitHub URL",
+        "kind": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "selector": "textarea[name=\"cards\\[5e7c0a1b-0000-4000-8000-00000000c0de\\]\\[field0\\]\"]",
+        "label": "Why do you want to work at Orbital Foods?",
+        "kind": "textarea",
+        "required": true,
+        "options": []
+      },
+      {
+        "selector": "input[type=\"radio\"][name=\"cards\\[5e7c0a1b-0000-4000-8000-00000000c0de\\]\\[field1\\]\"]",
+        "label": "Are you legally authorized to work in Spain?",
+        "kind": "radio",
+        "required": true,
+        "options": ["Yes", "No", "Yes, with sponsorship"],
+        "option_values": ["Yes", "No", "Yes, with sponsorship"]
+      },
+      {
+        "selector": "input[type=\"checkbox\"][name=\"cards\\[5e7c0a1b-0000-4000-8000-00000000c0de\\]\\[field2\\]\"]",
+        "label": "Which of these have you worked with?",
+        "kind": "checkbox",
+        "required": false,
+        "options": ["Python", "Go", "Rust"],
+        "option_values": ["Python", "Go", "Rust"]
+      },
+      {
+        "selector": "select[name=\"cards\\[5e7c0a1b-0000-4000-8000-00000000c0de\\]\\[field3\\]\"]",
+        "label": "Notice period",
+        "kind": "select",
+        "required": false,
+        "options": ["Immediately", "2 weeks", "30 days", "90 days"],
+        "option_values": ["Immediately", "2 weeks", "30 days", "90 days"]
+      },
+      {
+        "selector": "input[name=\"cards\\[5e7c0a1b-0000-4000-8000-00000000c0de\\]\\[field4\\]\"]",
+        "label": "Internal referral code",
+        "kind": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "selector": "input[name=\"cards\\[5e7c0a1b-0000-4000-8000-00000000c0de\\]\\[field5\\]\"]",
+        "label": "Do you hold a security clearance?",
+        "kind": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "selector": "textarea[name=\"comments\"]",
+        "label": "Additional information",
+        "kind": "textarea",
+        "required": false,
+        "options": []
+      },
+      {
+        "selector": "select[name=\"eeo\\[gender\\]\"]",
+        "label": "Voluntary self-identification: Gender",
+        "kind": "select",
+        "required": false,
+        "options": ["Male", "Female", "Decline to self-identify"],
+        "option_values": ["Male", "Female", "Decline to self-identify"]
+      },
+      {
+        "selector": "input[type=\"radio\"][name=\"eeo\\[race\\]\"]",
+        "label": "Voluntary self-identification: Race",
+        "kind": "radio",
+        "required": false,
+        "options": ["Group A", "Group B", "Decline to self-identify"],
+        "option_values": ["Group A", "Group B", "Decline to self-identify"]
+      },
+      {
+        "selector": "#disabilitySelectElement",
+        "label": "Voluntary self-identification: Disability status",
+        "kind": "select",
+        "required": false,
+        "options": [
+          "Yes, I have a disability",
+          "No, I do not have a disability",
+          "I do not want to answer"
+        ],
+        "option_values": ["Yes", "No", "I do not want to answer"]
+      },
+      {
+        "selector": "input[name=\"eeo\\[disabilitySignature\\]\"]",
+        "label": "Voluntary self-identification: Name",
+        "kind": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "selector": "input[name=\"eeo\\[disabilitySignatureDate\\]\"]",
+        "label": "Voluntary self-identification: Date",
+        "kind": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "selector": "input[type=\"radio\"][name=\"surveysResponses\\[00000000-0000-4000-8000-00000000005e\\]\\[responses\\]\\[field0\\]\"]",
+        "label": "Voluntary self-identification: What is your age range?",
+        "kind": "radio",
+        "required": false,
+        "options": ["18-29", "30 or older"],
+        "option_values": ["18-29", "30 or older"]
+      }
+    ],
+    "identity": {
+      "company": "Orbital Foods",
+      "title": "Platform Engineer"
+    },
+    "fingerprint": "v1:7bb9366bad6c0535f6e6c97a9542a4bf",
+    "keys": [
+      "resume_cv",
+      "full_name",
+      "pronouns",
+      "email",
+      "phone",
+      "current_location",
+      "current_company",
+      "linkedin_url",
+      "github_url",
+      "why_do_you_want_to_work_at_orbital_foods",
+      "are_you_legally_authorized_to_work_in_spain",
+      "which_of_these_have_you_worked_with",
+      "notice_period",
+      "internal_referral_code",
+      "do_you_hold_a_security_clearance",
+      "additional_information",
+      "voluntary_self_identification_gender",
+      "voluntary_self_identification_race",
+      "voluntary_self_identification_disability_status",
+      "voluntary_self_identification_name",
+      "voluntary_self_identification_date",
+      "voluntary_self_identification_what_is_your_age_range"
+    ]
+  }
+]

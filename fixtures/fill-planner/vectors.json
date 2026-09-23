@@ -154,6 +154,18 @@
     {
       "label": "Tell us about your salary history",
       "sensitivity": "sensitive"
+    },
+    {
+      "label": "Pronouns",
+      "sensitivity": "never_reuse"
+    },
+    {
+      "label": "What is your age range?",
+      "sensitivity": "never_reuse"
+    },
+    {
+      "label": "Voluntary self-identification: Name",
+      "sensitivity": "never_reuse"
     }
   ],
   "fingerprint": [

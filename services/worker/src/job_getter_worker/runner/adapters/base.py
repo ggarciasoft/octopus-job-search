@@ -23,7 +23,7 @@ exact-match rule on a work-authorization question.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Final, Protocol, runtime_checkable
 
 from ..forms import FieldKind, FormField, FormSchema
 
@@ -211,3 +211,68 @@ def check_identity(page: PageIdentity, expected_company: str, expected_title: st
         if left not in right and right not in left:
             return IdentityCheck(False, f"the page's {what} is not the one this packet names")
     return IdentityCheck(True)
+
+
+#: Read a post-submission confirmation, if the page is showing one.
+#:
+#: Shared by every adapter, because nothing in it is specific to one board. It
+#: was written for Greenhouse, and Lever reuses it unchanged: its confirmation
+#: page has not been seen, since seeing one means submitting an application.
+#:
+#: Deliberately conservative. It looks for a board's own confirmation
+#: container and for a small set of phrasings boards actually use, and it
+#: returns ``null`` for anything else. The cost of the two mistakes is not
+#: symmetric: failing to recognise a real confirmation leaves the user to say
+#: so themselves, while inventing one from a stray "thank you" on a marketing
+#: footer would record a submission that may never have happened.
+CONFIRMATION_SCRIPT: Final = r"""
+() => {
+  const clean = (value) => (value || '').replace(/\s+/g, ' ').trim();
+
+  // Greenhouse's own confirmation container, when the board renders one.
+  const container = document.querySelector(
+    '#application_confirmation, .application-confirmation, [data-qa="confirmation"]'
+  );
+
+  let text = container ? clean(container.textContent) : '';
+
+  if (!text) {
+    // Otherwise accept only an explicit statement, and only from a heading or
+    // a status region -- not from anywhere on the page.
+    const candidates = document.querySelectorAll(
+      'h1, h2, h3, [role="status"], [role="alert"], .flash-message, .status-message'
+    );
+    const accepted = new RegExp(
+      '(application (was )?(successfully )?(submitted|received)' +
+        '|thank you for applying' +
+        '|your application has been (submitted|received))',
+      'i'
+    );
+    for (const node of candidates) {
+      const value = clean(node.textContent);
+      if (value && accepted.test(value)) {
+        text = value;
+        break;
+      }
+    }
+  }
+
+  if (!text) return null;
+
+  // An application/reference number when the page shows one beside the text.
+  const body = clean(document.body ? document.body.textContent : '');
+  const match = body.match(
+    new RegExp(
+      '(?:application|reference|confirmation)\\s*(?:id|number|no\\.?|#)' +
+        '\\s*[:#]?\\s*([A-Za-z0-9-]{4,40})',
+      'i'
+    )
+  );
+
+  return {
+    confirmation_text: text.slice(0, 2000),
+    reference: match ? match[1] : null,
+    url: window.location.href,
+  };
+}
+"""

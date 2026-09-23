@@ -32,6 +32,8 @@ export type ContentMessage =
       /** "Here is what this page looks like." */
       readonly type: 'page/inspected';
       readonly url: string;
+      /** Which reader read it. Checked against `KNOWN_ADAPTERS`, never trusted. */
+      readonly adapter: unknown;
       readonly identity: unknown;
       readonly fields: unknown;
     }
@@ -56,6 +58,7 @@ export type ContentMessage =
        */
       readonly type: 'page/confirmation';
       readonly url: string;
+      readonly adapter: unknown;
       readonly confirmation: {
         readonly confirmation_text: string;
         readonly reference: string | null;

@@ -140,8 +140,8 @@ The popup then shows your approved applications. The device appears as
    recorded as submitted, with the confirmation's words as evidence. If it
    doesn't, Job Getter asks you what happened.
 
-Only Greenhouse forms are supported, and only a synthetic Greenhouse form has
-been filled so far. See the [source support matrix](../README.md#source-support-matrix).
+Only Greenhouse and Lever forms are supported, and only synthetic forms of each
+shape have been filled so far. See the [source support matrix](../README.md#source-support-matrix).
 
 ## 4b. The desktop runner, instead ⚠️
 

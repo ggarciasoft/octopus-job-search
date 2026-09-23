@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Orbital Foods - Platform Engineer</title>
+    <meta property="og:title" content="Orbital Foods - Platform Engineer" />
+  </head>
+  <!--
+    The same synthetic Lever page with one required question added.
+
+    It exists to prove that the form fingerprint moves when the form does: a
+    packet approved against the original is not approved against this one, and
+    "Any changed ... known form schema invalidates approval"
+    (docs/spec/03_DATA_MODEL.md) has to be something the reader can detect
+    rather than something the code merely claims.
+
+    Invented throughout: Orbital Foods does not exist (it is the same invented
+    board as fixtures/jobs/lever.orbital-foods.postings.json), and no real
+    posting, person or contact detail appears here (fixtures/README.md, "the
+    one rule"). What is copied from the real thing is the *shape* of one
+    public Lever demo posting's apply page, read on 2026-09-23: the
+    `form#application-form`, `li.application-question` blocks whose question is
+    named by a `div.application-label` inside a wrapping `<label>`, the heavy
+    asterisk (U+2731) in `span.required`, the `cards[…]` names of an employer's
+    own questions, the `urls[…]` link inputs, the EEO section, the demographic
+    survey, and a submit that is a `type="button"` behind an hCaptcha.
+
+    It deliberately includes the cases the Lever reader has to get right:
+
+      * a resume label whose wrapping `<label>` also holds the upload button's
+        captions, which must not become part of the question's name;
+      * a required question marked only by the asterisk span, with no
+        `required` attribute;
+      * a pronouns group with a nameless "Custom" checkbox and a hidden text
+        box sharing the group's name, which are one question, not three;
+      * a location autocomplete, which must be reported rather than typed into;
+      * a required question no packet would carry, so filling has to pause;
+      * EEO questions whose options carry long descriptions inside the label;
+      * a disability-form signature labelled only "Name" and "Date", which must
+        never be filled with the person's name;
+      * a survey age question, which must be left to the person;
+      * hidden inputs and a hidden submit button, and a visible submit button,
+        which nothing may ever click.
+  -->
+  <body class="application header-compact">
+    <div class="page application">
+      <div class="main-header page-full-width section-wrapper">
+        <div class="main-header-content page-centered narrow-section page-full-width">
+          <a href="https://orbital-foods.example" class="main-header-logo"
+            ><img alt="Orbital Foods logo" src="data:,"
+          /></a>
+        </div>
+      </div>
+    </div>
+    <div class="content-wrapper application-page">
+      <div class="content">
+        <div class="section-wrapper accent-section small-accent page-full-width">
+          <div class="section page-centered posting-header">
+            <h2>Platform Engineer</h2>
+            <div class="posting-categories">
+              <div class="posting-category location">Madrid, Spain</div>
+              <div class="posting-category department">Engineering /</div>
+            </div>
+          </div>
+        </div>
+        <div class="section-wrapper page-full-width">
+          <form id="application-form" enctype="multipart/form-data" method="POST">
+            <div class="section page-centered application-form">
+              <h4>Submit your application</h4>
+              <ul>
+                <li class="application-question resume">
+                  <label>
+                    <div class="application-label">Resume/CV<span class="required">✱</span></div>
+                    <div class="application-field">
+                      <a href="#" class="postings-btn visible-resume-upload"
+                        ><span class="filename"></span
+                        ><span class="default-label">ATTACH RESUME/CV</span>
+                        <input
+                          class="application-file-input invisible-resume-upload"
+                          data-qa="input-resume"
+                          id="resume-upload-input"
+                          name="resume"
+                          tabindex="-1"
+                          type="file"
+                      /></a>
+                      <span class="resume-upload-failure"
+                        ><div class="resume-upload-label">Couldn't auto-read resume.</div></span
+                      >
+                      <span class="resume-upload-working"
+                        ><div class="resume-upload-label">Analyzing resume...</div></span
+                      >
+                    </div>
+                  </label>
+                </li>
+                <li class="application-question">
+                  <label>
+                    <div class="application-label">Full name<span class="required">✱</span></div>
+                    <div class="application-field">
+                      <input type="text" data-qa="name-input" name="name" required />
+                    </div>
+                  </label>
+                </li>
+                <li class="application-question">
+                  <div class="application-label multiple-select">Pronouns</div>
+                  <div class="application-field">
+                    <ul id="candidatePronounsCheckboxes">
+                      <li>
+                        <label
+                          ><input type="checkbox" name="pronouns" value="He/him" /><span
+                            class="application-answer-alternative"
+                            >He/him</span
+                          ></label
+                        >
+                      </li>
+                      <li>
+                        <label
+                          ><input type="checkbox" name="pronouns" value="She/her" /><span
+                            class="application-answer-alternative"
+                            >She/her</span
+                          ></label
+                        >
+                      </li>
+                      <li>
+                        <label
+                          ><input type="checkbox" name="pronouns" value="They/them" /><span
+                            class="application-answer-alternative"
+                            >They/them</span
+                          ></label
+                        >
+                      </li>
+                      <li>
+                        <label
+                          ><input type="checkbox" value="Custom" id="customPronounsOption" /><span
+                            class="application-answer-alternative"
+                            >Custom</span
+                          ></label
+                        >
+                        <input
+                          class="card-field-input"
+                          style="display: none"
+                          id="customPronounsTextField"
+                          type="text"
+                          maxlength="40"
+                          placeholder="Write here..."
+                          name="pronouns"
+                        />
+                      </li>
+                    </ul>
+                  </div>
+                </li>
+                <li class="application-question">
+                  <label>
+                    <div class="application-label">Email<span class="required">✱</span></div>
+                    <div class="application-field">
+                      <input name="email" data-qa="email-input" type="email" required />
+                    </div>
+                  </label>
+                </li>
+                <li class="application-question">
+                  <label>
+                    <div class="application-label">Phone <span class="required">✱</span></div>
+                    <div class="application-field">
+                      <input type="text" data-qa="phone-input" name="phone" required />
+                    </div>
+                  </label>
+                </li>
+                <!-- An autocomplete. Reported for the person, never typed into. -->
+                <li class="application-question">
+                  <label>
+                    <div class="application-label">Current location</div>
+                    <div class="application-field">
+                      <input
+                        class="location-input"
+                        id="location-input"
+                        type="text"
+                        maxlength="100"
+                        name="location"
+                      />
+                      <input id="selected-location" type="hidden" name="selectedLocation" />
+                      <div class="dropdown-container">
+                        <div class="dropdown-no-results">No location found.</div>
+                      </div>
+                    </div>
+                  </label>
+                </li>
+                <li class="application-question">
+                  <label>
+                    <div class="application-label">Current company</div>
+                    <div class="application-field">
+                      <input type="text" data-qa="org-input" name="org" />
+                    </div>
+                  </label>
+                </li>
+              </ul>
+            </div>
+
+            <div class="section page-centered application-form">
+              <h4>Links</h4>
+              <ul>
+                <li class="application-question">
+                  <label>
+                    <div class="application-label">LinkedIn URL</div>
+                    <div class="application-field">
+                      <input type="text" name="urls[LinkedIn]" />
+                    </div>
+                  </label>
+                </li>
+                <li class="application-question">
+                  <label>
+                    <div class="application-label">GitHub URL</div>
+                    <div class="application-field">
+                      <input type="text" name="urls[GitHub]" />
+                    </div>
+                  </label>
+                </li>
+              </ul>
+            </div>
+
+            <!-- The employer's own questions, which Lever calls a card. -->
+            <div class="section page-centered application-form">
+              <input
+                type="hidden"
+                name="cards[5e7c0a1b-0000-4000-8000-00000000c0de][baseTemplate]"
+                value="{}"
+              />
+              <h4>Orbital Foods questions</h4>
+              <ul>
+                <li class="application-question custom-question">
+                  <div class="application-label full-width text">
+                    <div class="text">
+                      Why do you want to work at Orbital Foods?<span class="required">✱</span>
+                    </div>
+                  </div>
+                  <div class="application-field full-width">
+                    <textarea
+                      class="card-field-input"
+                      name="cards[5e7c0a1b-0000-4000-8000-00000000c0de][field0]"
+                    ></textarea>
+                  </div>
+                </li>
+                <li class="application-question custom-question">
+                  <div class="application-label full-width multiple-choice">
+                    <div class="text">
+                      Are you legally authorized to work in Spain?<span class="required">✱</span>
+                    </div>
+                  </div>
+                  <div class="application-field full-width">
+                    <ul data-qa="multiple-choice">
+                      <li>
+                        <label
+                          ><input
+                            type="radio"
+                            name="cards[5e7c0a1b-0000-4000-8000-00000000c0de][field1]"
+                            value="Yes" /><span class="application-answer-alternative"
+                            >Yes</span
+                          ></label
+                        >
+                      </li>
+                      <li>
+                        <label
+                          ><input
+                            type="radio"
+                            name="cards[5e7c0a1b-0000-4000-8000-00000000c0de][field1]"
+                            value="No" /><span class="application-answer-alternative">No</span></label
+                        >
+                      </li>
+                      <li>
+                        <label
+                          ><input
+                            type="radio"
+                            name="cards[5e7c0a1b-0000-4000-8000-00000000c0de][field1]"
+                            value="Yes, with sponsorship" /><span
+                            class="application-answer-alternative"
+                            >Yes, with sponsorship</span
+                          ></label
+                        >
+                      </li>
+                    </ul>
+                  </div>
+                </li>
+                <li class="application-question custom-question">
+                  <div class="application-label full-width multiple-select">
+                    <div class="text">Which of these have you worked with?</div>
+                    <p class="description">Select all that apply</p>
+                  </div>
+                  <div class="application-field full-width">
+                    <ul data-qa="checkboxes">
+                      <li>
+                        <label
+                          ><input
+                            type="checkbox"
+                            name="cards[5e7c0a1b-0000-4000-8000-00000000c0de][field2]"
+                            value="Python" /><span class="application-answer-alternative"
+                            >Python</span
+                          ></label
+                        >
+                      </li>
+                      <li>
+                        <label
+                          ><input
+                            type="checkbox"
+                            name="cards[5e7c0a1b-0000-4000-8000-00000000c0de][field2]"
+                            value="Go" /><span class="application-answer-alternative">Go</span></label
+                        >
+                      </li>
+                      <li>
+                        <label
+                          ><input
+                            type="checkbox"
+                            name="cards[5e7c0a1b-0000-4000-8000-00000000c0de][field2]"
+                            value="Rust" /><span class="application-answer-alternative"
+                            >Rust</span
+                          ></label
+                        >
+                      </li>
+                    </ul>
+                  </div>
+                </li>
+                <li class="application-question custom-question">
+                  <label>
+                    <div class="application-label full-width">
+                      <div class="text">Notice period</div>
+                    </div>
+                    <div class="application-field full-width">
+                      <div class="application-dropdown">
+                        <select name="cards[5e7c0a1b-0000-4000-8000-00000000c0de][field3]">
+                          <option value="">Select ...</option>
+                          <option value="Immediately">Immediately</option>
+                          <option value="2 weeks">2 weeks</option>
+                          <option value="30 days">30 days</option>
+                          <option value="90 days">90 days</option>
+                        </select>
+                      </div>
+                    </div>
+                  </label>
+                </li>
+                <!-- A question no prepared packet would carry: filling must pause here. -->
+                <li class="application-question custom-question">
+                  <label>
+                    <div class="application-label full-width">
+                      <div class="text">
+                        Internal referral code<span class="required">✱</span>
+                      </div>
+                    </div>
+                    <div class="application-field full-width">
+                      <input
+                        type="text"
+                        class="card-field-input"
+                        name="cards[5e7c0a1b-0000-4000-8000-00000000c0de][field4]"
+                        required
+                      />
+                    </div>
+                  </label>
+                </li>
+              </ul>
+            </div>
+
+            <!-- The one difference from lever-application.html: an extra
+                 required question. A packet approved against the other form's
+                 fingerprint is not approved against this one. -->
+            <div class="section page-centered application-form">
+              <ul>
+                <li class="application-question custom-question">
+                  <label>
+                    <div class="application-label full-width">
+                      <div class="text">
+                        Do you hold a security clearance?<span class="required">✱</span>
+                      </div>
+                    </div>
+                    <div class="application-field full-width">
+                      <input
+                        type="text"
+                        class="card-field-input"
+                        name="cards[5e7c0a1b-0000-4000-8000-00000000c0de][field5]"
+                        required
+                      />
+                    </div>
+                  </label>
+                </li>
+              </ul>
+            </div>
+
+            <div class="section page-centered application-form">
+              <h4>Additional information</h4>
+              <ul>
+                <li class="application-question">
+                  <label>
+                    <div class="application-label">Additional information</div>
+                    <div class="application-field">
+                      <textarea
+                        name="comments"
+                        placeholder="Add a cover letter or anything else you want to share."
+                      ></textarea>
+                    </div>
+                  </label>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Voluntary, and demographic whatever the label says. -->
+            <div
+              class="section eeo-section page-centered application-form"
+              id="eeoSurvey_00000000-0000-4000-8000-0000000000ee"
+            >
+              <h4>U.S. Equal Employment Opportunity information</h4>
+              <div class="application-question">
+                <label>
+                  <div class="application-label">Gender</div>
+                  <div class="application-field">
+                    <div class="application-dropdown">
+                      <select name="eeo[gender]">
+                        <option value="">Select ...</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Decline to self-identify">Decline to self-identify</option>
+                      </select>
+                    </div>
+                  </div>
+                </label>
+              </div>
+              <div class="application-question">
+                <label>
+                  <div class="application-label multiple-choice">Race</div>
+                  <div class="application-field">
+                    <ul data-qa="multiple-choice">
+                      <li>
+                        <label
+                          ><input type="radio" name="eeo[race]" value="Group A" /><span
+                            class="eeo-option-text application-answer-alternative"
+                            >Group A</span
+                          >
+                          <div class="eeo-option-description">
+                            A description of group A, which is not part of the option's name.
+                          </div></label
+                        >
+                      </li>
+                      <li>
+                        <label
+                          ><input type="radio" name="eeo[race]" value="Group B" /><span
+                            class="eeo-option-text application-answer-alternative"
+                            >Group B</span
+                          >
+                          <div class="eeo-option-description">
+                            A description of group B, which is not part of the option's name.
+                          </div></label
+                        >
+                      </li>
+                      <li>
+                        <label
+                          ><input
+                            type="radio"
+                            name="eeo[race]"
+                            value="Decline to self-identify"
+                          /><span class="eeo-option-text application-answer-alternative"
+                            >Decline to self-identify</span
+                          ></label
+                        >
+                      </li>
+                    </ul>
+                  </div>
+                </label>
+              </div>
+              <h4>Voluntary self-identification of disability</h4>
+              <div class="application-question">
+                <label>
+                  <div class="application-label">Disability status</div>
+                  <div class="application-field">
+                    <div class="application-dropdown">
+                      <select id="disabilitySelectElement" name="eeo[disability]">
+                        <option value="">Select ...</option>
+                        <option value="Yes">Yes, I have a disability</option>
+                        <option value="No">No, I do not have a disability</option>
+                        <option value="I do not want to answer">I do not want to answer</option>
+                      </select>
+                    </div>
+                  </div>
+                </label>
+              </div>
+              <div id="disabilitySignatureSection">
+                <div class="application-question">
+                  <label>
+                    <div class="application-label">Name</div>
+                    <div class="application-field">
+                      <input
+                        type="text"
+                        name="eeo[disabilitySignature]"
+                        placeholder="Enter your full name"
+                      />
+                    </div>
+                  </label>
+                </div>
+                <div class="application-question">
+                  <label>
+                    <div class="application-label">Date</div>
+                    <div class="application-field">
+                      <input
+                        type="text"
+                        name="eeo[disabilitySignatureDate]"
+                        placeholder="MM/DD/YYYY"
+                      />
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="section page-centered application-form"
+              id="countrySurvey_all-opportunity-locations"
+            >
+              <h4>Demographic Survey for Orbital Foods</h4>
+              <input
+                type="hidden"
+                name="surveysResponses[00000000-0000-4000-8000-00000000005e][surveyId]"
+                value="00000000-0000-4000-8000-00000000005f"
+              />
+              <ul>
+                <li class="application-question">
+                  <div class="application-label full-width multiple-choice">
+                    <div class="text">What is your age range?</div>
+                  </div>
+                  <div class="application-field full-width">
+                    <ul data-qa="multiple-choice">
+                      <li>
+                        <label
+                          ><input
+                            type="radio"
+                            name="surveysResponses[00000000-0000-4000-8000-00000000005e][responses][field0]"
+                            value="18-29" /><span class="application-answer-alternative"
+                            >18-29</span
+                          ></label
+                        >
+                      </li>
+                      <li>
+                        <label
+                          ><input
+                            type="radio"
+                            name="surveysResponses[00000000-0000-4000-8000-00000000005e][responses][field0]"
+                            value="30 or older" /><span class="application-answer-alternative"
+                            >30 or older</span
+                          ></label
+                        >
+                      </li>
+                    </ul>
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            <input type="hidden" name="accountId" value="00000000-0000-4000-8000-0000000000ac" />
+            <input type="hidden" name="origin" />
+            <input id="hcaptchaResponseInput" type="hidden" name="h-captcha-response" value="" />
+            <button id="hcaptchaSubmitBtn" type="submit" class="hidden"></button>
+            <div class="section page-centered application-form last-section-apply">
+              <button id="btn-submit" type="button" class="postings-btn" data-qa="btn-submit">
+                Submit application
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

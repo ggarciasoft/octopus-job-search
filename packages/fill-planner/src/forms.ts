@@ -123,6 +123,14 @@ export const NEVER_REUSE_LABEL_FRAGMENTS: readonly string[] = [
   'medical',
   'pregnan',
   'religio',
+  // Lever asks for pronouns beside the name, an age range in its demographic
+  // survey, and a name and date as the signature on a disability form. The
+  // Lever reader prefixes every control in those voluntary sections with
+  // "Voluntary self-identification", so the last fragment catches all of them,
+  // including a signature labelled only "Name".
+  'pronoun',
+  'age range',
+  'self-identif',
 ];
 
 /** Fragments that mark a question as personal but reusable within its scope. */

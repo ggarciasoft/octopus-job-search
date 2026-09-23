@@ -10,10 +10,11 @@
  * as stale to the other. Silently, on a real employer's page, at the moment
  * someone is trying to apply.
  *
- * `fixtures/fill-planner/greenhouse-page.json` records what Chromium saw,
- * written by `generate-page.py` beside it and re-asserted against a live
- * Chromium in `services/worker/tests/test_planner_parity.py`. This suite reads
- * the same page in jsdom and demands the same answer.
+ * `fixtures/fill-planner/{greenhouse,lever}-page.json` record what Chromium
+ * saw, one file per adapter, written by `generate-page.py` beside them and
+ * re-asserted against a live Chromium in
+ * `services/worker/tests/test_planner_parity.py`. This suite reads the same
+ * pages in jsdom, through the same adapter, and demands the same answer.
  */
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
@@ -21,7 +22,11 @@ import { resolve } from 'node:path';
 import { JSDOM } from 'jsdom';
 import { describe, expect, it } from 'vitest';
 import { fingerprint, parseFields } from '@job-getter/fill-planner';
-import { readConfirmation, readFields, readIdentity } from '../src/adapters/greenhouse.js';
+import * as greenhouse from '../src/adapters/greenhouse.js';
+import * as lever from '../src/adapters/lever.js';
+
+const { readConfirmation } = greenhouse;
+const READERS = { greenhouse, lever } as const;
 
 interface RecordedPage {
   page: string;
@@ -31,9 +36,14 @@ interface RecordedPage {
   keys: string[];
 }
 
-const recorded = JSON.parse(
-  readFileSync(resolve(process.cwd(), '../../fixtures/fill-planner/greenhouse-page.json'), 'utf-8'),
-) as RecordedPage[];
+function recording(adapter: keyof typeof READERS): RecordedPage[] {
+  return JSON.parse(
+    readFileSync(
+      resolve(process.cwd(), `../../fixtures/fill-planner/${adapter}-page.json`),
+      'utf-8',
+    ),
+  ) as RecordedPage[];
+}
 
 function sha256Hex(input: string): string {
   return createHash('sha256').update(input, 'utf-8').digest('hex');
@@ -45,57 +55,56 @@ function read(name: string) {
   return dom.window.document;
 }
 
-describe('the extension reads a page the way the runner does', () => {
-  for (const expected of recorded) {
-    describe(expected.page, () => {
-      const document = read(expected.page);
-      const fields = parseFields(readFields(document));
+for (const [adapter, reader] of Object.entries(READERS) as [
+  keyof typeof READERS,
+  (typeof READERS)[keyof typeof READERS],
+][]) {
+  const recorded = recording(adapter);
 
-      it('finds the same question keys, in the same order', () => {
-        expect(fields.map((field) => field.key)).toEqual(expected.keys);
-      });
+  describe(`the extension reads a ${adapter} page the way the runner does`, () => {
+    for (const expected of recorded) {
+      describe(expected.page, () => {
+        const document = read(expected.page);
+        const fields = parseFields(reader.readFields(document));
 
-      it('produces the same form fingerprint as Chromium did', () => {
-        // The assertion this whole package exists to make.
-        expect(fingerprint(fields, sha256Hex)).toBe(expected.fingerprint);
-      });
+        it('finds the same question keys, in the same order', () => {
+          expect(fields.map((field) => field.key)).toEqual(expected.keys);
+        });
 
-      it('reads the same company and role', () => {
-        const identity = readIdentity(document);
-        expect(identity.company).toBe(expected.identity.company);
-        expect(identity.title).toBe(expected.identity.title);
-      });
+        it('produces the same form fingerprint as Chromium did', () => {
+          // The assertion this whole package exists to make.
+          expect(fingerprint(fields, sha256Hex)).toBe(expected.fingerprint);
+        });
 
-      it('agrees field for field about kind, requiredness and options', () => {
-        const chromium = parseFields(expected.rows);
-        expect(
-          fields.map((field) => ({
+        it('reads the same company and role', () => {
+          const identity = reader.readIdentity(document);
+          expect(identity.company).toBe(expected.identity.company);
+          expect(identity.title).toBe(expected.identity.title);
+        });
+
+        it('agrees field for field about label, kind, requiredness and options', () => {
+          const chromium = parseFields(expected.rows);
+          const shape = (field: (typeof fields)[number]) => ({
             key: field.key,
+            label: field.label,
             kind: field.kind,
             required: field.required,
             options: field.options,
             optionValues: field.optionValues,
-          })),
-        ).toEqual(
-          chromium.map((field) => ({
-            key: field.key,
-            kind: field.kind,
-            required: field.required,
-            options: field.options,
-            optionValues: field.optionValues,
-          })),
-        );
+          });
+          expect(fields.map(shape)).toEqual(chromium.map(shape));
+        });
       });
+    }
+
+    it('records two pages that really are different forms', () => {
+      // If the "changed" fixture ever stopped differing, the staleness
+      // mechanism would be untested in both clients at once.
+      expect(recorded).toHaveLength(2);
+      expect(recorded[0]!.fingerprint).not.toBe(recorded[1]!.fingerprint);
     });
-  }
-
-  it('records two pages that really are different forms', () => {
-    // If the "changed" fixture ever stopped differing, the staleness mechanism
-    // would be untested in both clients at once.
-    expect(recorded).toHaveLength(2);
-    expect(recorded[0]!.fingerprint).not.toBe(recorded[1]!.fingerprint);
   });
-});
+}
 
 interface RecordedConfirmation {
   page: string;

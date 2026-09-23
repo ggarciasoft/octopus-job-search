@@ -40,7 +40,7 @@ import {
   originOf,
   withBlockedAttachment,
 } from './session.js';
-import { ADAPTER_NAME, ADAPTER_VERSION } from './adapters/greenhouse.js';
+import { knownAdapter } from './adapters/known.js';
 import { normaliseBaseUrl, normalisePairingCode } from './targets.js';
 
 // A minimal structural view of the parts of the extension API this file uses,
@@ -338,8 +338,9 @@ export async function fillActiveTab(
         page_url: inspected.url,
         form_fingerprint: null,
         outcome: 'unsupported',
-        adapter: ADAPTER_NAME,
-        adapter_version: ADAPTER_VERSION,
+        // No adapter read it, so none is named.
+        adapter: null,
+        adapter_version: null,
       });
       return { ok: false, message: 'No tested adapter matches this page. Apply in your browser.' };
     }
@@ -351,8 +352,7 @@ export async function fillActiveTab(
     const material = formFingerprintMaterial(inspected);
     const decision = decide(grant, inspected, {
       fingerprint: material === '' ? null : formFingerprint(await digest(material)),
-      adapter: ADAPTER_NAME,
-      adapterVersion: ADAPTER_VERSION,
+      ...knownAdapter(inspected.adapter),
     });
 
     if (decision.kind === 'refuse') {
@@ -498,6 +498,11 @@ export async function checkConfirmation(
   }
 
   const found = answer.type === 'page/confirmation' ? answer.confirmation : null;
+  // An unsupported page was read by no adapter, so none is named.
+  const reader =
+    answer.type === 'page/confirmation'
+      ? knownAdapter(answer.adapter)
+      : { adapter: null, adapterVersion: null };
   try {
     const recorded = await reportObservation(
       { baseUrl: pairing.baseUrl, token: pairing.token, fetch: options_.fetch },
@@ -519,8 +524,8 @@ export async function checkConfirmation(
               ? 'unsupported'
               : 'no_confirmation_found',
         page_url: answer.url,
-        adapter: ADAPTER_NAME,
-        adapter_version: ADAPTER_VERSION,
+        adapter: reader.adapter,
+        adapter_version: reader.adapterVersion,
       },
     );
     return recorded.status === 'submitted'

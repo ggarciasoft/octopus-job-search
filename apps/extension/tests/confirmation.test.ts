@@ -81,15 +81,23 @@ function fakeFetch(status: number, body: unknown) {
 
 const noWait = async () => undefined;
 
+const GREENHOUSE = { name: 'greenhouse', version: 'v1' };
+
 const CONFIRMED: ContentMessage = {
   type: 'page/confirmation',
   url: PAGE,
+  adapter: GREENHOUSE,
   confirmation: {
     confirmation_text: 'Your application has been submitted',
     reference: 'NW-2026-4471',
   },
 };
-const NOTHING: ContentMessage = { type: 'page/confirmation', url: PAGE, confirmation: null };
+const NOTHING: ContentMessage = {
+  type: 'page/confirmation',
+  url: PAGE,
+  adapter: GREENHOUSE,
+  confirmation: null,
+};
 
 describe('checking a confirmation', () => {
   it('sends a confirmation with the page’s words, and lets the API keep time', async () => {
@@ -165,7 +173,33 @@ describe('checking a confirmation', () => {
     const api = fakeFetch(200, { application_id: ITEM.application_id, status: 'outcome_unknown' });
     await checkConfirmation(ITEM, { api: chrome.api, fetch: api.fetch, sleep: noWait });
     expect(chrome.sent).toHaveLength(1);
-    expect(JSON.parse(api.calls[0]!.init.body as string).unknown_reason).toBe('unsupported');
+    const body = JSON.parse(api.calls[0]!.init.body as string);
+    expect(body.unknown_reason).toBe('unsupported');
+    // No adapter read the page, so the report names none.
+    expect(body).toMatchObject({ adapter: null, adapter_version: null });
+  });
+
+  it('names the adapter the page reports only when this build has it', async () => {
+    // The content script shares a DOM with the employer's page. Whatever it
+    // claims read the page is checked, not passed through to the API.
+    const lever = fakeChrome(PAGE, [{ ...CONFIRMED, adapter: { name: 'lever', version: 'v1' } }]);
+    const forged = fakeChrome(PAGE, [
+      { ...CONFIRMED, adapter: { name: 'anything', version: 'v9' } },
+    ]);
+    const first = fakeFetch(200, { application_id: ITEM.application_id, status: 'submitted' });
+    const second = fakeFetch(200, { application_id: ITEM.application_id, status: 'submitted' });
+
+    await checkConfirmation(ITEM, { api: lever.api, fetch: first.fetch, sleep: noWait });
+    await checkConfirmation(ITEM, { api: forged.api, fetch: second.fetch, sleep: noWait });
+
+    expect(JSON.parse(first.calls[0]!.init.body as string)).toMatchObject({
+      adapter: 'lever',
+      adapter_version: 'v1',
+    });
+    expect(JSON.parse(second.calls[0]!.init.body as string)).toMatchObject({
+      adapter: null,
+      adapter_version: null,
+    });
   });
 
   it('never reads a page on another origin, and records nothing', async () => {

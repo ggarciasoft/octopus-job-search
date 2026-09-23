@@ -1,4 +1,4 @@
-"""Record what a real browser sees on the synthetic Greenhouse page.
+"""Record what a real browser sees on the synthetic Greenhouse and Lever pages.
 
     cd services/worker && uv run python ../../fixtures/fill-planner/generate-page.py
 
@@ -9,7 +9,8 @@ disagreement between those two produces two different fingerprints for one
 page — which silently invalidates every approval made through the other
 client.
 
-So this records the ground truth from Chromium, and both sides assert against
+So this records the ground truth from Chromium, one file per adapter
+(`greenhouse-page.json`, `lever-page.json`), and both sides assert against
 it: `services/worker/tests/test_planner_parity.py` re-reads the page in
 Chromium and compares, and `apps/extension/tests/parity.test.ts` reads the same
 file in jsdom and compares. The recorded fingerprint is the contract between
@@ -33,16 +34,28 @@ from collections.abc import Iterator
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "services/worker/src"))
 
-from job_getter_worker.runner.adapters import GreenhouseAdapter  # noqa: E402
+from job_getter_worker.runner.adapters import Adapter, GreenhouseAdapter, LeverAdapter  # noqa: E402
 from job_getter_worker.runner.browser import BrowserOptions, RunnerBrowser  # noqa: E402
 
 PAGES = pathlib.Path(__file__).resolve().parents[1] / "ats-pages"
-OUT = pathlib.Path(__file__).resolve().parent / "greenhouse-page.json"
-NAMES = ("greenhouse-application.html", "greenhouse-application-changed.html")
+HERE = pathlib.Path(__file__).resolve().parent
+
+#: Each adapter, the pages it is recorded on, and where the recording goes.
+RECORDINGS: tuple[tuple[Adapter, tuple[str, ...], pathlib.Path], ...] = (
+    (
+        GreenhouseAdapter(),
+        ("greenhouse-application.html", "greenhouse-application-changed.html"),
+        HERE / "greenhouse-page.json",
+    ),
+    (
+        LeverAdapter(),
+        ("lever-application.html", "lever-application-changed.html"),
+        HERE / "lever-page.json",
+    ),
+)
 
 
-async def read(name: str, server: str) -> dict[str, object]:
-    adapter = GreenhouseAdapter()
+async def read(adapter: Adapter, name: str, server: str) -> dict[str, object]:
     url = f"{server}/{name}"
     with tempfile.TemporaryDirectory() as profile:
         runner = RunnerBrowser(
@@ -88,10 +101,17 @@ def serve() -> "Iterator[str]":
 
 async def main() -> int:
     with serve() as server:
-        recorded = [await read(name, server) for name in NAMES]
-    OUT.write_text(json.dumps(recorded, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    for entry in recorded:
-        print(f"{entry['page']}: {entry['fingerprint']} ({len(entry['keys'])} fields)")
+        for adapter, names, out in RECORDINGS:
+            recorded = [await read(adapter, name, server) for name in names]
+            # LF on every platform. Run Prettier over the result before
+            # committing, as for the other vectors.
+            out.write_text(
+                json.dumps(recorded, indent=2, ensure_ascii=False) + "\n",
+                encoding="utf-8",
+                newline="\n",
+            )
+            for entry in recorded:
+                print(f"{entry['page']}: {entry['fingerprint']} ({len(entry['keys'])} fields)")
     return 0
 
 

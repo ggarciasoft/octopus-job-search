@@ -14,8 +14,8 @@ What lives here:
   the form fingerprint.
 * :mod:`~job_getter_worker.runner.plan` - the pure planner, which decides what
   may be typed and what must be asked.
-* :mod:`~job_getter_worker.runner.adapters` - the tested site adapters. One so
-  far: Greenhouse.
+* :mod:`~job_getter_worker.runner.adapters` - the tested site adapters:
+  Greenhouse and Lever.
 * :mod:`~job_getter_worker.runner.browser` - the persistent Chromium profile
   and the origin fence around it.
 * :mod:`~job_getter_worker.runner.fill` - the driver.

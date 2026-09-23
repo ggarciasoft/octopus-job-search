@@ -90,6 +90,11 @@ SENSITIVITY_LABELS = [
     # word still classifies, and so does a role that merely mentions salary.
     "Transgender policy awareness",
     "Tell us about your salary history",
+    # Added with the Lever adapter: its pronouns question, its survey's age
+    # range, and a disability-form signature the reader has qualified.
+    "Pronouns",
+    "What is your age range?",
+    "Voluntary self-identification: Name",
 ]
 
 

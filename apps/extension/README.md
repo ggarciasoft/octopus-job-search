@@ -7,7 +7,7 @@ already looking at**, and stops. It has no code path that presses submit.
 > synthetic page, and on 2026-09-22 it paired itself from a code and filled
 > that page from its own list, in a real Chrome, CV attached — but it has
 > never met a live employer's form. Nothing here should be read as
-> "Greenhouse supported".
+> "Greenhouse supported" or "Lever supported".
 
 ## Building it
 
@@ -111,10 +111,14 @@ approval made through one client would read as stale to the other.
 - `packages/fill-planner` is a port of the runner's `forms.py` and `plan.py`,
   pinned to it by `fixtures/fill-planner/vectors.json` — asserted from both
   sides, in TypeScript and in Python.
-- `fixtures/fill-planner/greenhouse-page.json` records what **Chromium** read
-  from the synthetic page. `tests/parity.test.ts` demands jsdom reproduce it
-  exactly, and `services/worker/tests/test_planner_parity.py` demands Chromium
-  still does.
+- `fixtures/fill-planner/greenhouse-page.json` and `lever-page.json` record
+  what **Chromium** read from each synthetic page. `tests/parity.test.ts`
+  demands jsdom reproduce them exactly, labels included, and
+  `services/worker/tests/test_planner_parity.py` demands Chromium still does.
+- `src/adapters/index.ts` picks the reader, and no page may be claimed by two.
+  Lever's form is `#application-form`, which Greenhouse's container selector
+  also matches, so the Greenhouse reader refuses a form built from Lever's
+  question blocks. `tests/adapters.test.ts` checks every fixture.
 
 Regenerate both after any deliberate change to the Python planner:
 
@@ -126,8 +130,10 @@ uv run python ../../fixtures/fill-planner/generate-page.py   # needs Chromium
 
 ## What is missing
 
-- **Only Greenhouse, and only a fixture.** Lever is M5's second adapter and is
-  not written. No adapter has met a live board in either client.
+- **Only Greenhouse and Lever, and only fixtures.** No adapter has met a live
+  board in either client. Lever's confirmation page has never been seen, since
+  seeing one means submitting, so Lever reuses Greenhouse's conservative
+  confirmation reader.
 - **The confirmation check is one look, not a watch.** The desktop runner
   opens the page itself and watches it for up to ninety seconds. The extension
   may read an employer's page only while you invoke it there, so you open the
