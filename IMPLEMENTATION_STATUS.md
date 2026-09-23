@@ -48,7 +48,7 @@ single honest answer to "does this actually work yet?"
 | Functional requirements implemented | 11 of 14 (PR01–PR10, PR14); PR11 is partial (providers, weights, limits and connectors configurable; prompt bodies are not)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | Acceptance scenarios passing        | **28 of 28.** AT24 was the last, closed on 2026-09-22 by loading the extension in a real Chrome and having the page it had just filled attack it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Milestones complete                 | 4 of 8 (M0, M1, M2, M3); M4 in progress, 2 of 10 pilot workflows run; M5 in progress. **All 28 acceptance scenarios pass** — see the milestone table for what "complete" covers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| Verified working today              | Toolchain; `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm contracts:check`; every test suite (contracts 192, api 705, web 232, ui 7, worker 555, fill-planner 84, extension 59); two M4 workflows on the Compose stack — one full sandbox fill with a real Chromium, and one prepared to the approval gate against a live Greenhouse posting; the fixture corpus (46/46); all three images build; `docker compose up` from a `setup.sh`-generated `.env`; `scripts/smoke.sh` through the nginx proxy on `127.0.0.1:3000`; data persistence across `docker compose down`/`up`; `scripts/backup.sh` (gpg and `--no-encrypt`), `scripts/restore.sh` into a separate installation and over the source, and `scripts/migrate.sh` (AT25); workspace deletion on a throwaway stack, and a restore of a pre-deletion backup that re-deleted it (AT26); all eleven M1–M3 screens rendered by a real Chromium against the live stack, in English and Spanish |
+| Verified working today              | Toolchain; `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm contracts:check`; every test suite (contracts 192, api 705, web 232, ui 7, worker 560, fill-planner 84, extension 59); two M4 workflows on the Compose stack — one full sandbox fill with a real Chromium, and one prepared to the approval gate against a live Greenhouse posting; the fixture corpus (46/46); all three images build; `docker compose up` from a `setup.sh`-generated `.env`; `scripts/smoke.sh` through the nginx proxy on `127.0.0.1:3000`; data persistence across `docker compose down`/`up`; `scripts/backup.sh` (gpg and `--no-encrypt`), `scripts/restore.sh` into a separate installation and over the source, and `scripts/migrate.sh` (AT25); workspace deletion on a throwaway stack, and a restore of a pre-deletion backup that re-deleted it (AT26); all eleven M1–M3 screens rendered by a real Chromium against the live stack, in English and Spanish |
 | **Never executed**                  | `scripts/smoke.ps1`, `scripts/backup.ps1`, `scripts/dev.*` (syntax-checked only); `scripts/restore.ps1` end to end (its new file-pruning block ran on its own under Windows PowerShell 5.1; the whole script stops earlier on 5.1, see AT26); `backup.sh --age-recipient` (only the gpg and plaintext paths ran); the `local-ai` Ollama profile; any image build on a host WITHOUT TLS interception (the no-secret path is verified only by construction); macOS/Linux hosts                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
 If you came here from the README looking for a product: there isn't one yet.
@@ -1288,6 +1288,36 @@ on 5.1 (see "Backup and restore are incomplete by design").
 receipt page; both are covered by component tests only. The retry of a failed
 erasure ran in tests, not live. So did the hosted rule that setup stays closed.
 A deletion's receipt does not survive a restore of an older backup.
+
+### The desktop runner's token folder, and its pairing prompt (verified 2026-09-22)
+
+The runner said its token was "readable only by you". On Windows that was
+not true. `0o600` does nothing there, and the state folder inherited the ACL
+of `%LOCALAPPDATA%`, which on this machine grants a local group
+(`CodexSandboxUsers`) read access. So the device token and the runner's
+browser profile, which holds employer sessions, were readable by other
+accounts. The fix is in `services/worker/src/job_getter_worker/runner/store.py`.
+On Windows the folder drops its inherited entries and grants only the current
+user, SYSTEM and Administrators, by SID and with `icacls` called by its full
+System32 path. `run` applies the same to a folder an older version created.
+If the restriction fails, **the token is not written**. No runner had been
+paired through the default folder on this machine, so no token was exposed
+here.
+
+Tests: `services/worker/tests/test_runner_store_acl.py` has 5 cases, one of
+them on the real filesystem. Its parent folder grants Everyone read, and it
+holds a token written the old way. After a save, neither the folder's nor the
+token's stored security descriptor mentions Everyone, and the folder no longer
+inherits from its parent.
+
+**The `pair` prompt in a real console:** `.local/e2e-runner-pair.py` drives
+`job-getter-runner pair` through a ConPTY pseudo-console, because on Windows
+`getpass` reads the console rather than stdin. **11 of 11 checks passed.** It
+prompts and says where to get a code. The code is neither echoed nor stored.
+The state folder is protected. `status` names the server. The API lists a
+paired `local_runner`. The test device was then revoked. It also removed a
+stray `HTTP Request: POST …` line that httpx logged into the person's
+terminal.
 
 ### M5: the settings file (verified 2026-09-22)
 

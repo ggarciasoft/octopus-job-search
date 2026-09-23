@@ -161,10 +161,11 @@ It opens a visible Chromium window. Log in to job sites there when asked. The
 runner stops at any login, CAPTCHA or identity check and hands control back to
 you. `job-getter-runner status` shows what it is paired with.
 
-> ⚠️ The three install commands were run from a fresh clone. The runner has
-> filled a form with `run --headless`, but with a device paired through the
-> API. The interactive `pair` prompt and a filled form in a visible window
-> have not been observed end to end yet.
+> ⚠️ The three install commands were run from a fresh clone. The interactive
+> `pair` prompt was run in a real Windows console: the code was not echoed or
+> stored, and the device appeared as a paired local runner. The runner has
+> filled a form with `run --headless`. A fill in a visible window has not been
+> observed end to end yet.
 
 ---
 

@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import getpass
+import logging
 import platform
 import socket
 import sys
@@ -173,6 +174,9 @@ async def _run_loop(pairing: StoredPairing, store: PairingStore, *, headless: bo
 def command_run(store: PairingStore, *, headless: bool) -> int:
     try:
         pairing = store.load()
+        # Before the browser profile is opened: a directory created by an
+        # older version kept its parent's permissions, and this tightens it.
+        store.secure()
     except PairingStoreError as error:
         print(f"job-getter-runner: {error}", file=sys.stderr)
         return 2
@@ -218,6 +222,9 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     configure_logging("info")
+    # httpx logs every request at INFO. That is noise in a terminal a person
+    # is reading, and a URL is not something this prompt needs to show them.
+    logging.getLogger("httpx").setLevel(logging.WARNING)
     store = _store(getattr(args, "state_dir", None))
 
     if args.command == "pair":
