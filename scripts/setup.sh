@@ -103,6 +103,11 @@ if [ -f "$JG_ENV_FILE" ]; then
     warn "Previous .env saved to: ${BACKUP}"
     warn "It contains the OLD secrets. Keep it out of git and delete it once you are sure."
     ( umask 077; cp "$EXAMPLE_FILE" "$JG_ENV_FILE" )
+  elif [ -z "$(env_get ENCRYPTION_KEY || printf '')" ]; then
+    # No ENCRYPTION_KEY means nothing stored can depend on it, so there is
+    # nothing the refusal below would protect. This is the documented install
+    # path (cp .env.example .env, then this script), which the refusal broke.
+    info "Existing .env has no ENCRYPTION_KEY yet (a copy of .env.example?); filling in empty secrets."
   else
     die ".env already exists at ${JG_ENV_FILE}.
 Refusing to overwrite it, because that would destroy the ENCRYPTION_KEY that

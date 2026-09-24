@@ -53,7 +53,10 @@ The same arguments work with `pwsh` if you have it.
 - **No secrets in shell history or in `ps` output.** Request bodies go through a
   temporary file or `ConvertTo-Json`, never inline in an argument list.
 - **`.env` is read key-by-key and never sourced.** Sourcing it would execute the
-  file and load every secret into the process environment.
+  file and load every secret into the process environment. The one script that
+  does put all of `.env` into its environment is `dev`, because the API and
+  worker it starts need those secrets, as Compose's `env_file` gives them. It
+  still reads the file as data, never executing it.
 - **Destructive actions confirm first**, and say specifically what will be lost.
   `--yes` / `-Yes` skips the prompt for automation.
 - **Paths are absolute**, derived from the script's own location, so it does not
@@ -63,12 +66,10 @@ The same arguments work with `pwsh` if you have it.
 
 ## Status
 
-**Run against a live installation:** every POSIX script except `dev.sh`, and,
-under Windows PowerShell 5.1, `smoke.ps1`, `backup.ps1` (gpg and `-NoEncrypt`),
-`restore.ps1` (into a separate installation and over the source) and
-`migrate.ps1`. **Never run:** `dev.sh`, `dev.ps1`, `--age-recipient` /
-`-AgeRecipient`, and any script under PowerShell 7 or on macOS or Linux.
-`setup.ps1` has only been run against a throwaway environment file.
+**Run against a live installation, 2026-09-24:** every script, on Windows 11.
+The PowerShell ones ran under both Windows PowerShell 5.1 and PowerShell 7,
+backups with gpg, age and `--no-encrypt`, and `setup` from a fresh clone.
+**Never run:** any script on macOS or Linux.
 
 See [`../IMPLEMENTATION_STATUS.md`](../IMPLEMENTATION_STATUS.md) → "Verified
 commands" for exactly what was run and what it printed.

@@ -46,7 +46,7 @@ git clone <repository> && cd job-getter
 cp .env.example .env                 # ✅ verified
 
 sh scripts/setup.sh                  # ✅ verified (produced the .env used below; zero carriage returns)
-# powershell -ExecutionPolicy Bypass -File scripts/setup.ps1       # ✅ verified against a throwaway env file only
+# powershell -ExecutionPolicy Bypass -File scripts/setup.ps1       # ✅ verified from a fresh clone, 2026-09-24
 
 docker compose up --build -d         # ✅ verified (with IMAGE_REGISTRY and the build_ca secret, see §6)
 # open http://localhost:3000 and enter the setup token that was printed
@@ -56,14 +56,17 @@ sh scripts/smoke.sh                  # ✅ passed through the nginx proxy on 127
 > On a network with TLS interception (see §6, Symptom B) `docker compose up
 --build` fails inside the image builds. Build the images first with the
 > `build_ca` secret, then `docker compose up -d --no-build`. That is how the
-> verification above was performed; a build on a host **without**
-> interception has not been observed and is verified only by construction.
+> verification above was performed. A build on a host **without**
+> interception is CI's "Container build smoke" job, which builds every image on
+> a GitHub runner.
 
 ### What to expect at each step
 
 **`scripts/setup.sh`** generates `SESSION_SECRET`, `ENCRYPTION_KEY`,
 `WORKER_AUTH_TOKEN` and `SETUP_TOKEN` from a CSPRNG and prints the setup token
-**once**. It refuses to overwrite an existing `.env` without `--force`.
+**once**. It refuses to overwrite an existing `.env` without `--force`, unless
+that `.env` has no `ENCRYPTION_KEY` yet (a fresh copy of `.env.example`), in
+which case it fills in the empty secrets.
 
 > **Save the setup token now.** It is also in `.env`
 > (`grep '^SETUP_TOKEN=' .env`), but it is the only thing standing between you
@@ -159,8 +162,8 @@ build.
 source) and `migrate.sh` ran against a populated installation for AT25. See
 `IMPLEMENTATION_STATUS.md`, "AT25". On 2026-09-24 `backup.ps1`, `restore.ps1`
 and `migrate.ps1` repeated that run under Windows PowerShell 5.1 (same file,
-"The PowerShell scripts, run for the first time"). `--age-recipient` remains
-⚠️ Unverified.
+"The PowerShell scripts, run for the first time"), and later that day the
+age path and PowerShell 7 ran too.
 
 ### Backup
 

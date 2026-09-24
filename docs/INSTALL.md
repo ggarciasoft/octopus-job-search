@@ -43,7 +43,7 @@ to work but are **not verified**.
 git clone <repository> job-getter && cd job-getter
 cp .env.example .env
 sh scripts/setup.sh              # Linux, macOS, Git Bash
-# powershell -ExecutionPolicy Bypass -File scripts/setup.ps1   # Windows PowerShell (⚠️ verified against a throwaway file only)
+# powershell -ExecutionPolicy Bypass -File scripts/setup.ps1   # Windows PowerShell
 docker compose up --build -d
 ```
 
@@ -55,8 +55,15 @@ The first `up` builds three images and takes a few minutes. It's ready when
 
 > **Behind a corporate proxy or antivirus that inspects HTTPS?** The image
 > builds fail with certificate errors. See [RUNBOOK §6](RUNBOOK.md) (Symptom
-> B). The verification above was run that way. A build on a network
-> **without** interception has not been observed yet.
+> B). The verification above was run that way. Without interception the
+> build is CI's: every CI run builds the images on a GitHub runner.
+
+> **Installing a second copy on the same machine?** `docker-compose.yml` names
+> its project `job-getter`, whatever folder you clone into, so a second copy's
+> `up` replaces the first one's containers. Give it a name of its own first:
+> `export COMPOSE_PROJECT_NAME=job-getter-2` (PowerShell:
+> `$env:COMPOSE_PROJECT_NAME = 'job-getter-2'`), and different ports in its
+> `.env`.
 
 To confirm the whole chain works, run `sh scripts/smoke.sh` (✅ passes).
 

@@ -101,6 +101,13 @@ if (Test-Path -LiteralPath $envFile -PathType Leaf) {
 
         Copy-Item -LiteralPath $exampleFile -Destination $envFile -Force
     }
+    elseif (-not (Get-JGEnvValue -Key 'ENCRYPTION_KEY' -Path $envFile)) {
+        # No ENCRYPTION_KEY means nothing stored can depend on it, so there is
+        # nothing the refusal below would protect. This is the documented
+        # install path (copy .env.example to .env, then this script), which
+        # the refusal broke.
+        Write-JGInfo 'Existing .env has no ENCRYPTION_KEY yet (a copy of .env.example?); filling in empty secrets.'
+    }
     else {
         Stop-JG @"
 .env already exists at $envFile.
