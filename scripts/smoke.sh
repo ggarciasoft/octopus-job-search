@@ -29,6 +29,7 @@ set -eu
 . "$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)/lib.sh"
 
 BASE_URL="${SMOKE_BASE_URL:-http://localhost:3000}"
+ORIGIN="${SMOKE_ORIGIN:-}"
 EMAIL="${SMOKE_EMAIL:-smoke@localhost.invalid}"
 PASSWORD="${SMOKE_PASSWORD:-}"
 TIMEOUT_SECS="${SMOKE_TIMEOUT:-120}"
@@ -45,6 +46,12 @@ USAGE
 OPTIONS
     --base-url URL    Origin to test. Default http://localhost:3000, which is
                       what docker-compose.yml publishes.
+    --origin URL      Origin and Referer to send. Default: the base URL, which
+                      is right whenever the browser and this script call the
+                      same origin. The dev loop is the exception: its API
+                      trusts the Vite origin, http://localhost:5173, which does
+                      not proxy the health endpoints, so point --base-url at
+                      the API and --origin at Vite.
     --email ADDR      Owner email. Default smoke@localhost.invalid
     --password PW     Owner password (min 12 chars). PREFER the environment
                       variable SMOKE_PASSWORD: a password passed as an argument
@@ -57,7 +64,7 @@ OPTIONS
     -h, --help        Show this help and exit.
 
 ENVIRONMENT
-    SMOKE_BASE_URL, SMOKE_EMAIL, SMOKE_PASSWORD, SMOKE_TIMEOUT,
+    SMOKE_BASE_URL, SMOKE_ORIGIN, SMOKE_EMAIL, SMOKE_PASSWORD, SMOKE_TIMEOUT,
     SMOKE_READY_TIMEOUT, SMOKE_SETUP_TOKEN
     JG_READY_PATH / JG_LIVE_PATH override the health endpoint paths.
 
@@ -85,6 +92,7 @@ HELPTEXT
 while [ $# -gt 0 ]; do
   case "$1" in
     --base-url) BASE_URL=${2:?--base-url needs a value}; shift ;;
+    --origin)   ORIGIN=${2:?--origin needs a value}; shift ;;
     --email)    EMAIL=${2:?--email needs a value}; shift ;;
     --password) PASSWORD=${2:?--password needs a value}; shift ;;
     --timeout)  TIMEOUT_SECS=${2:?--timeout needs a value}; shift ;;
@@ -97,6 +105,7 @@ done
 
 require_curl
 BASE_URL=$(printf '%s' "$BASE_URL" | sed 's#/*$##')   # strip trailing slashes
+ORIGIN=$(printf '%s' "${ORIGIN:-$BASE_URL}" | sed 's#/*$##')
 
 # --- Scratch state ------------------------------------------------------------
 # The cookie jar holds a live session cookie. It is created with restrictive
@@ -131,8 +140,8 @@ api() {
        --request "$_method" \
        --cookie "$JAR" --cookie-jar "$JAR" \
        --header "Accept: application/json" \
-       --header "Origin: ${BASE_URL}" \
-       --header "Referer: ${BASE_URL}/" \
+       --header "Origin: ${ORIGIN}" \
+       --header "Referer: ${ORIGIN}/" \
        --max-time 30 \
        --output "$BODY" \
        --write-out '%{http_code}' \

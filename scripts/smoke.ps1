@@ -26,6 +26,13 @@
     Origin to test. Default http://localhost:3000, which is what
     docker-compose.yml publishes.
 
+.PARAMETER Origin
+    The Origin and Referer to send. Default: BaseUrl, which is right whenever
+    the browser and the script call the same origin. The dev loop is the
+    exception: the API there trusts the Vite origin, http://localhost:5173,
+    which does not proxy the health endpoints, so point BaseUrl at the API and
+    Origin at Vite.
+
 .PARAMETER Email
     Owner email. Default smoke@localhost.invalid
 
@@ -66,6 +73,7 @@
 [CmdletBinding()]
 param(
     [string]$BaseUrl,
+    [string]$Origin,
     [string]$Email,
     [string]$Password,
     [int]$TimeoutSeconds = 0,
@@ -81,6 +89,8 @@ if ($TimeoutSeconds -le 0)      { if ($env:SMOKE_TIMEOUT)       { $TimeoutSecond
 if ($ReadyTimeoutSeconds -le 0) { if ($env:SMOKE_READY_TIMEOUT) { $ReadyTimeoutSeconds = [int]$env:SMOKE_READY_TIMEOUT } else { $ReadyTimeoutSeconds = 90 } }
 
 $BaseUrl = $BaseUrl.TrimEnd('/')
+if (-not $Origin) { if ($env:SMOKE_ORIGIN) { $Origin = $env:SMOKE_ORIGIN } else { $Origin = $BaseUrl } }
+$Origin = $Origin.TrimEnd('/')
 
 # Windows PowerShell 5.1 negotiates TLS 1.0 by default, which any modern
 # endpoint rejects. Harmless for plain http, required if you point this at an
@@ -112,8 +122,8 @@ function Invoke-JGApi {
     )
     $headers = @{
         'Accept'  = 'application/json'
-        'Origin'  = $BaseUrl
-        'Referer' = "$BaseUrl/"
+        'Origin'  = $Origin
+        'Referer' = "$Origin/"
     }
     foreach ($k in $ExtraHeaders.Keys) { $headers[$k] = $ExtraHeaders[$k] }
 

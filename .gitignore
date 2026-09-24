@@ -191,6 +191,11 @@ fixtures/private/
 # captured container logs, and throwaway helper scripts. Never committed.
 .local/
 
+# The dev loop's file storage (uploaded CVs and generated documents, so personal
+# data) and its temporary Compose override (scripts/dev.sh, scripts/dev.ps1).
+.dev-files/
+.dev-compose.tmp.yml
+
 # Secrets and generated credentials
 *.pem
 *.key

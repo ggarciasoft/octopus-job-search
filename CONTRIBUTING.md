@@ -73,8 +73,10 @@ sh scripts/dev.sh                # powershell -ExecutionPolicy Bypass -File scri
 ```
 
 `scripts/dev.sh` serves the UI on **5173** (Vite), not 3000. Point the smoke
-test at the API directly in that mode:
-`sh scripts/smoke.sh --base-url http://127.0.0.1:8080`.
+test at the API directly in that mode, with the Vite origin the API trusts:
+`sh scripts/smoke.sh --base-url http://127.0.0.1:8080 --origin http://localhost:5173`.
+If another PostgreSQL already has port 5432, set `JG_DEV_DB_PORT` to a free
+port first.
 
 ### Lockfiles
 
