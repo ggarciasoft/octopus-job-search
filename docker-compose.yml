@@ -299,17 +299,14 @@ services:
   # must be measured, not assumed. The project's 8 GB target is for the stack
   # WITHOUT a local model.
   #
-  # Image: OLLAMA_IMAGE, default ollama/ollama:0.34.0.
-  # TODO(digest): this tag was confirmed to EXIST (docker manifest inspect
-  # ollama/ollama:0.34.0 returned a manifest, 2026-09-20) but its digest could
-  # not be resolved - Docker Hub started returning HTTP 429 mid-verification.
-  # It is pinned by tag only. Resolve and pin the digest before any release:
-  #   docker buildx imagetools inspect ollama/ollama:0.34.0 \
-  #     --format '{{.Manifest.Digest}}'
+  # Image: OLLAMA_IMAGE, default ollama/ollama:0.34.0 pinned by digest. The
+  # digest is the multi-arch index, resolved against Docker Hub on 2026-09-24
+  # (Ollama is not on the ECR Public mirror, so IMAGE_REGISTRY does not apply).
+  # The download is about 9 GB before any model weights.
   # ---------------------------------------------------------------------------
   ollama:
     profiles: ['local-ai']
-    image: ${OLLAMA_IMAGE:-ollama/ollama:0.34.0}
+    image: ${OLLAMA_IMAGE:-ollama/ollama:0.34.0@sha256:684d8674b4315fa18f4f0e973a118ec2652ed96f67563277839985175858e0ba}
     logging: *default-logging
     restart: unless-stopped
     volumes:

@@ -187,14 +187,14 @@ API (`/releases/latest`, then `/git/ref/tags/<tag>`, dereferencing annotated tag
 through `/git/tags/<sha>` — `pnpm/action-setup@v6.1.0` is annotated and needed
 that extra step).
 
-**Honest gaps**, both recorded in `IMPLEMENTATION_STATUS.md`:
+**Former gaps**, recorded in `IMPLEMENTATION_STATUS.md`:
 
-- `ollama/ollama:0.34.0` is pinned **by tag only**. The tag was confirmed to
-  exist with `docker manifest inspect`, but digest resolution hit Docker Hub's
-  429 limit. Marked `TODO(digest)` in `docker-compose.yml`. It is an optional
-  profile, so this does not affect the default stack.
-- The `postgres` **service container in CI** is pinned by tag only — see ADR12
-  for why an ECR-resolved digest must not be asserted there.
+- Both gaps closed on 2026-09-24, when Docker Hub answered. `ollama/ollama:0.34.0`
+  is now pinned by digest (`sha256:684d8674…58e0ba`, resolved against Docker
+  Hub), in `docker-compose.yml` and in `.env.example`. The `postgres` service
+  container in CI now pins the same digest as Compose, because that digest
+  resolved on Docker Hub itself, the registry CI pulls from, which is what ADR12
+  asked for.
 
 **Revisit when:** a CVE affects a pinned image, or before any release. The pins
 are a snapshot of 2026-09-20, not a permanent truth.

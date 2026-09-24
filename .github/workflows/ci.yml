@@ -189,16 +189,14 @@ jobs:
       postgres:
         # PostgreSQL 17 baseline, per docs/spec/02_ARCHITECTURE.md.
         #
-        # Pinned by TAG only, deliberately. docker-compose.yml pins this image
-        # by tag AND digest, but that digest was resolved through the AWS ECR
-        # Public mirror because Docker Hub was rate-limiting the development
-        # network. GitHub runners pull from Docker Hub, so asserting an
-        # ECR-resolved digest here would be claiming a verification that was
-        # not performed against the registry this job actually uses.
-        # TODO(digest): pin once the digest can be confirmed against Docker Hub:
-        #   docker buildx imagetools inspect postgres:17-alpine \
-        #     --format '{{.Manifest.Digest}}'
-        image: postgres:17-alpine
+        # The same digest docker-compose.yml pins. It was first resolved through
+        # the AWS ECR Public mirror, so until 2026-09-24 this stayed tag-only:
+        # GitHub runners pull from Docker Hub. On 2026-09-24
+        #   docker buildx imagetools inspect postgres:17-alpine@sha256:f02121de...
+        # resolved against Docker Hub itself, so the pin is now verified
+        # against the registry this job uses. (Docker Hub's 17-alpine tag has
+        # since moved on; the digest is what keeps CI and Compose identical.)
+        image: postgres:17-alpine@sha256:f02121de6f74d30d8a94cd1d9584125e2178d7e6c377d8130112d4e52d867995
         env:
           POSTGRES_USER: jobgetter
           POSTGRES_PASSWORD: jobgetter
