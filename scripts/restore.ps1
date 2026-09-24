@@ -28,7 +28,8 @@
 
 .PARAMETER From
     Backup to restore. Accepts .tar.gz.age, .tar.gz.gpg, .tar.gz, or an
-    unpacked backup directory.
+    unpacked backup directory. A .age backup needs $env:JG_AGE_IDENTITY set
+    to the age identity file (from age-keygen): age cannot prompt for it.
 
 .PARAMETER DropExisting
     Drop and recreate the target database first. DESTRUCTIVE. Without it,
@@ -100,10 +101,17 @@ $src = $null
 try {
     if ($From.EndsWith('.age')) {
         Assert-JGCommand -Name 'age' -Hint 'Install age to decrypt this backup.'
+        # age does not prompt for an identity, and a backup encrypted to a
+        # recipient cannot be opened without the matching one.
+        if (-not $env:JG_AGE_IDENTITY) {
+            throw 'set $env:JG_AGE_IDENTITY to the age identity file (from age-keygen) whose public key this backup was encrypted to.'
+        }
+        if (-not (Test-Path -LiteralPath $env:JG_AGE_IDENTITY -PathType Leaf)) {
+            throw "JG_AGE_IDENTITY names a file that does not exist: $($env:JG_AGE_IDENTITY)"
+        }
         Write-JGInfo 'Decrypting with age...'
         $plain = Join-Path $workDir 'backup.tar.gz'
-        if ($env:JG_AGE_IDENTITY) { & age --decrypt --identity $env:JG_AGE_IDENTITY --output $plain $From }
-        else                      { & age --decrypt --output $plain $From }
+        & age --decrypt --identity $env:JG_AGE_IDENTITY --output $plain $From
         if ($LASTEXITCODE -ne 0) { throw 'decryption failed.' }
         & tar -C $workDir -xzf $plain
         if ($LASTEXITCODE -ne 0) { throw 'extraction failed.' }

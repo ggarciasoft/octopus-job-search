@@ -235,7 +235,9 @@ try {
         $h = (Get-FileHash -LiteralPath (Join-Path $stage $f) -Algorithm SHA256).Hash.ToLower()
         "$h  $f"
     }
-    [System.IO.File]::WriteAllLines((Join-Path $stage 'SHA256SUMS'), [string[]]$lines, $utf8NoBom)
+    # LF, not WriteAllLines: that writes CRLF on Windows, and sha256sum then
+    # looks for a file named "database.dump\r" and calls the archive corrupt.
+    [System.IO.File]::WriteAllText((Join-Path $stage 'SHA256SUMS'), (($lines -join "`n") + "`n"), $utf8NoBom)
     Write-JGOk 'SHA256SUMS'
 }
 catch {

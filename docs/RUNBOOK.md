@@ -201,8 +201,13 @@ no built-in scheduler; use `cron` or Task Scheduler.
 ### Restore
 
 ```bash
-sh scripts/restore.sh --from backups/job-getter-<ts>.tar.gz.age --drop-existing
+JG_AGE_IDENTITY=~/job-getter-backup.key \
+  sh scripts/restore.sh --from backups/job-getter-<ts>.tar.gz.age --drop-existing
 ```
+
+A `.age` backup needs `JG_AGE_IDENTITY`: the identity file from `age-keygen`
+whose public key you gave `--age-recipient`. age cannot prompt for it, so keep
+that file somewhere other than the backups.
 
 To a **separate installation** — the case the specification actually cares about:
 

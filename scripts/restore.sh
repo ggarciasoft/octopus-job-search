@@ -63,6 +63,10 @@ OPTIONS
     --yes             Do not prompt. Use with care.
     -h, --help        Show this help and exit.
 
+ENVIRONMENT
+    JG_AGE_IDENTITY   The age identity file (from age-keygen) for a .age
+                      backup. Required for one: age cannot prompt for it.
+
 RESTORING TO A SEPARATE INSTALLATION
     1. Check out the repository on the target machine.
     2. sh scripts/setup.sh           # creates a NEW .env with NEW secrets
@@ -128,8 +132,13 @@ SRC=""
 case "$FROM" in
   *.age)
     require_cmd age "Install age to decrypt this backup."
-    info "Decrypting with age (you will be prompted for the identity)..."
-    age --decrypt "${JG_AGE_IDENTITY:+--identity=$JG_AGE_IDENTITY}" "$FROM" \
+    # age does not prompt for an identity, and a backup encrypted to a
+    # recipient cannot be opened without the matching one. Without this check
+    # the failure surfaced as gzip and tar complaining about empty input.
+    [ -n "${JG_AGE_IDENTITY:-}" ]       || die "set JG_AGE_IDENTITY to the age identity file (from age-keygen) whose public key this backup was encrypted to."
+    require_file "$JG_AGE_IDENTITY" "JG_AGE_IDENTITY"
+    info "Decrypting with age..."
+    age --decrypt --identity "$JG_AGE_IDENTITY" "$FROM" \
       | tar -C "$WORKDIR" -xzf - || die "decryption or extraction failed."
     SRC=$(find "$WORKDIR" -maxdepth 1 -mindepth 1 -type d | head -n 1)
     ;;
@@ -156,9 +165,12 @@ require_file "${SRC}/manifest.json" "this does not look like a scripts/backup.sh
 # --- Integrity ----------------------------------------------------------------
 if [ -f "${SRC}/SHA256SUMS" ]; then
   info "Verifying checksums..."
+  # Carriage returns stripped from the list, not from anything it hashes:
+  # backup.ps1 wrote CRLF here until 2026-09-24, and sha256sum would otherwise
+  # look for "database.dump\r" and refuse every backup made on Windows.
   ( cd "$SRC" && {
-      if command -v sha256sum >/dev/null 2>&1; then sha256sum --check --quiet SHA256SUMS
-      else shasum -a 256 --check --status SHA256SUMS
+      if command -v sha256sum >/dev/null 2>&1; then tr -d '\r' < SHA256SUMS | sha256sum --check --quiet -
+      else tr -d '\r' < SHA256SUMS | shasum -a 256 --check --status -
       fi
     } ) || die "CHECKSUM MISMATCH. This archive is corrupt or was modified. Refusing to restore it."
   ok "checksums match"
