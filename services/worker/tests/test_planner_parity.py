@@ -20,6 +20,7 @@ import json
 import pathlib
 import threading
 from collections.abc import AsyncIterator, Iterator
+from typing import Any
 
 import pytest
 
@@ -47,7 +48,7 @@ VECTORS = json.loads(
 )
 
 
-def to_field(vector: dict) -> FormField:
+def to_field(vector: dict[str, Any]) -> FormField:
     return FormField(
         key=vector["key"],
         label=vector["label"],
@@ -59,7 +60,7 @@ def to_field(vector: dict) -> FormField:
     )
 
 
-def from_field(item: FormField) -> dict:
+def from_field(item: FormField) -> dict[str, Any]:
     return {
         "key": item.key,
         "label": item.label,
@@ -71,29 +72,31 @@ def from_field(item: FormField) -> dict:
     }
 
 
-@pytest.mark.parametrize("vector", VECTORS["normalize_question_key"], ids=lambda v: v["key"] or "empty")
-def test_question_keys_match_the_fixture(vector: dict) -> None:
+@pytest.mark.parametrize(
+    "vector", VECTORS["normalize_question_key"], ids=lambda v: v["key"] or "empty"
+)
+def test_question_keys_match_the_fixture(vector: dict[str, Any]) -> None:
     assert normalize_question_key(vector["label"]) == vector["key"]
 
 
 @pytest.mark.parametrize("vector", VECTORS["sensitivity_for"], ids=lambda v: v["label"][:40])
-def test_sensitivity_matches_the_fixture(vector: dict) -> None:
+def test_sensitivity_matches_the_fixture(vector: dict[str, Any]) -> None:
     assert str(sensitivity_for(vector["label"])) == vector["sensitivity"]
 
 
 @pytest.mark.parametrize("vector", VECTORS["fingerprint"], ids=lambda v: v["name"])
-def test_fingerprints_match_the_fixture(vector: dict) -> None:
+def test_fingerprints_match_the_fixture(vector: dict[str, Any]) -> None:
     fields = tuple(to_field(item) for item in vector["fields"])
     assert fingerprint(fields) == vector["fingerprint"]
 
 
 @pytest.mark.parametrize("vector", VECTORS["parse_fields"], ids=lambda v: v["name"])
-def test_parsed_fields_match_the_fixture(vector: dict) -> None:
+def test_parsed_fields_match_the_fixture(vector: dict[str, Any]) -> None:
     assert [from_field(item) for item in parse_fields(vector["raw"])] == vector["fields"]
 
 
 @pytest.mark.parametrize("vector", VECTORS["check_identity"], ids=lambda v: v["name"])
-def test_identity_checks_match_the_fixture(vector: dict) -> None:
+def test_identity_checks_match_the_fixture(vector: dict[str, Any]) -> None:
     identity = parse_identity(vector["raw"], "https://x.example/a", "https://x.example")
     assert {"company": identity.company, "title": identity.title} == vector["identity"]
 
@@ -102,7 +105,7 @@ def test_identity_checks_match_the_fixture(vector: dict) -> None:
 
 
 @pytest.mark.parametrize("vector", VECTORS["build_plan"], ids=lambda v: v["name"])
-def test_plans_match_the_fixture(vector: dict) -> None:
+def test_plans_match_the_fixture(vector: dict[str, Any]) -> None:
     fields = tuple(to_field(item) for item in vector["fields"])
     answers = tuple(
         FillField(
@@ -154,8 +157,7 @@ PAGE_VECTORS = [
     for name in _PAGE_ADAPTERS
     for vector in json.loads(
         (
-            pathlib.Path(__file__).resolve().parents[3]
-            / f"fixtures/fill-planner/{name}-page.json"
+            pathlib.Path(__file__).resolve().parents[3] / f"fixtures/fill-planner/{name}-page.json"
         ).read_text(encoding="utf-8")
     )
 ]
@@ -201,7 +203,7 @@ async def ats_browser(tmp_path: pathlib.Path) -> AsyncIterator[RunnerBrowser]:
     ("adapter_name", "expected"), PAGE_VECTORS, ids=[v["page"] for _, v in PAGE_VECTORS]
 )
 async def test_chromium_still_reads_the_recorded_page(
-    ats_browser: RunnerBrowser, ats_server: str, adapter_name: str, expected: dict
+    ats_browser: RunnerBrowser, ats_server: str, adapter_name: str, expected: dict[str, Any]
 ) -> None:
     adapter = _PAGE_ADAPTERS[adapter_name]
     page = await ats_browser.open(f"{ats_server}/{expected['page']}", (ats_server,))
@@ -225,7 +227,7 @@ CONFIRMATION_VECTORS = json.loads(
 
 @pytest.mark.parametrize("expected", CONFIRMATION_VECTORS, ids=lambda v: v["page"])
 async def test_chromium_still_reads_the_recorded_confirmation(
-    ats_browser: RunnerBrowser, ats_server: str, expected: dict
+    ats_browser: RunnerBrowser, ats_server: str, expected: dict[str, Any]
 ) -> None:
     adapter = GreenhouseAdapter()
     page = await ats_browser.open(f"{ats_server}/{expected['page']}", (ats_server,))
