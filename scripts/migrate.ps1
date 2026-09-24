@@ -24,7 +24,7 @@
     BEFORE YOU RUN THIS ON DATA YOU CARE ABOUT, take a backup.
     docs/spec/10_DEPLOYMENT.md: "Back up before migration."
 
-        pwsh -File scripts/backup.ps1
+        powershell -ExecutionPolicy Bypass -File scripts/backup.ps1
 
     Migrations are additive by preference and must be repeatable from an empty
     database. This script never runs DOWN migrations: docs/spec/10_DEPLOYMENT.md
@@ -34,10 +34,10 @@
     A non-zero exit means DO NOT START THE API against this database.
 
 .EXAMPLE
-    pwsh -File scripts/migrate.ps1
+    powershell -ExecutionPolicy Bypass -File scripts/migrate.ps1
 
 .EXAMPLE
-    pwsh -File scripts/migrate.ps1 -Local
+    powershell -ExecutionPolicy Bypass -File scripts/migrate.ps1 -Local
 #>
 [CmdletBinding()]
 param(
@@ -58,8 +58,8 @@ if ($Local)   { $mode = 'local' }
 if ($mode -eq 'auto') {
     $dbRunning = ''
     try {
-        & docker compose version *> $null
-        if ($LASTEXITCODE -eq 0) { $dbRunning = (& docker compose ps --quiet db 2>$null) -join '' }
+        Invoke-JGNative { docker compose version } | Out-Null
+        if ($LASTEXITCODE -eq 0) { $dbRunning = (Invoke-JGNative { docker compose ps --quiet db }) -join '' }
     } catch { }
     if ($dbRunning) {
         $mode = 'compose'

@@ -46,7 +46,7 @@ git clone <repository> && cd job-getter
 cp .env.example .env                 # ✅ verified
 
 sh scripts/setup.sh                  # ✅ verified (produced the .env used below; zero carriage returns)
-# pwsh -File scripts/setup.ps1       # ✅ verified against a throwaway env file only
+# powershell -ExecutionPolicy Bypass -File scripts/setup.ps1       # ✅ verified against a throwaway env file only
 
 docker compose up --build -d         # ✅ verified (with IMAGE_REGISTRY and the build_ca secret, see §6)
 # open http://localhost:3000 and enter the setup token that was printed
@@ -157,8 +157,10 @@ build.
 **Status: ✅ Verified (POSIX scripts), 2026-09-22.** `backup.sh` (gpg and
 `--no-encrypt`), `restore.sh` (to a separate installation, and over the
 source) and `migrate.sh` ran against a populated installation for AT25. See
-`IMPLEMENTATION_STATUS.md`, "AT25". `backup.ps1`, `restore.ps1` and
-`--age-recipient` remain ⚠️ Unverified.
+`IMPLEMENTATION_STATUS.md`, "AT25". On 2026-09-24 `backup.ps1`, `restore.ps1`
+and `migrate.ps1` repeated that run under Windows PowerShell 5.1 (same file,
+"The PowerShell scripts, run for the first time"). `--age-recipient` remains
+⚠️ Unverified.
 
 ### Backup
 

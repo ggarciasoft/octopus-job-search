@@ -81,7 +81,7 @@ cp .env.example .env
 
 # 2. Generate local secrets. Prints a one-time setup token, once.
 sh scripts/setup.sh          # Linux, macOS, Git Bash
-# pwsh -File scripts/setup.ps1   # Windows PowerShell
+# powershell -ExecutionPolicy Bypass -File scripts/setup.ps1   # Windows PowerShell
 
 # 3. Start the stack
 docker compose up --build -d
@@ -106,7 +106,7 @@ To check the whole chain really works — web → API → queue → Python worke
 stored result:
 
 ```bash
-sh scripts/smoke.sh          # pwsh -File scripts/smoke.ps1 on Windows
+sh scripts/smoke.sh          # powershell -ExecutionPolicy Bypass -File scripts/smoke.ps1 on Windows
 ```
 
 That script is the M0 exit criterion. It exits non-zero and prints the actual

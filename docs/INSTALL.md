@@ -43,7 +43,7 @@ to work but are **not verified**.
 git clone <repository> job-getter && cd job-getter
 cp .env.example .env
 sh scripts/setup.sh              # Linux, macOS, Git Bash
-# pwsh -File scripts/setup.ps1   # Windows PowerShell (⚠️ verified against a throwaway file only)
+# powershell -ExecutionPolicy Bypass -File scripts/setup.ps1   # Windows PowerShell (⚠️ verified against a throwaway file only)
 docker compose up --build -d
 ```
 

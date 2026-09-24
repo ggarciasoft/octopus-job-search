@@ -30,6 +30,18 @@ function Stop-JG {
     exit 1
 }
 
+# Runs a native command with its stderr discarded, returning its stdout and
+# leaving $LASTEXITCODE set. Plain `2>$null` is not enough: under
+# $ErrorActionPreference = 'Stop', Windows PowerShell 5.1 turns every line a
+# native program writes to a redirected stderr into a terminating error, and
+# docker compose writes its progress there even when it succeeds.
+function Invoke-JGNative {
+    param([Parameter(Mandatory)][scriptblock]$Command)
+    $previous = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try { & $Command 2>$null } finally { $ErrorActionPreference = $previous }
+}
+
 function Assert-JGCommand {
     param(
         [Parameter(Mandatory)][string]$Name,
@@ -58,7 +70,7 @@ function Assert-JGFile {
 # migration job, so falling back to it would silently break ordering.
 function Assert-JGCompose {
     Assert-JGCommand -Name 'docker' -Hint 'Install Docker Desktop.'
-    & docker compose version *> $null
+    Invoke-JGNative { docker compose version } | Out-Null
     if ($LASTEXITCODE -ne 0) {
         Stop-JG "'docker compose' (v2) is not available. Legacy 'docker-compose' v1 is not supported."
     }

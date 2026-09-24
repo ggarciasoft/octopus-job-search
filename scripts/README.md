@@ -10,12 +10,19 @@ Every script exists twice and the two versions are feature-equivalent:
 Pick whichever shell you actually live in. You do not need both.
 
 ```bash
-sh scripts/setup.sh --help            # POSIX
-pwsh -File scripts/setup.ps1 -?       # PowerShell (or: Get-Help scripts/setup.ps1 -Full)
+sh scripts/setup.sh --help                                  # POSIX
+powershell -ExecutionPolicy Bypass -File scripts/setup.ps1 -?   # PowerShell (or: Get-Help scripts/setup.ps1 -Full)
 ```
 
 **Every script has `--help` / comment-based help.** They are written to be read
 before they are run.
+
+**Why `powershell -ExecutionPolicy Bypass -File`, not `pwsh -File`.** Windows
+ships Windows PowerShell 5.1 as `powershell`; `pwsh` (PowerShell 7) is a
+separate install. And a stock Windows 11 client's execution policy is
+`Restricted`, which refuses to run any `.ps1` file at all. `-ExecutionPolicy
+Bypass` applies to that one process only and changes nothing on the machine.
+The same arguments work with `pwsh` if you have it.
 
 ---
 
@@ -56,9 +63,12 @@ before they are run.
 
 ## Status
 
-**These scripts have been syntax-checked, and `setup` has been run end to end
-against a throwaway environment file. The rest have not been executed against a
-real installation, because there is no working installation yet.**
+**Run against a live installation:** every POSIX script except `dev.sh`, and,
+under Windows PowerShell 5.1, `smoke.ps1`, `backup.ps1` (gpg and `-NoEncrypt`),
+`restore.ps1` (into a separate installation and over the source) and
+`migrate.ps1`. **Never run:** `dev.sh`, `dev.ps1`, `--age-recipient` /
+`-AgeRecipient`, and any script under PowerShell 7 or on macOS or Linux.
+`setup.ps1` has only been run against a throwaway environment file.
 
 See [`../IMPLEMENTATION_STATUS.md`](../IMPLEMENTATION_STATUS.md) → "Verified
 commands" for exactly what was run and what it printed.

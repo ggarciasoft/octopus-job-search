@@ -44,13 +44,13 @@
 .NOTES
     RESTORING TO A SEPARATE INSTALLATION
       1. Check out the repository on the target machine.
-      2. pwsh -File scripts/setup.ps1        # creates a NEW .env, NEW secrets
+      2. powershell -ExecutionPolicy Bypass -File scripts/setup.ps1        # creates a NEW .env, NEW secrets
       3. Replace ENCRYPTION_KEY in the new .env with the SOURCE installation's,
          if you still have it. Without it, stored provider API keys cannot be
          decrypted and must be re-entered. Everything else restores either way.
       4. docker compose up -d db
-      5. pwsh -File scripts/restore.ps1 -From <backup> -DropExisting
-      6. pwsh -File scripts/migrate.ps1      # older dump -> current schema
+      5. powershell -ExecutionPolicy Bypass -File scripts/restore.ps1 -From <backup> -DropExisting
+      6. powershell -ExecutionPolicy Bypass -File scripts/migrate.ps1      # older dump -> current schema
       7. Deal with the deletion-ledger warning this script prints.
       8. Only then: docker compose up -d
 
@@ -66,7 +66,7 @@
                 docs/spec/10_DEPLOYMENT.md, not measured results.
 
 .EXAMPLE
-    pwsh -File scripts/restore.ps1 -From .\backups\job-getter-20260920T120000Z.tar.gz.age -DropExisting
+    powershell -ExecutionPolicy Bypass -File scripts/restore.ps1 -From .\backups\job-getter-20260920T120000Z.tar.gz.age -DropExisting
 #>
 [CmdletBinding()]
 param(
@@ -230,12 +230,12 @@ $ledgerSaved    = $false
 $ledgerReapplied = 'not run'
 
 if (-not $FilesOnly) {
-    & docker compose up -d --wait db 2>$null | Out-Null
-    $ledgerPresent = ((& docker compose exec -T db psql -U $pgUser -d $pgDb -tAc "SELECT to_regclass('public.deletion_ledger') IS NOT NULL" 2>$null) -join '').Trim()
+    Invoke-JGNative { docker compose up -d --wait db } | Out-Null
+    $ledgerPresent = ((Invoke-JGNative { docker compose exec -T db psql -U $pgUser -d $pgDb -tAc "SELECT to_regclass('public.deletion_ledger') IS NOT NULL" }) -join '').Trim()
     if ($ledgerPresent -eq 't') {
         # Emitted as idempotent INSERTs rather than CSV: one file, readable by
         # a person, replayable into a ledger that already holds some of them.
-        $rows = & docker compose exec -T db psql -U $pgUser -d $pgDb -tAc "SELECT format('INSERT INTO deletion_ledger (id, workspace_id, object_kind, object_id, deleted_at, reason, created_at) VALUES (%L,%L,%L,%L,%L,%L,%L) ON CONFLICT (id) DO NOTHING;', id, workspace_id, object_kind, object_id, deleted_at, reason, created_at) FROM deletion_ledger" 2>$null
+        $rows = Invoke-JGNative { docker compose exec -T db psql -U $pgUser -d $pgDb -tAc "SELECT format('INSERT INTO deletion_ledger (id, workspace_id, object_kind, object_id, deleted_at, reason, created_at) VALUES (%L,%L,%L,%L,%L,%L,%L) ON CONFLICT (id) DO NOTHING;', id, workspace_id, object_kind, object_id, deleted_at, reason, created_at) FROM deletion_ledger" }
         Set-Content -LiteralPath $ledgerSql -Value ($rows -join "`n") -Encoding utf8
         $ledgerSaved = $true
         Write-JGOk "saved $(@($rows | Where-Object { $_ -match 'INSERT INTO' }).Count) deletion-ledger row(s) from the target"
@@ -263,14 +263,14 @@ try {
         Assert-JGFile -Path (Join-Path $src 'database.dump') -Hint 'the backup has no database dump'
 
         Write-JGInfo 'Starting the target database...'
-        & docker compose up -d --wait db *> $null
+        Invoke-JGNative { docker compose up -d --wait db } | Out-Null
         if ($LASTEXITCODE -ne 0) { throw "the 'db' service did not become healthy." }
 
-        $apiRunning = (& docker compose ps --status running --quiet api 2>$null) -join ''
+        $apiRunning = (Invoke-JGNative { docker compose ps --status running --quiet api }) -join ''
         if ($apiRunning) {
             Write-JGWarn 'The API is running against the target database.'
             Confirm-JGAction -Prompt 'Stop api and worker before restoring?' -AssumeYes:$Yes
-            & docker compose stop api worker *> $null
+            Invoke-JGNative { docker compose stop api worker } | Out-Null
             Write-JGOk 'api and worker stopped'
         }
 
@@ -299,14 +299,14 @@ try {
         }
         Write-JGOk 'database restored'
 
-        $tableCount = ((& docker compose exec -T db psql -U $pgUser -d $pgDb -tAc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public'" 2>$null) -join '').Trim()
+        $tableCount = ((Invoke-JGNative { docker compose exec -T db psql -U $pgUser -d $pgDb -tAc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public'" }) -join '').Trim()
         if (-not $tableCount) { $tableCount = '?' }
         Write-JGOk "public schema now has $tableCount tables"
 
         # --- Reapply the deletion ledger --------------------------------------
         # docs/spec/03_DATA_MODEL.md: "Restore must reapply a deletion ledger
         # before exposing data." This is that step, before the script returns.
-        $ledgerAfter = ((& docker compose exec -T db psql -U $pgUser -d $pgDb -tAc "SELECT to_regclass('public.deletion_ledger') IS NOT NULL" 2>$null) -join '').Trim()
+        $ledgerAfter = ((Invoke-JGNative { docker compose exec -T db psql -U $pgUser -d $pgDb -tAc "SELECT to_regclass('public.deletion_ledger') IS NOT NULL" }) -join '').Trim()
         if ($ledgerAfter -ne 't') {
             # The dump predates migration 0007. Migrating is migrate.ps1's job,
             # so the ledger is kept and the exact commands printed.
@@ -315,7 +315,7 @@ try {
             $ledgerReapplied = 'NO - the restored schema has no deletion_ledger'
             Write-JGWarn 'The restored dump predates the deletion ledger (migration 0007).'
             Write-JGWarn 'The ledger was NOT reapplied. Before serving anything, run:'
-            Write-JGWarn '    pwsh scripts/migrate.ps1'
+            Write-JGWarn '    powershell -ExecutionPolicy Bypass -File scripts/migrate.ps1'
             if ($ledgerSaved) { Write-JGWarn "    cmd /c `"docker compose exec -T db psql -U $pgUser -d $pgDb < `"$ledgerKeep`"`"" }
             Write-JGWarn "    cmd /c `"docker compose exec -T db psql -U $pgUser -d $pgDb -v ON_ERROR_STOP=1 < scripts/reapply-deletions.sql`""
         }
@@ -327,7 +327,7 @@ try {
             }
             & cmd /c "docker compose exec -T db psql -U $pgUser -d $pgDb -v ON_ERROR_STOP=1 -q < scripts/reapply-deletions.sql" | Out-Null
             if ($LASTEXITCODE -ne 0) { throw 'reapplying the deletion ledger failed. Do NOT start the API: deleted data may be present.' }
-            $ledgerTotal = ((& docker compose exec -T db psql -U $pgUser -d $pgDb -tAc 'SELECT count(*) FROM deletion_ledger' 2>$null) -join '').Trim()
+            $ledgerTotal = ((Invoke-JGNative { docker compose exec -T db psql -U $pgUser -d $pgDb -tAc 'SELECT count(*) FROM deletion_ledger' }) -join '').Trim()
             if (-not $ledgerTotal) { $ledgerTotal = '?' }
             $ledgerReapplied = "yes - $ledgerTotal ledger entries replayed"
             Write-JGOk "deletion ledger reapplied ($ledgerTotal entries)"
@@ -343,7 +343,7 @@ try {
         & cmd /c "docker compose run --rm --no-deps -T --entrypoint sh api -c `"mkdir -p '$filesRoot' && tar -C '$filesRoot' -xzf -`" < `"$filesPath`""
         if ($LASTEXITCODE -ne 0) { throw 'restoring the files volume failed.' }
 
-        $restoredCount = ((& docker compose run --rm --no-deps --entrypoint sh api -c "find '$filesRoot' -type f | wc -l" 2>$null) -join '').Trim()
+        $restoredCount = ((Invoke-JGNative { docker compose run --rm --no-deps --entrypoint sh api -c "find '$filesRoot' -type f | wc -l" }) -join '').Trim()
         if (-not $restoredCount) { $restoredCount = '?' }
         Write-JGOk "files volume now holds $restoredCount files (archive recorded $bkFiles)"
 
@@ -353,7 +353,7 @@ try {
         # <workspace>/<file>), a deleted file is one object. Paths come from the
         # ledger, which holds UUIDs only, and are checked against that shape
         # again inside the container before anything is removed.
-        $ledgerPaths = & docker compose exec -T db psql -U $pgUser -d $pgDb -tA -v ON_ERROR_STOP=1 -c "SELECT CASE WHEN object_kind = 'workspace' THEN workspace_id::text ELSE workspace_id::text || '/' || object_id::text END FROM deletion_ledger WHERE object_kind IN ('workspace', 'file')" 2>$null
+        $ledgerPaths = Invoke-JGNative { docker compose exec -T db psql -U $pgUser -d $pgDb -tA -v ON_ERROR_STOP=1 -c "SELECT CASE WHEN object_kind = 'workspace' THEN workspace_id::text ELSE workspace_id::text || '/' || object_id::text END FROM deletion_ledger WHERE object_kind IN ('workspace', 'file')" }
         if ($LASTEXITCODE -eq 0) {
             $pathList = @($ledgerPaths | Where-Object { $_ -and $_.Trim() })
             # No double quotes inside the command: Windows PowerShell 5.1 does not escape
@@ -366,7 +366,7 @@ try {
             if ($LASTEXITCODE -ne 0) { throw 'removing deleted objects from the files volume failed. Do NOT start the API: deleted files may be present.' }
             $filesPruned = "yes - $($pathList.Count) ledger path(s) applied"
             # Recounted, so the report says what is left rather than what was unpacked.
-            $restoredCount = ((& docker compose run --rm --no-deps --entrypoint sh api -c "find '$filesRoot' -type f | wc -l" 2>$null) -join '').Trim()
+            $restoredCount = ((Invoke-JGNative { docker compose run --rm --no-deps --entrypoint sh api -c "find '$filesRoot' -type f | wc -l" }) -join '').Trim()
             if (-not $restoredCount) { $restoredCount = '?' }
             Write-JGOk "deleted workspaces and files removed from the files volume ($restoredCount files remain)"
         }
@@ -408,7 +408,7 @@ Write-Host ' loss, restore within 4 hours - are UNVALIDATED TARGETS. This run is
 Write-Host ' evidence that they are met.'
 Write-Host ''
 Write-Host ' Next:'
-Write-Host '   pwsh -File scripts/migrate.ps1   # older dump -> current schema'
+Write-Host '   powershell -ExecutionPolicy Bypass -File scripts/migrate.ps1   # older dump -> current schema'
 Write-Host '   docker compose up -d             # only once you accept the notes above'
-Write-Host '   pwsh -File scripts/smoke.ps1     # confirm the stack works end to end'
+Write-Host '   powershell -ExecutionPolicy Bypass -File scripts/smoke.ps1     # confirm the stack works end to end'
 Write-Host '-----------------------------------------------------------------------'

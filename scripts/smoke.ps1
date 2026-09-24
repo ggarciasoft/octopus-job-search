@@ -58,10 +58,10 @@
     Exit code is 0 only when the probe task reached state "succeeded".
 
 .EXAMPLE
-    pwsh -File scripts/smoke.ps1
+    powershell -ExecutionPolicy Bypass -File scripts/smoke.ps1
 
 .EXAMPLE
-    $env:SMOKE_PASSWORD = 'correct-horse-battery'; pwsh -File scripts/smoke.ps1
+    $env:SMOKE_PASSWORD = 'correct-horse-battery'; powershell -ExecutionPolicy Bypass -File scripts/smoke.ps1
 #>
 [CmdletBinding()]
 param(
@@ -125,7 +125,9 @@ function Invoke-JGApi {
         UseBasicParsing = $true
         TimeoutSec      = 30
     }
-    if ($null -ne $Body) {
+    # Not `$null -ne $Body`: a [string] parameter turns $null into '', so that
+    # test is always true, and Windows PowerShell 5.1 refuses a GET with a body.
+    if ($PSBoundParameters.ContainsKey('Body')) {
         $params['Body']        = $Body
         $params['ContentType'] = 'application/json'
     }
@@ -219,7 +221,7 @@ while ($true) {
         Write-Host 'Check:  docker compose ps'
         Write-Host '        docker compose logs api --tail 50'
         Write-Host 'If the API is alive but not READY, migrations probably have not run:'
-        Write-Host '        pwsh -File scripts/migrate.ps1'
+        Write-Host '        powershell -ExecutionPolicy Bypass -File scripts/migrate.ps1'
         Stop-JG 'readiness check failed'
     }
     Write-Host '.' -NoNewline

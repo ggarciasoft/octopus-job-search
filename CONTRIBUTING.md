@@ -59,7 +59,7 @@ corepack enable && corepack prepare --activate   # gets you the pinned pnpm
 pnpm install --frozen-lockfile
 
 cp .env.example .env
-sh scripts/setup.sh              # pwsh -File scripts/setup.ps1 on Windows
+sh scripts/setup.sh              # powershell -ExecutionPolicy Bypass -File scripts/setup.ps1 on Windows
 ```
 
 Two ways to run it:
@@ -69,7 +69,7 @@ Two ways to run it:
 docker compose up --build -d
 
 # Dev loop: database in Docker, API/web/worker on the host with hot reload
-sh scripts/dev.sh                # pwsh -File scripts/dev.ps1
+sh scripts/dev.sh                # powershell -ExecutionPolicy Bypass -File scripts/dev.ps1
 ```
 
 `scripts/dev.sh` serves the UI on **5173** (Vite), not 3000. Point the smoke

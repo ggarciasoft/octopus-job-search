@@ -58,10 +58,10 @@
     Never commit .env. It is already excluded by .gitignore.
 
 .EXAMPLE
-    pwsh -File scripts/setup.ps1
+    powershell -ExecutionPolicy Bypass -File scripts/setup.ps1
 
 .EXAMPLE
-    pwsh -File scripts/setup.ps1 -KeepExisting
+    powershell -ExecutionPolicy Bypass -File scripts/setup.ps1 -KeepExisting
 #>
 [CmdletBinding()]
 param(

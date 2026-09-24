@@ -20,7 +20,7 @@
     archive are taken at slightly different moments. For a single-owner local
     installation that is almost always fine. To make it exact:
         docker compose stop api worker
-        pwsh -File scripts/backup.ps1
+        powershell -ExecutionPolicy Bypass -File scripts/backup.ps1
         docker compose start api worker
     The manifest records whether the stack was quiesced, so a restore can tell
     you what it is working with instead of guessing.
@@ -67,10 +67,10 @@
     validated for this installation. They are targets, not measured results.
 
 .EXAMPLE
-    pwsh -File scripts/backup.ps1 -AgeRecipient age1abc...
+    powershell -ExecutionPolicy Bypass -File scripts/backup.ps1 -AgeRecipient age1abc...
 
 .EXAMPLE
-    pwsh -File scripts/backup.ps1 -NoEncrypt -Label pre-migration
+    powershell -ExecutionPolicy Bypass -File scripts/backup.ps1 -NoEncrypt -Label pre-migration
 #>
 [CmdletBinding()]
 param(
@@ -140,8 +140,8 @@ Write-JGInfo "Backup: $stage"
 
 # Is the stack quiesced? Recorded in the manifest so a restore knows whether
 # the two halves are guaranteed consistent with each other.
-$apiRunning    = (& docker compose ps --status running --quiet api 2>$null) -join ''
-$workerRunning = (& docker compose ps --status running --quiet worker 2>$null) -join ''
+$apiRunning    = (Invoke-JGNative { docker compose ps --status running --quiet api }) -join ''
+$workerRunning = (Invoke-JGNative { docker compose ps --status running --quiet worker }) -join ''
 $quiesced = 'true'
 if ($apiRunning -or $workerRunning) {
     $quiesced = 'false'
@@ -152,7 +152,7 @@ if ($apiRunning -or $workerRunning) {
 try {
     # --- Database -------------------------------------------------------------
     Write-JGInfo 'Dumping the database...'
-    & docker compose up -d --wait db *> $null
+    Invoke-JGNative { docker compose up -d --wait db } | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "the 'db' service is not healthy; cannot dump. Check: docker compose logs db" }
 
     $dumpPath = Join-Path $stage 'database.dump'
@@ -169,13 +169,13 @@ try {
     }
     Write-JGOk "database.dump ($((Get-Item -LiteralPath $dumpPath).Length) bytes)"
 
-    $pgVersion = ((& docker compose exec -T db psql -U $pgUser -d $pgDb -tAc 'SHOW server_version' 2>$null) -join '').Trim()
+    $pgVersion = ((Invoke-JGNative { docker compose exec -T db psql -U $pgUser -d $pgDb -tAc 'SHOW server_version' }) -join '').Trim()
     if (-not $pgVersion) { $pgVersion = 'unknown' }
 
     # The ledger is an ordinary table (migration 0007), so the dump carries it
     # whenever the schema has it. Recorded rather than assumed: a dump of a
     # pre-0007 database has none.
-    $ledgerProbe = ((& docker compose exec -T db psql -U $pgUser -d $pgDb -tAc "SELECT to_regclass('public.deletion_ledger') IS NOT NULL" 2>$null) -join '').Trim()
+    $ledgerProbe = ((Invoke-JGNative { docker compose exec -T db psql -U $pgUser -d $pgDb -tAc "SELECT to_regclass('public.deletion_ledger') IS NOT NULL" }) -join '').Trim()
     $ledgerInDump = if ($ledgerProbe -eq 't') { 'true' } else { 'false' }
 
     # --- Files ----------------------------------------------------------------
@@ -184,7 +184,7 @@ try {
     & cmd /c "docker compose run --rm --no-deps --entrypoint sh api -c `"tar -C '$filesRoot' -czf - .`" > `"$filesPath`""
     if ($LASTEXITCODE -ne 0) { throw "archiving $filesRoot failed." }
 
-    $fileCount = ((& docker compose run --rm --no-deps --entrypoint sh api -c "find '$filesRoot' -type f | wc -l" 2>$null) -join '').Trim()
+    $fileCount = ((Invoke-JGNative { docker compose run --rm --no-deps --entrypoint sh api -c "find '$filesRoot' -type f | wc -l" }) -join '').Trim()
     if (-not $fileCount) { $fileCount = '0' }
     Write-JGOk "files.tar.gz ($fileCount files, $((Get-Item -LiteralPath $filesPath).Length) bytes)"
 
@@ -276,7 +276,7 @@ Remove-Item -Recurse -Force -LiteralPath $stage -ErrorAction SilentlyContinue
 Write-Host ''
 Write-JGOk "Backup written: $artifact"
 Write-Host ''
-Write-Host "  Restore it with:  pwsh -File scripts/restore.ps1 -From '$artifact'"
+Write-Host "  Restore it with:  powershell -ExecutionPolicy Bypass -File scripts/restore.ps1 -From '$artifact'"
 Write-Host ''
 if ($encryption -eq 'none') {
     Write-JGWarn 'This backup is NOT encrypted. Store it somewhere encrypted at rest.'

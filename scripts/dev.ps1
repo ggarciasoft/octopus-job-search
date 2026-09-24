@@ -42,13 +42,13 @@
     * Vite serves on 5173 in this mode, not 3000. 3000 is the Compose web
       container. scripts/smoke.ps1 defaults to 3000, so point it at the API for
       this loop:
-          pwsh -File scripts/smoke.ps1 -BaseUrl http://127.0.0.1:8080
+          powershell -ExecutionPolicy Bypass -File scripts/smoke.ps1 -BaseUrl http://127.0.0.1:8080
 
 .EXAMPLE
-    pwsh -File scripts/dev.ps1
+    powershell -ExecutionPolicy Bypass -File scripts/dev.ps1
 
 .EXAMPLE
-    pwsh -File scripts/dev.ps1 -DbOnly
+    powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 -DbOnly
 #>
 [CmdletBinding()]
 param(
